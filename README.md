@@ -11,12 +11,12 @@
   </p>
 
   <p align="center">
-    <a href="#showcase"><b>Showcase</b></a> •
-    <a href="#features"><b>Features</b></a> •
-    <a href="#download"><b>Download</b></a> •
-    <a href="#known-issues"><b>Known Issues</b></a> •
-    <a href="#contributing"><b>Contributing</b></a> •
-    <a href="#donate"><b>Donate</b></a>
+    <a href="#-showcase"><b>Showcase</b></a> •
+    <a href="#-features"><b>Features</b></a> •
+    <a href="#-download"><b>Download</b></a> •
+    <a href="#-known-issues"><b>Known Issues</b></a> •
+    <a href="#-contributing"><b>Contributing</b></a> •
+    <a href="#-donate"><b>Donate</b></a>
   </p>
 
 </div>
