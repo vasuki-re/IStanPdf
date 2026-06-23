@@ -25,7 +25,7 @@
 
 <br>
 
-**IStanPdf** is an offline Android utility for PDF and DOCX operations — no internet required, no subscription, no file size limits. It was born out of frustration with the slow upload speeds and freemium paywalls of tools like iLovePDF and Smallpdf. Everything runs on your device.
+**IStanPdf** is an offline Android utility for PDF and DOCX operations. There are no subscriptions, internet requirements, or file size limits. I built this as a fast, local alternative to freemium online tools like iLovePDF and Smallpdf. Everything runs directly on your device.
 
 <br>
 
@@ -123,13 +123,13 @@
 ## ⚠️ Known Issues
 
 - **DOCX Remove Pages:** Some DOCX files with structural issues fail to save during the "Remove Pages" operation.
-  - **Workaround:** Use "Reorder Pages" instead — it internally converts the DOCX to PDF to bypass the limitation.
+  - **Workaround:** Use "Reorder Pages" instead - it internally converts the DOCX to PDF to bypass the limitation.
   - **Caveat:** If you later convert the resulting PDF back to DOCX, some elements may no longer be editable.
 
 - **App Size:** IStanPdf is larger than a typical utility app because it bundles LibreOffice binaries, which power the DOCX operations.
 
-- **UI:** The interface is functional but not fully polished yet. Micro-optimizations for accessibility are planned.
-- **Monolith Architecture:** Every operation code is in singleton MainActivity. It is easier to code but too hard to debug and update changes. I'll refactor the app in later updates to use different architecture for development.
+- **UI:** The interface is functional but a bit rough right now. I'm planning some micro-optimizations to make it more accessible.
+- **Monolith Architecture:** Core operations currently live in a singleton `MainActivity`. I plan to refactor this into a modular architecture in future updates to make debugging and maintenance easier.
 
 <br>
 
@@ -152,17 +152,17 @@
 
 ## 💡 Why IStanPdf?
 
-As a 1st-year CS Engineering student, I found myself constantly needing PDF and DOCX tools — and constantly hitting paywalls or waiting for slow cloud uploads. No offline app I found handled both well enough. So I built one.
+As a CS student, I regularly needed PDF and DOCX tools but found most online options too slow or restricted by paywalls. I couldn't find a lightweight offline alternative, so I built this.
 
 ### Why Vibecoding?
 
-Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Engineering Student, and I am actively learning. My ultimate aim is to manually code everything and eventually ditch vibecoding. 
+I use AI generation ("vibecoding") to prototype and build quickly while I continue to learn and improve my own coding skills.
 
-| As a Friend 🤝 | As a Foe ⚔️ |
+| Pros | Cons |
 | :--- | :--- |
-| Writes code rapidly | Introduces bugs frequently |
-| Turns imagination into reality | Takes time to debug |
-| Great for prototyping | Hallucinates often |
+| Fast prototyping | Can introduce bugs |
+| Rapid development | Extra debugging time |
+| Helpful for learning | Model hallucinations |
 
 <br>
 
@@ -186,7 +186,7 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 
 ## 🤝 Contributing
 
-Issues, bug reports, and Pull Requests are welcome! If something doesn't work as expected, open an issue and let's fix it together.
+Found a bug or have a feature idea? Feel free to open an issue or submit a PR. Let's fix it together!
 
 [![GitHub Issues](https://img.shields.io/github/issues/vasuki-re/IStanPdf?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github)](https://github.com/vasuki-re/IStanPdf/issues)
 
@@ -214,8 +214,8 @@ If IStanPdf has been useful to you, consider supporting its development!
 
 ## 🏆 Credits
 
-- **iLovePDF & Smallpdf** — For inspiring the overall UI and design direction.
-- **LibreOffice** — The engine powering all DOCX operations under the hood.
+- **iLovePDF & Smallpdf** - For the UI and design inspiration.
+- **LibreOffice** - The engine under the hood that makes all the DOCX operations possible.
 
 <br>
 
