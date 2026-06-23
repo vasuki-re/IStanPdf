@@ -759,18 +759,38 @@ public class MainActivity extends AppCompatActivity {
         outer.setOrientation(LinearLayout.VERTICAL);
         outer.setBackgroundColor(color(R.color.istan_background));
 
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setPadding(dp(22), dp(16), dp(22), dp(16));
+        outer.addView(titleRow);
+
+        TextView backArrow = new TextView(this);
+        backArrow.setText("←");
+        backArrow.setTextSize(26);
+        backArrow.setTextColor(color(R.color.istan_olive_dark));
+        backArrow.setGravity(Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable arrowBg = new android.graphics.drawable.GradientDrawable();
+        arrowBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        arrowBg.setColor(color(R.color.istan_surface));
+        backArrow.setBackground(arrowBg);
+        backArrow.setOnClickListener(v -> buildHome());
+        
+        LinearLayout.LayoutParams arrowParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+        arrowParams.setMargins(0, 0, dp(16), 0);
+        titleRow.addView(backArrow, arrowParams);
+
+        TextView title = text(titleText, 24, R.color.istan_text, true);
+        titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        View separator = new View(this);
+        separator.setBackgroundColor(color(R.color.istan_outline));
+        outer.addView(separator, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.VERTICAL);
         header.setPadding(dp(22), dp(16), dp(22), 0);
         outer.addView(header);
-
-        TextView backArrow = text("←", 32, R.color.istan_text, true);
-        backArrow.setPadding(0, dp(4), dp(16), dp(8));
-        backArrow.setOnClickListener(v -> buildHome());
-        header.addView(backArrow);
-
-        TextView title = text(titleText, 28, R.color.istan_text, true);
-        header.addView(title);
 
         LinearLayout statusCard = new LinearLayout(this);
         statusCard.setOrientation(LinearLayout.HORIZONTAL);
@@ -799,7 +819,7 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout.LayoutParams scParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        scParams.setMargins(0, dp(16), 0, dp(12));
+        scParams.setMargins(0, 0, 0, dp(12));
         header.addView(statusCard, scParams);
 
         pageList = new RecyclerView(this);
