@@ -101,7 +101,6 @@
 </table>
 
 </div>
----
 
 ## ⚠️ Known Issues
 
@@ -112,6 +111,16 @@
 - **App Size:** IStanPdf is larger than a typical utility app because it bundles LibreOffice binaries, which power the DOCX operations.
 
 - **UI:** The interface is functional but not fully polished yet. Micro-optimizations for accessibility are planned.
+- **Monolith Architecture:** Every operation code is in singleton MainActivity.It is easier to code but to hard to debug and update changes.I'll refactor the app in later updates to use different architecture for development.
+
+---
+
+## 📋 TODOs
+
+- [ ] **Refactor Architecture:** Refactor code from monolith to a better architecture for easier debugging.
+- [ ] **Compress PDF:** Introduce Compress PDF feature.
+- [ ] **Optimize DOCX:** Optimize DOCX operations.
+- [ ] **Auto DOCX Repair:** Introduce auto DOCX Repair feature to fix structural issues in DOCX making it difficult to be saved.
 
 ---
 
@@ -121,9 +130,7 @@ As a 1st-year CS Engineering student, I found myself constantly needing PDF and 
 
 ### Why Vibecoding?
 
-Vibecoding isn't a shortcut — it's a tool. It helps bring ideas to life quickly while I'm still learning to write everything manually. That's the goal: use it as a scaffold today, replace it with clean hand-written code tomorrow.
-
-**The honest tradeoff:**
+Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Engineering Student, and I am actively learning. My ultimate aim is to manually code everything and eventually ditch vibecoding. 
 
 | As a Friend 🤝 | As a Foe ⚔️ |
 | :--- | :--- |
@@ -161,6 +168,11 @@ If IStanPdf has been useful to you, consider supporting its development!
   </a>
 </div>
 
+## 🏆 Credits
+
+- **iLovePDF & Smallpdf** — For inspiring the overall UI and design direction.
+- **LibreOffice** — The engine powering all DOCX operations under the hood.
+
 ---
 
 <div align="center">
@@ -168,8 +180,3 @@ If IStanPdf has been useful to you, consider supporting its development!
 </div>
 
 ---
-
-## 🏆 Credits
-
-- **iLovePDF & Smallpdf** — For inspiring the overall UI and design direction.
-- **LibreOffice** — The engine powering all DOCX operations under the hood.
