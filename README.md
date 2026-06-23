@@ -156,7 +156,7 @@ As a CS student, I regularly needed PDF and DOCX tools but found most online opt
 
 ### Why Vibecoding?
 
-I use AI generation ("vibecoding") to prototype and build quickly while I continue to learn and improve my own coding skills.
+Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Engineering Student, and I am actively learning. My ultimate aim is to manually code everything and eventually ditch vibecoding. 
 
 | Pros | Cons |
 | :--- | :--- |
