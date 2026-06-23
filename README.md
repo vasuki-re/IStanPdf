@@ -101,9 +101,6 @@
 </table>
 
 </div>
-
-*Note: Always download from the official GitHub releases page. We are not responsible for risks encountered from unofficial sources.*
-
 ---
 
 ## ⚠️ Known Issues
