@@ -591,6 +591,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout statusCard = new LinearLayout(this);
         statusCard.setOrientation(LinearLayout.HORIZONTAL);
         statusCard.setGravity(Gravity.CENTER);
+        statusCard.setBaselineAligned(false);
         statusCard.setPadding(dp(16), dp(10), dp(20), dp(10));
         android.graphics.drawable.GradientDrawable statusBg = new android.graphics.drawable.GradientDrawable();
         statusBg.setColor(color(R.color.istan_surface));
@@ -780,6 +781,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout statusCard = new LinearLayout(this);
         statusCard.setOrientation(LinearLayout.HORIZONTAL);
         statusCard.setGravity(Gravity.CENTER);
+        statusCard.setBaselineAligned(false);
         statusCard.setPadding(dp(16), dp(10), dp(20), dp(10));
         android.graphics.drawable.GradientDrawable statusBg = new android.graphics.drawable.GradientDrawable();
         statusBg.setColor(color(R.color.istan_surface));
@@ -803,8 +805,19 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout.LayoutParams scParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        scParams.setMargins(0, dp(16), 0, dp(12));
-        header.addView(statusCard, scParams);
+
+        LinearLayout statusRow = new LinearLayout(this);
+        statusRow.setOrientation(LinearLayout.HORIZONTAL);
+        TextView spacer = text("←", 24, R.color.istan_text, true);
+        spacer.setPadding(0, 0, dp(16), dp(2));
+        spacer.setVisibility(View.INVISIBLE);
+        statusRow.addView(spacer);
+        statusRow.addView(statusCard, scParams);
+
+        LinearLayout.LayoutParams srParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        srParams.setMargins(0, dp(16), 0, dp(12));
+        header.addView(statusRow, srParams);
 
         pageList = new RecyclerView(this);
         pageList.setLayoutManager(new LinearLayoutManager(this));
@@ -1265,9 +1278,6 @@ public class MainActivity extends AppCompatActivity {
                     crossBtn.setTextSize(22);
                     crossBtn.setTextColor(color(R.color.istan_olive));
                     crossBtn.setPadding(dp(12), dp(4), dp(8), dp(4));
-                    titleRow.addView(crossBtn);
-                } else {
-                    titleRow.addView(keepBox, cbParams);
                 }
 
                 TextView infoText = text("", 13, R.color.istan_olive, false);
@@ -1290,6 +1300,11 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout actionsBox = new LinearLayout(MainActivity.this);
                 actionsBox.setOrientation(LinearLayout.HORIZONTAL);
                 actionsBox.setGravity(Gravity.CENTER_VERTICAL);
+                if (isMerge) {
+                    actionsBox.addView(crossBtn);
+                } else {
+                    actionsBox.addView(keepBox, cbParams);
+                }
                 actionsBox.addView(rotateLeft, new LinearLayout.LayoutParams(dp(40), dp(40)));
                 actionsBox.addView(rotateRight, new LinearLayout.LayoutParams(dp(40), dp(40)));
                 row.addView(actionsBox);
