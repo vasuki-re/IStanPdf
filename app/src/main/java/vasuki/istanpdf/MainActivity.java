@@ -764,19 +764,13 @@ public class MainActivity extends AppCompatActivity {
         header.setPadding(dp(22), dp(16), dp(22), 0);
         outer.addView(header);
 
-        LinearLayout titleRow = new LinearLayout(this);
-        titleRow.setOrientation(LinearLayout.HORIZONTAL);
-        titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        
-        TextView backArrow = text("←", 24, R.color.istan_text, true);
-        backArrow.setPadding(0, 0, dp(16), dp(2));
+        TextView backArrow = text("←", 32, R.color.istan_text, true);
+        backArrow.setPadding(0, dp(4), dp(16), dp(8));
         backArrow.setOnClickListener(v -> buildHome());
-        titleRow.addView(backArrow);
+        header.addView(backArrow);
 
-        TextView title = text(titleText, 22, R.color.istan_text, true);
-        titleRow.addView(title);
-        
-        header.addView(titleRow);
+        TextView title = text(titleText, 28, R.color.istan_text, true);
+        header.addView(title);
 
         LinearLayout statusCard = new LinearLayout(this);
         statusCard.setOrientation(LinearLayout.HORIZONTAL);
@@ -805,19 +799,8 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout.LayoutParams scParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        LinearLayout statusRow = new LinearLayout(this);
-        statusRow.setOrientation(LinearLayout.HORIZONTAL);
-        TextView spacer = text("←", 24, R.color.istan_text, true);
-        spacer.setPadding(0, 0, dp(16), dp(2));
-        spacer.setVisibility(View.INVISIBLE);
-        statusRow.addView(spacer);
-        statusRow.addView(statusCard, scParams);
-
-        LinearLayout.LayoutParams srParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        srParams.setMargins(0, dp(16), 0, dp(12));
-        header.addView(statusRow, srParams);
+        scParams.setMargins(0, dp(16), 0, dp(12));
+        header.addView(statusCard, scParams);
 
         pageList = new RecyclerView(this);
         pageList.setLayoutManager(new LinearLayoutManager(this));
@@ -955,7 +938,7 @@ public class MainActivity extends AppCompatActivity {
         boolean hideRotate = isSplit || isRemoveDocx || titleText.equals("Merge PDF");
         boolean hideDrag = isSplit || isRemoveDocx;
         boolean isImg = titleText.equals("Images to PDF") 
-                || titleText.equals("Remove/Reorder Pages from PDF")
+                || titleText.equals("Remove/Reorder PDF")
                 || titleText.equals("Reorder Pages from DOCX") 
                 || isRemoveDocx
                 || isSplit
@@ -1008,7 +991,7 @@ public class MainActivity extends AppCompatActivity {
         footer.setOrientation(LinearLayout.VERTICAL);
         footer.setPadding(dp(22), dp(8), dp(22), dp(18));
 
-        if ("Images to PDF".equals(titleText) || "Reorder Pages from DOCX".equals(titleText) || titleText.equals("Remove/Reorder Pages from PDF") || "Merge PDF".equals(titleText)) {
+        if ("Images to PDF".equals(titleText) || "Reorder Pages from DOCX".equals(titleText) || titleText.equals("Remove/Reorder PDF") || "Merge PDF".equals(titleText)) {
             MaterialCardView addCard = new MaterialCardView(this);
             addCard.setCardBackgroundColor(color(R.color.istan_surface));
             addCard.setCardElevation(0);
@@ -1045,7 +1028,7 @@ public class MainActivity extends AppCompatActivity {
             addCard.setOnClickListener(v -> {
                 if ("Reorder Pages from DOCX".equals(titleText)) {
                     pickMany(new String[]{"image/jpeg", "image/png", "image/webp", "image/bmp", MIME_DOCX, MIME_PDF}, REQ_PICK_DOCX_ADD);
-                } else if (titleText.equals("Remove/Reorder Pages from PDF")) {
+                } else if (titleText.equals("Remove/Reorder PDF")) {
                     pickMany(new String[]{"image/jpeg", "image/png", "image/webp", "image/bmp", MIME_PDF}, REQ_PICK_PDF_ADD);
                 } else if ("Merge PDF".equals(titleText)) {
                     pickMany(new String[]{MIME_PDF}, REQ_PICK_MERGE_PDF_ADD);
@@ -1854,7 +1837,7 @@ public class MainActivity extends AppCompatActivity {
                     reorderSource = uri;
                     originalFileName = null;
                     setBusy(false, "Ready");
-                    buildPageEditor("Remove/Reorder Pages from PDF", "Save PDF", docxExport, true);
+                    buildPageEditor("Remove/Reorder PDF", "Save PDF", docxExport, true);
                 });
             } catch (Exception exception) {
                 showError(exception);
