@@ -1,0 +1,6 @@
+[Bootstrap]
+Logo=1
+NativeProgress=1
+URE_BOOTSTRAP=file:///assets/program/fundamentalrc
+HOME=$APP_DATA_DIR/cache
+OSL_SOCKET_PATH=$APP_DATA_DIR/cache

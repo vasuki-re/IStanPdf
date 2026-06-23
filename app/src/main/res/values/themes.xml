@@ -1,0 +1,27 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.AppTheme" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/istan_background</item>
+        <item name="android:statusBarColor">@color/istan_background</item>
+        <item name="colorPrimary">@color/istan_olive</item>
+        <item name="colorSecondary">@color/istan_olive</item>
+        <item name="colorSurface">@color/istan_surface</item>
+        <item name="colorOnSurface">@color/istan_text</item>
+        <item name="materialButtonStyle">@style/Widget.IStan.Button</item>
+        <item name="materialSwitchStyle">@style/Widget.IStan.Switch</item>
+    </style>
+
+    <style name="Widget.IStan.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">18dp</item>
+        <item name="backgroundTint">@color/istan_olive</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="Widget.IStan.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/istan_switch_thumb</item>
+        <item name="trackTint">@color/istan_switch_track</item>
+    </style>
+
+    <style name="AppTheme" parent="Base.AppTheme" />
+</resources>

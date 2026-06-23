@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="istan_background">#FAFAFA</color>
+    <color name="istan_surface">#F4F7EE</color>
+    <color name="istan_surface_high">#E7EBDC</color>
+    <color name="istan_olive">#728241</color>
+    <color name="istan_olive_dark">#5C6B32</color>
+    <color name="istan_text">#1C1C1C</color>
+    <color name="istan_text_muted">#505548</color>
+    <color name="istan_outline">#B4B8AA</color>
+</resources>
