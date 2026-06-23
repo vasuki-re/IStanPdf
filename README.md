@@ -19,11 +19,19 @@
 
 </div>
 
-<hr />
+<br>
+
+---
+
+<br>
 
 **IStanPdf** is an offline Android utility for PDF and DOCX operations — no internet required, no subscription, no file size limits. It was born out of frustration with the slow upload speeds and freemium paywalls of tools like iLovePDF and Smallpdf. Everything runs on your device.
 
+<br>
+
 ---
+
+<br>
 
 ## ✨ Features
 
@@ -77,7 +85,11 @@
 
 </div>
 
+<br>
+
 ---
+
+<br>
 
 ## 📥 Download
 
@@ -102,6 +114,12 @@
 
 </div>
 
+<br>
+
+---
+
+<br>
+
 ## ⚠️ Known Issues
 
 - **DOCX Remove Pages:** Some DOCX files with structural issues fail to save during the "Remove Pages" operation.
@@ -111,9 +129,13 @@
 - **App Size:** IStanPdf is larger than a typical utility app because it bundles LibreOffice binaries, which power the DOCX operations.
 
 - **UI:** The interface is functional but not fully polished yet. Micro-optimizations for accessibility are planned.
-- **Monolith Architecture:** Every operation code is in singleton MainActivity.It is easier to code but to hard to debug and update changes.I'll refactor the app in later updates to use different architecture for development.
+- **Monolith Architecture:** Every operation code is in singleton MainActivity. It is easier to code but too hard to debug and update changes. I'll refactor the app in later updates to use different architecture for development.
+
+<br>
 
 ---
+
+<br>
 
 ## 📋 TODOs
 
@@ -122,7 +144,11 @@
 - [ ] **Optimize DOCX:** Optimize DOCX operations.
 - [ ] **Auto DOCX Repair:** Introduce auto DOCX Repair feature to fix structural issues in DOCX making it difficult to be saved.
 
+<br>
+
 ---
+
+<br>
 
 ## 💡 Why IStanPdf?
 
@@ -138,7 +164,11 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 | Turns imagination into reality | Takes time to debug |
 | Great for prototyping | Hallucinates often |
 
+<br>
+
 ---
+
+<br>
 
 ## 🛠️ Development
 
@@ -148,7 +178,11 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 | **Codex** | Development |
 | **ChatGPT Image Generation** | UI Design |
 
+<br>
+
 ---
+
+<br>
 
 ## 🤝 Contributing
 
@@ -156,7 +190,11 @@ Issues, bug reports, and Pull Requests are welcome! If something doesn't work as
 
 [![GitHub Issues](https://img.shields.io/github/issues/vasuki-re/IStanPdf?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github)](https://github.com/vasuki-re/IStanPdf/issues)
 
+<br>
+
 ---
+
+<br>
 
 ## ☕ Donate
 
@@ -168,15 +206,23 @@ If IStanPdf has been useful to you, consider supporting its development!
   </a>
 </div>
 
+<br>
+
+---
+
+<br>
+
 ## 🏆 Credits
 
 - **iLovePDF & Smallpdf** — For inspiring the overall UI and design direction.
 - **LibreOffice** — The engine powering all DOCX operations under the hood.
 
+<br>
+
 ---
+
+<br>
 
 <div align="center">
   <p><b>If you find this app useful, consider giving it a ⭐</b></p>
 </div>
-
----
