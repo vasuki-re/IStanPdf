@@ -762,25 +762,15 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout titleRow = new LinearLayout(this);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        titleRow.setPadding(dp(22), dp(16), dp(22), dp(16));
+        titleRow.setPadding(dp(12), dp(16), dp(22), dp(16));
         outer.addView(titleRow);
 
-        TextView backArrow = new TextView(this);
-        backArrow.setText("←");
-        backArrow.setTextSize(26);
-        backArrow.setTextColor(color(R.color.istan_olive_dark));
-        backArrow.setGravity(Gravity.CENTER);
-        android.graphics.drawable.GradientDrawable arrowBg = new android.graphics.drawable.GradientDrawable();
-        arrowBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        arrowBg.setColor(color(R.color.istan_surface));
-        backArrow.setBackground(arrowBg);
+        TextView backArrow = text("←", 28, R.color.istan_text, true);
+        backArrow.setPadding(0, 0, dp(16), dp(4));
         backArrow.setOnClickListener(v -> buildHome());
-        
-        LinearLayout.LayoutParams arrowParams = new LinearLayout.LayoutParams(dp(44), dp(44));
-        arrowParams.setMargins(0, 0, dp(16), 0);
-        titleRow.addView(backArrow, arrowParams);
+        titleRow.addView(backArrow);
 
-        TextView title = text(titleText, 24, R.color.istan_text, true);
+        TextView title = text(titleText, 22, R.color.istan_text, true);
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
         View separator = new View(this);
@@ -1434,23 +1424,12 @@ public class MainActivity extends AppCompatActivity {
                     imgCard.setStrokeColor(Color.parseColor("#33FFFFFF"));
                     imgCard.setStrokeWidth(dp(1));
 
-                    ImageView fullImg = new ImageView(MainActivity.this) {
-                        @Override
-                        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                            int w = getMeasuredWidth();
-                            int h = getMeasuredHeight();
-                            int maxH = (int) (w * 1.5f);
-                            if (h > maxH) {
-                                setMeasuredDimension(w, maxH);
-                            }
-                        }
-                    };
-                    fullImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    ImageView fullImg = new ImageView(MainActivity.this);
+                    fullImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     fullImg.setAdjustViewBounds(true);
-                    imgCard.addView(fullImg, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    imgCard.addView(fullImg, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-                    FrameLayout.LayoutParams cardLp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    FrameLayout.LayoutParams cardLp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                     cardLp.gravity = Gravity.CENTER;
                     cardContainer.addView(imgCard, cardLp);
 
@@ -2081,7 +2060,7 @@ public class MainActivity extends AppCompatActivity {
                     try (PdfRenderer.Page page = renderer.openPage(i)) {
                         int screenWidth = getResources().getDisplayMetrics().widthPixels;
                         int width = Math.max(dp(280), screenWidth - dp(64));
-                        int height = Math.max(dp(360), width * page.getHeight() / Math.max(1, page.getWidth()));
+                        int height = Math.max(1, width * page.getHeight() / Math.max(1, page.getWidth()));
                         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
                         bitmap.eraseColor(Color.WHITE);
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
