@@ -11,27 +11,21 @@
   </p>
 
   <p align="center">
-    <a href="#-features"><b>Features</b></a> •
-    <a href="#-download"><b>Download</b></a> •
-    <a href="#-known-issues"><b>Known Issues</b></a> •
-    <a href="#-contributing"><b>Contributing</b></a>
+    <a href="#showcase"><b>Showcase</b></a> •
+    <a href="#features"><b>Features</b></a> •
+    <a href="#download"><b>Download</b></a> •
+    <a href="#known-issues"><b>Known Issues</b></a> •
+    <a href="#contributing"><b>Contributing</b></a> •
+    <a href="#donate"><b>Donate</b></a>
   </p>
 
 </div>
 
-<br>
-
 ---
-
-<br>
 
 **IStanPdf** is an offline Android utility for PDF and DOCX operations. There are no subscriptions, internet requirements, or file size limits. I built this as a fast, local alternative to freemium online tools like iLovePDF and Smallpdf. Everything runs directly on your device.
 
-<br>
-
 ---
-
-<br>
 
 ## 📸 Showcase
 
@@ -44,11 +38,7 @@
 
 </div>
 
-<br>
-
 ---
-
-<br>
 
 ## ✨ Features
 
@@ -102,11 +92,7 @@
 
 </div>
 
-<br>
-
 ---
-
-<br>
 
 ## 📥 Download
 
@@ -131,11 +117,7 @@
 
 </div>
 
-<br>
-
 ---
-
-<br>
 
 ## ⚠️ Known Issues
 
@@ -148,11 +130,7 @@
 - **UI:** The interface is functional but a bit rough right now. I'm planning some micro-optimizations to make it more accessible.
 - **Monolith Architecture:** Core operations currently live in a singleton `MainActivity`. I plan to refactor this into a modular architecture in future updates to make debugging and maintenance easier.
 
-<br>
-
 ---
-
-<br>
 
 ## 📋 TODOs
 
@@ -161,11 +139,7 @@
 - [ ] **Optimize DOCX:** Optimize DOCX operations.
 - [ ] **Auto DOCX Repair:** Introduce auto DOCX Repair feature to fix structural issues in DOCX making it difficult to be saved.
 
-<br>
-
 ---
-
-<br>
 
 ## 💡 Why IStanPdf?
 
@@ -181,11 +155,7 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 | Rapid development | Extra debugging time |
 | Helpful for learning | Model hallucinations |
 
-<br>
-
 ---
-
-<br>
 
 ## 🛠️ Development
 
@@ -195,11 +165,7 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 | **Codex** | Development |
 | **ChatGPT Image Generation** | UI Design |
 
-<br>
-
 ---
-
-<br>
 
 ## 🤝 Contributing
 
@@ -207,11 +173,7 @@ Found a bug or have a feature idea? Feel free to open an issue or submit a PR. L
 
 [![GitHub Issues](https://img.shields.io/github/issues/vasuki-re/IStanPdf?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github)](https://github.com/vasuki-re/IStanPdf/issues)
 
-<br>
-
 ---
-
-<br>
 
 ## ☕ Donate
 
