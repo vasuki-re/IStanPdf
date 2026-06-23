@@ -35,10 +35,10 @@
 <img src="assets/merge.jpg" alt="Merge PDF" width="30%" />
 <img src="assets/split.jpg" alt="Split PDF" width="30%" />
 <img src="assets/modify_pdf.jpg" alt="Modify PDF" width="30%" />
-<img src="img2pdf.jpg" alt="Image to PDF" width="30%" />
-<img src="rmpage_docx.jpg" alt="Remove Pages from DOCX" width="30%" />
+<img src="assets/img2pdf.jpg" alt="Image to PDF" width="30%" />
+<img src="assets/rmpage_docx.jpg" alt="Remove Pages from DOCX" width="30%" />
 </div>
-<img src="reorder_docx.jpg" alt="Reorder DOCX" width="30%" />
+<img src="assets/reorder_docx.jpg" alt="Reorder DOCX" width="30%" />
 
 ---
 
