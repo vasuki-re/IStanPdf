@@ -192,7 +192,7 @@ If IStanPdf has been useful to you, consider supporting its development!
 
 <br>
 
-## 🏆 Credits
+## Credits
 
 - **iLovePDF & Smallpdf** - For the UI and design inspiration.
 - **LibreOffice** - The engine under the hood that makes all the DOCX operations possible.
