@@ -7,7 +7,7 @@
   <p align="center">
     <strong>Offline PDF & DOCX operations. No paywalls. No internet. No nonsense.</strong>
     <br />
-    <em>Built to counter freemium online pdf and docx services.</em>
+    <em>Built to counter freemium online pdf and docx conversion services.</em>
   </p>
 
   <p align="center">
