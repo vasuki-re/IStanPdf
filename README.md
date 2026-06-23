@@ -31,14 +31,14 @@
 
 <div align="center">
 
-<img src="assets/ui.jpg" alt="Home Screen" width="23%" />
-<img src="assets/merge.jpg" alt="Merge PDF" width="23%" />
-<img src="assets/split.jpg" alt="Split PDF" width="23%" />
-<img src="assets/modify_pdf.jpg" alt="Modify PDF" width="23%" />
-<img src="img2pdf.jpg" alt="Image to PDF" width="23%" />
-<img src="rmpage_docx.jpg" alt="Remove Pages from DOCX" width="23%" />
+<img src="assets/ui.jpg" alt="Home Screen" width="30%" />
+<img src="assets/merge.jpg" alt="Merge PDF" width="30%" />
+<img src="assets/split.jpg" alt="Split PDF" width="30%" />
+<img src="assets/modify_pdf.jpg" alt="Modify PDF" width="30%" />
+<img src="img2pdf.jpg" alt="Image to PDF" width="30%" />
+<img src="rmpage_docx.jpg" alt="Remove Pages from DOCX" width="30%" />
 </div>
-<img src="reorder_docx.jpg" alt="Reorder DOCX" width="23%" />
+<img src="reorder_docx.jpg" alt="Reorder DOCX" width="30%" />
 
 ---
 
