@@ -1232,6 +1232,7 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout titleRow = new LinearLayout(MainActivity.this);
                 titleRow.setOrientation(LinearLayout.HORIZONTAL);
                 titleRow.setGravity(Gravity.CENTER_VERTICAL);
+                titleRow.setBaselineAligned(false);
                 infoBox.addView(titleRow);
 
                 TextView titleText = text("", 15, R.color.istan_text, true);
@@ -1254,6 +1255,7 @@ public class MainActivity extends AppCompatActivity {
                 
                 LinearLayout.LayoutParams cbParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 cbParams.setMargins(dp(8), 0, 0, 0);
+                cbParams.gravity = Gravity.CENTER_VERTICAL;
                 
                 TextView crossBtn = null;
                 if (isMerge) {
@@ -1316,6 +1318,7 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout infoBox = new LinearLayout(MainActivity.this);
                 infoBox.setOrientation(LinearLayout.HORIZONTAL);
                 infoBox.setGravity(Gravity.CENTER_VERTICAL);
+                infoBox.setBaselineAligned(false);
                 infoBox.setPadding(0, dp(12), 0, 0);
                 row.addView(infoBox, new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1341,7 +1344,9 @@ public class MainActivity extends AppCompatActivity {
                 keepBox.setTextSize(18);
                 keepBox.setTextColor(color(R.color.istan_text));
                 keepBox.setTypeface(regularFont);
-                infoBox.addView(keepBox, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams keepLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                keepLp.gravity = Gravity.CENTER_VERTICAL;
+                infoBox.addView(keepBox, keepLp);
 
                 RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -1434,6 +1439,7 @@ public class MainActivity extends AppCompatActivity {
                     LinearLayout bottomControls = new LinearLayout(MainActivity.this);
                     bottomControls.setOrientation(LinearLayout.HORIZONTAL);
                     bottomControls.setGravity(Gravity.CENTER_VERTICAL);
+                    bottomControls.setBaselineAligned(false);
                     bottomControls.setPadding(dp(24), dp(8), dp(24), dp(8));
                     
                     TextView pageCounter = text("", 16, R.color.istan_surface, true);
@@ -1477,7 +1483,9 @@ public class MainActivity extends AppCompatActivity {
                     keepBox.setTextSize(14);
                     keepBox.setTextColor(Color.WHITE);
                     keepBox.setPadding(dp(8), 0, 0, 0);
-                    bottomControls.addView(keepBox, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    LinearLayout.LayoutParams keepLpDialog = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    keepLpDialog.gravity = Gravity.CENTER_VERTICAL;
+                    bottomControls.addView(keepBox, keepLpDialog);
                     
                     dialogRoot.addView(bottomControls, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -1628,6 +1636,7 @@ public class MainActivity extends AppCompatActivity {
                     LinearLayout bottomControls = new LinearLayout(MainActivity.this);
                     bottomControls.setOrientation(LinearLayout.HORIZONTAL);
                     bottomControls.setGravity(Gravity.CENTER_VERTICAL);
+                    bottomControls.setBaselineAligned(false);
                     bottomControls.setPadding(dp(24), dp(8), dp(24), dp(8));
 
                     TextView pageCounter = text("", 16, R.color.istan_surface, true);
@@ -1672,7 +1681,9 @@ public class MainActivity extends AppCompatActivity {
                     keepBox.setTextColor(Color.WHITE);
                     keepBox.setPadding(dp(8), 0, 0, 0);
                     if (pages.size() <= 1) keepBox.setVisibility(View.GONE);
-                    bottomControls.addView(keepBox, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    LinearLayout.LayoutParams keepLpDialog2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    keepLpDialog2.gravity = Gravity.CENTER_VERTICAL;
+                    bottomControls.addView(keepBox, keepLpDialog2);
 
                     dialogRoot2.addView(bottomControls, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
