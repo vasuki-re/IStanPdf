@@ -33,6 +33,23 @@
 
 <br>
 
+## 📸 Showcase
+
+<div align="center">
+
+<img src="assets/1.ui.png" alt="Home Screen" width="23%" />
+<img src="assets/2.merge.png" alt="Merge PDF" width="23%" />
+<img src="assets/3.remove_reorder_pdf.png" alt="Remove and Reorder PDF" width="23%" />
+<img src="assets/4.remove_page_docx.png" alt="Remove DOCX Page" width="23%" />
+
+</div>
+
+<br>
+
+---
+
+<br>
+
 ## ✨ Features
 
 <div align="center">
