@@ -102,23 +102,19 @@
 
 </div>
 
-> [!WARNING]
-> **Note:** Always download from the official GitHub releases page. We are not responsible for risks encountered from unofficial sources.
+*Note: Always download from the official GitHub releases page. We are not responsible for risks encountered from unofficial sources.*
 
 ---
 
 ## ⚠️ Known Issues
 
-> [!IMPORTANT]
-> **DOCX Remove Pages:** Some DOCX files with structural issues fail to save during the "Remove Pages" operation.
-> - **Workaround:** Use "Reorder Pages" instead — it internally converts the DOCX to PDF to bypass the limitation.
-> - **Caveat:** If you later convert the resulting PDF back to DOCX, some elements may no longer be editable.
+- **DOCX Remove Pages:** Some DOCX files with structural issues fail to save during the "Remove Pages" operation.
+  - **Workaround:** Use "Reorder Pages" instead — it internally converts the DOCX to PDF to bypass the limitation.
+  - **Caveat:** If you later convert the resulting PDF back to DOCX, some elements may no longer be editable.
 
-> [!NOTE]
-> **App Size:** IStanPdf is larger than a typical utility app because it bundles LibreOffice binaries, which power the DOCX operations.
+- **App Size:** IStanPdf is larger than a typical utility app because it bundles LibreOffice binaries, which power the DOCX operations.
 
-> [!NOTE]
-> **UI:** The interface is functional but not fully polished yet. Micro-optimizations for accessibility are planned.
+- **UI:** The interface is functional but not fully polished yet. Micro-optimizations for accessibility are planned.
 
 ---
 
@@ -146,7 +142,7 @@ Vibecoding isn't a shortcut — it's a tool. It helps bring ideas to life quickl
 | :--- | :--- |
 | **Antigravity 2.0** | Development |
 | **Codex** | Development |
-| **ChatGPT** | UI Design |
+| **ChatGPT Image Generation** | UI Design |
 
 ---
 
@@ -155,13 +151,6 @@ Vibecoding isn't a shortcut — it's a tool. It helps bring ideas to life quickl
 Issues, bug reports, and Pull Requests are welcome! If something doesn't work as expected, open an issue and let's fix it together.
 
 [![GitHub Issues](https://img.shields.io/github/issues/vasuki-re/IStanPdf?style=for-the-badge&color=6366f1&labelColor=1e1e2e&logo=github)](https://github.com/vasuki-re/IStanPdf/issues)
-
----
-
-## 🏆 Credits
-
-- **iLovePDF & Smallpdf** — For inspiring the overall UI and design direction.
-- **LibreOffice** — The engine powering all DOCX operations under the hood.
 
 ---
 
@@ -180,3 +169,10 @@ If IStanPdf has been useful to you, consider supporting its development!
 <div align="center">
   <p><b>If you find this app useful, consider giving it a ⭐</b></p>
 </div>
+
+---
+
+## 🏆 Credits
+
+- **iLovePDF & Smallpdf** — For inspiring the overall UI and design direction.
+- **LibreOffice** — The engine powering all DOCX operations under the hood.
