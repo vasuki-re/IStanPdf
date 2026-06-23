@@ -27,7 +27,7 @@
 
 ---
 
-## 📸 Showcase
+## Showcase
 
 <div align="center">
 
@@ -41,7 +41,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 <div align="center">
 
@@ -49,7 +49,7 @@
   <tr>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>📄 PDF Tools</h3>
+        <h3> PDF Tools</h3>
         <ul>
           <li><b>Merge PDF:</b> Combine multiple PDF files into one.</li>
           <li><b>Split PDF:</b> Extract pages by specifying a page range.</li>
@@ -60,7 +60,7 @@
     </td>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>🔄 Conversions</h3>
+        <h3> Conversions</h3>
         <ul>
           <li><b>Images to PDF:</b> Convert one or more images into a single PDF document.</li>
           <li><b>PDF to Image:</b> Extract PDF pages and save them as images.</li>
@@ -71,7 +71,7 @@
   <tr>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>📝 DOCX Tools</h3>
+        <h3> DOCX Tools</h3>
         <ul>
           <li><b>Remove Pages:</b> Delete specific pages from a DOCX file.</li>
           <li><b>Reorder Pages:</b> Rearrange pages within a DOCX file.</li>
@@ -80,7 +80,7 @@
     </td>
     <td width="50%" valign="top">
       <div align="left">
-        <h3>🔒 Privacy & Offline</h3>
+        <h3> Privacy & Offline</h3>
         <ul>
           <li>Fully offline — your files never leave your device.</li>
           <li>No account required.</li>
@@ -95,7 +95,7 @@
 
 ---
 
-## 📥 Download
+##  Download
 
 <div align="center">
 
@@ -120,7 +120,7 @@
 
 ---
 
-## ⚠️ Known Issues
+## Known Issues
 
 - **DOCX Remove Pages:** Some DOCX files with structural issues fail to save during the "Remove Pages" operation.
   - **Workaround:** Use "Reorder Pages" instead - it internally converts the DOCX to PDF to bypass the limitation.
@@ -133,7 +133,7 @@
 
 ---
 
-## 📋 TODOs
+## TODOs
 
 - [ ] **Refactor Architecture:** Refactor code from monolith to a better architecture for easier debugging.
 - [ ] **Compress PDF:** Introduce Compress PDF feature.
@@ -142,7 +142,7 @@
 
 ---
 
-## 💡 Why IStanPdf?
+## Why IStanPdf?
 
 As a CS student, I regularly needed PDF and DOCX tools but found most online options too slow or restricted by paywalls. I couldn't find a lightweight offline alternative, so I built this.
 
@@ -158,7 +158,7 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 
 ---
 
-## 🛠️ Development
+## Development
 
 | Tool | Purpose |
 | :--- | :--- |
@@ -168,7 +168,7 @@ Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Enginee
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Found a bug or have a feature idea? Feel free to open an issue or submit a PR. Let's fix it together!
 
@@ -176,7 +176,7 @@ Found a bug or have a feature idea? Feel free to open an issue or submit a PR. L
 
 ---
 
-## ☕ Donate
+## Donate
 
 If IStanPdf has been useful to you, consider supporting its development!
 
