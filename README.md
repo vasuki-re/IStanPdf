@@ -7,7 +7,7 @@
   <p align="center">
     <strong>Offline PDF & DOCX operations. No paywalls. No internet. No nonsense.</strong>
     <br />
-    <em>Built by a college student who got tired of slow uploads and freemium walls.</em>
+    <em>Built to counter freemium online pdf and docx services.</em>
   </p>
 
   <p align="center">
@@ -158,7 +158,7 @@ Issues, bug reports, and Pull Requests are welcome! If something doesn't work as
 
 If IStanPdf has been useful to you, consider supporting its development!
 
-<div align="center">
+<div align="left">
   <a href="https://ko-fi.com/ramakanthgacharya">
     <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" />
   </a>
