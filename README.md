@@ -29,7 +29,7 @@
 
 ## Showcase
 
-<div align="center">
+<div align="left">
 
 <img src="assets/ui.jpg" alt="Home Screen" width="30%" />
 <img src="assets/merge.jpg" alt="Merge PDF" width="30%" />
@@ -37,6 +37,7 @@
 <img src="assets/modify_pdf.jpg" alt="Modify PDF" width="30%" />
 <img src="assets/img2pdf.jpg" alt="Image to PDF" width="30%" />
 <img src="assets/rmpage_docx.jpg" alt="Remove Pages from DOCX" width="30%" />
+<img src="assets/reorder_docx.jpg" alt="Reorder Pages from DOCX" width="30%" />
 </div>
 
 ---
