@@ -1293,13 +1293,13 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout actionsBox = new LinearLayout(MainActivity.this);
                 actionsBox.setOrientation(LinearLayout.HORIZONTAL);
                 actionsBox.setGravity(Gravity.CENTER_VERTICAL);
+                actionsBox.addView(rotateLeft, new LinearLayout.LayoutParams(dp(40), dp(40)));
+                actionsBox.addView(rotateRight, new LinearLayout.LayoutParams(dp(40), dp(40)));
                 if (isMerge) {
                     actionsBox.addView(crossBtn);
                 } else {
                     actionsBox.addView(keepBox, cbParams);
                 }
-                actionsBox.addView(rotateLeft, new LinearLayout.LayoutParams(dp(40), dp(40)));
-                actionsBox.addView(rotateRight, new LinearLayout.LayoutParams(dp(40), dp(40)));
                 row.addView(actionsBox);
 
                 RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
