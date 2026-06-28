@@ -2000,8 +2000,8 @@ public class MainActivity extends AppCompatActivity {
                 if (renderer.getPageCount() > 0) {
                     try (android.graphics.pdf.PdfRenderer.Page page = renderer.openPage(0)) {
                         int screenWidth = getResources().getDisplayMetrics().widthPixels;
-                        int width = Math.max(dp(140), screenWidth / 2);
-                        int height = width * page.getHeight() / Math.max(1, page.getWidth());
+                        int width = Math.max(dp(280), screenWidth - dp(64));
+                        int height = Math.max(1, width * page.getHeight() / Math.max(1, page.getWidth()));
                         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
                         bitmap.eraseColor(Color.WHITE);
                         page.render(bitmap, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
