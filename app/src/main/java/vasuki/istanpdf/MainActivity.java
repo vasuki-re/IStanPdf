@@ -218,25 +218,33 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQ_PICK_MERGE_PDF) {
             List<Uri> selected = readSelectedUris(data);
             int dupes = 0;
+            int emptyFiles = 0;
             for (Uri u : selected) {
                 boolean exists = false;
                 for (Uri existing : pendingUris) {
                     if (existing.toString().equals(u.toString())) { exists = true; break; }
                 }
-                if (exists) dupes++;
-                else pendingUris.add(u);
+                if (exists) { dupes++; continue; }
+                try {
+                    android.database.Cursor cursor = getContentResolver().query(u, new String[]{android.provider.OpenableColumns.SIZE}, null, null, null);
+                    if (cursor != null) {
+                        if (cursor.moveToFirst()) {
+                            long fileSize = cursor.getLong(0);
+                            if (fileSize == 0) { cursor.close(); emptyFiles++; continue; }
+                        }
+                        cursor.close();
+                    }
+                } catch (Exception ignored) {}
+                pendingUris.add(u);
             }
-
-            if (pendingUris.size() < 2) {
-                String name = pendingUris.isEmpty() ? "" : getDisplayName(pendingUris.get(0));
-                String tMsg = "Added: " + name + "\nPlease select another PDF to merge.";
-                if (dupes > 0) {
-                    tMsg = dupes + " duplicate(s) skipped.\n" + tMsg;
+            if (pendingUris.isEmpty()) {
+                if (emptyFiles > 0) {
+                    Toast.makeText(this, "Empty PDF skipped", Toast.LENGTH_SHORT).show();
                 }
-                toast(tMsg);
-                status.setText("Need 2 or more PDFs to merge");
-                pickMany(new String[]{MIME_PDF}, REQ_PICK_MERGE_PDF);
                 return;
+            }
+            if (emptyFiles > 0) {
+                status.setText(emptyFiles + "Empty PDF skipped.");
             }
 
             setStatusIndicatorColor(color(R.color.istan_olive));
@@ -314,13 +322,33 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQ_PICK_MERGE_PDF_ADD) {
             List<Uri> rawUris = readSelectedUris(data);
             if (rawUris.isEmpty()) return;
+
+            List<Uri> validUris = new ArrayList<>();
+            int emptyFiles = 0;
+            for (Uri u : rawUris) {
+                try {
+                    android.database.Cursor cursor = getContentResolver().query(u, new String[]{android.provider.OpenableColumns.SIZE}, null, null, null);
+                    if (cursor != null) {
+                        if (cursor.moveToFirst()) {
+                            long fileSize = cursor.getLong(0);
+                            if (fileSize == 0) { cursor.close(); emptyFiles++; continue; }
+                        }
+                        cursor.close();
+                    }
+                } catch (Exception ignored) {}
+                validUris.add(u);
+            }
+            if (emptyFiles > 0) {
+                status.setText(emptyFiles + " empty PDF(s) (0 bytes) skipped.");
+            }
+            if (validUris.isEmpty()) return;
             
             setStatusIndicatorColor(color(R.color.istan_olive));
             status.setText("Loading PDFs...");
             worker.execute(() -> {
                 List<PageItem> rendered = new ArrayList<>();
                 int startIndex = pages.size();
-                for (Uri uri : rawUris) {
+                for (Uri uri : validUris) {
                     try {
                         Bitmap thumb = renderFirstPdfPage(uri);
                         if (thumb != null) {
@@ -330,7 +358,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 runOnUiThread(() -> {
                     for (PageItem p : rendered) p.keep = true;
-                    pendingUris.addAll(rawUris);
+                    pendingUris.addAll(validUris);
                     pages.addAll(rendered);
                     pagesAdded = true;
                     if (pageList != null && pageList.getAdapter() != null) {
@@ -1080,11 +1108,20 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if ("Merge PDF".equals(titleText)) {
-                if (pendingUris.size() < 2) {
+                List<Uri> keptUris = new ArrayList<>();
+                for (int i = 0; i < pages.size(); i++) {
+                    if (pages.get(i).keep && i < pendingUris.size()) {
+                        keptUris.add(pendingUris.get(i));
+                    }
+                }
+                if (keptUris.size() < 2) {
                     toast("Please keep at least 2 PDFs to merge.");
                     return;
                 }
-                createDocument(MIME_PDF, "MergedDocument.pdf", REQ_SAVE_MERGE_PDF);
+                pendingUris.clear();
+                pendingUris.addAll(keptUris);
+                String mergePrefix = getDisplayName(keptUris.get(0));
+                createDocument(MIME_PDF, mergePrefix + "_merged.pdf", REQ_SAVE_MERGE_PDF);
                 return;
             }
 
