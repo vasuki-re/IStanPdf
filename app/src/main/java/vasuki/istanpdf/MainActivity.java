@@ -244,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             if (emptyFiles > 0) {
-                status.setText(emptyFiles + "Empty PDF skipped");
+                status.setText(emptyFiles + "Empty PDF skipped.");
             }
 
             setStatusIndicatorColor(color(R.color.istan_olive));
