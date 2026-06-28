@@ -864,7 +864,7 @@ public class MainActivity extends AppCompatActivity {
             editBtn.addView(editLayout);
 
             selectedRow.addView(editBtn);
-            outer.addView(selectedRow, 1);
+            outer.addView(selectedRow, 2);
 
             updateCountRef[0] = () -> {
                 int count = 0;
