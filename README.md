@@ -39,6 +39,7 @@
 <img src="assets/rmpage_docx.jpg" alt="Remove Pages from DOCX" width="30%" />
 <img src="assets/reorder_docx.jpg" alt="Reorder Pages from DOCX" width="30%" />
 </div>
+
 ---
 
 ## Features
