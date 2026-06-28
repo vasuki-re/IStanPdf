@@ -29,7 +29,7 @@
 
 ## Showcase
 
-<div align="center">
+<div align="left">
 
 <img src="assets/ui.jpg" alt="Home Screen" width="30%" />
 <img src="assets/merge.jpg" alt="Merge PDF" width="30%" />
