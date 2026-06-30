@@ -23,7 +23,7 @@
 
 ---
 
-**IStanPdf** is an offline Android utility for PDF and DOCX operations. There are no subscriptions, internet requirements, or file size limits. I built this as a fast, local alternative to freemium online tools like iLovePDF and Smallpdf. Everything runs directly on your device.
+**IStanPdf** is an offline Android app for PDF and DOCX operations. There are no subscriptions, internet requirements, or file size limits. I built this as a fast, local alternative to freemium online tools like iLovePDF and Smallpdf. Everything runs directly on your device.
 
 ---
 
