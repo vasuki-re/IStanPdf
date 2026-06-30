@@ -646,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
         scParams.gravity = Gravity.CENTER_HORIZONTAL;
         root.addView(statusCard, scParams);
 
-        TextView footerText = text("1.0-Yotsuba", 15, R.color.istan_text_muted, false);
+        TextView footerText = text("1.1-Yotsuba", 15, R.color.istan_text_muted, false);
         LinearLayout.LayoutParams ftParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ftParams.gravity = Gravity.CENTER_HORIZONTAL;
