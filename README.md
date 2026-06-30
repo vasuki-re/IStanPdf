@@ -137,6 +137,7 @@
 ## TODOs
 
 - [ ] **Refactor Architecture:** Refactor code from monolith to a better architecture for easier debugging.
+- [ ] **Monet theming & dark theme support:** Implement Monet theming & dark theme support.
 - [ ] **Compress PDF:** Introduce Compress PDF feature.
 - [ ] **Optimize DOCX:** Optimize DOCX operations.
 - [ ] **Auto DOCX Repair:** Introduce auto DOCX Repair feature to fix structural issues in DOCX making it difficult to be saved.
@@ -196,8 +197,8 @@ If IStanPdf has been useful to you, consider supporting its development!
 ## Credits
 
 - **iLovePDF & Smallpdf** - For the UI and design inspiration.
-- **LibreOffice** - The engine under the hood that makes all the DOCX operations possible.
-
+- [**LibreOffice**](https://github.com/LibreOffice/core) - The engine under the hood that makes all the DOCX operations possible.
+- [**PaperKnife**](https://github.com/potatameister/PaperKnife) - For CherryPicks.
 <br>
 
 ---
