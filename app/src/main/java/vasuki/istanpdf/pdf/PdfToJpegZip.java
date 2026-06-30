@@ -16,9 +16,14 @@ public final class PdfToJpegZip {
     }
 
     public static void run(Context ctx, Uri src, Uri dst) throws Exception {
+        run(ctx, src, dst, null);
+    }
+
+    public static void run(Context ctx, Uri src, Uri dst, PdfProgressCallback callback) throws Exception {
         String base = PdfStore.base(ctx, src);
         java.io.File tempPdf = null;
         ParcelFileDescriptor fd = null;
+        OutputStream out = null;
         try {
             if ("file".equals(src.getScheme())) {
                 fd = ParcelFileDescriptor.open(new java.io.File(src.getPath()), ParcelFileDescriptor.MODE_READ_ONLY);
@@ -29,40 +34,46 @@ public final class PdfToJpegZip {
             if (fd == null) {
                 throw new IllegalArgumentException("Cannot open PDF file");
             }
-            OutputStream out = ctx.getContentResolver().openOutputStream(dst);
+            out = ctx.getContentResolver().openOutputStream(dst);
             if (out == null) {
-                fd.close();
                 throw new IllegalStateException("Cannot open output file");
             }
-            try (ParcelFileDescriptor pdf = fd;
-                 OutputStream raw = out;
-                 ZipOutputStream zip = new ZipOutputStream(raw)) {
-                try (PdfRenderer rnd = new PdfRenderer(pdf)) {
-                for (int i = 0; i < rnd.getPageCount(); i++) {
-                    try (PdfRenderer.Page page = rnd.openPage(i)) {
+            PdfRenderer rnd = new PdfRenderer(fd);
+            fd = null;
+            try (PdfRenderer renderer = rnd;
+                 ZipOutputStream zip = new ZipOutputStream(out)) {
+                out = null;
+                int total = renderer.getPageCount();
+                for (int i = 0; i < total; i++) {
+                    try (PdfRenderer.Page page = renderer.openPage(i)) {
                         int w = page.getWidth() * 2;
                         int h = page.getHeight() * 2;
                         Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
                         try {
                             bmp.eraseColor(Color.WHITE);
-                            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
                             String name = String.format("%s-%03d.jpg", base, i + 1);
                             zip.putNextEntry(new ZipEntry(name));
-                            boolean success = bmp.compress(Bitmap.CompressFormat.JPEG, 100, zip);
+                            boolean success = bmp.compress(Bitmap.CompressFormat.JPEG, 90, zip);
                             zip.closeEntry();
                             if (!success) {
-                                throw new IllegalStateException("Failed to compress PNG to JPEG for page " + (i + 1));
+                                throw new IllegalStateException("Failed to compress page " + (i + 1) + " to JPEG");
                             }
                         } finally {
                             bmp.recycle();
                         }
                     }
+                    if (callback != null) {
+                        callback.onProgress(i + 1, total);
+                    }
                 }
             }
-        }
         } finally {
             if (fd != null) {
                 try { fd.close(); } catch (Exception ignored) {}
+            }
+            if (out != null) {
+                try { out.close(); } catch (Exception ignored) {}
             }
             if (tempPdf != null && tempPdf.exists()) {
                 tempPdf.delete();

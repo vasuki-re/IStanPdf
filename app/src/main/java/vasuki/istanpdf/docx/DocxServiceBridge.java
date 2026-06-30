@@ -80,7 +80,7 @@ public final class DocxServiceBridge {
         Runnable fail = () -> {
             if (completed.compareAndSet(false, true)) {
                 Bundle error = new Bundle();
-                error.putString(DocxPreviewService.EXTRA_ERROR, failureMessage + " failed because the LibreOffice process stopped unexpectedly.");
+                error.putString(DocxPreviewService.EXTRA_ERROR, failureMessage + " Failed");
                 resultCode.set(DocxPreviewService.RESULT_ERROR);
                 resultData.set(error);
                 latch.countDown();
@@ -129,16 +129,12 @@ public final class DocxServiceBridge {
             }
 
             if (!latch.await(LIBREOFFICE_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                throw new IllegalStateException(failureMessage + " timed out waiting for the LibreOffice process");
+                throw new IllegalStateException(failureMessage + " Failed");
             }
 
             Bundle result = resultData.get();
             if (resultCode.get() != DocxPreviewService.RESULT_OK) {
-                String message = result == null ? null : result.getString(DocxPreviewService.EXTRA_ERROR);
-                if (message == null || message.isEmpty()) {
-                    message = failureMessage + " failed";
-                }
-                throw new IllegalStateException(message);
+                throw new IllegalStateException(failureMessage + " Failed");
             }
 
             return result == null ? new Bundle() : result;

@@ -61,9 +61,7 @@ public final class LibreOfficeDocumentEngine {
     }
 
     private static void saveAs(Context context, File input, File output, String format) throws Exception {
-        initialize(context);
-
-        Office office = new Office(LibreOfficeKit.getLibreOfficeKitHandle());
+        Office office = getOffice(context);
         Document document = null;
         try {
             document = office.documentLoad(Uri.fromFile(input).toString());
@@ -79,6 +77,7 @@ public final class LibreOfficeDocumentEngine {
     }
 
     private static boolean isInitialized = false;
+    private static Office cachedOffice;
 
     public static synchronized void initialize(Context context) {
         if (isInitialized) return;
@@ -94,5 +93,13 @@ public final class LibreOfficeDocumentEngine {
             throw new IllegalStateException("LibreOffice native initialization failed");
         }
         isInitialized = true;
+    }
+
+    public static synchronized Office getOffice(Context context) {
+        initialize(context);
+        if (cachedOffice == null) {
+            cachedOffice = new Office(LibreOfficeKit.getLibreOfficeKitHandle());
+        }
+        return cachedOffice;
     }
 }
