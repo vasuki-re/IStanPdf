@@ -139,7 +139,7 @@
 - [ ] **Refactor Architecture:** Refactor code from monolith to a better architecture for easier debugging.
 - [ ] **Monet theming & dark theme support:** Implement Monet theming & dark theme support.
 - [ ] **Compress PDF:** Introduce Compress PDF feature.
-- [ ] **Optimize DOCX:** Optimize DOCX operations.
+- [X] **Optimize DOCX:** Optimize DOCX operations.
 - [ ] **Auto DOCX Repair:** Introduce auto DOCX Repair feature to fix structural issues in DOCX making it difficult to be saved.
 
 ---
