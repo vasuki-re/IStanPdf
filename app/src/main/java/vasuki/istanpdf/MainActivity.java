@@ -962,7 +962,8 @@ public class MainActivity extends AppCompatActivity {
                                 pages.get(k).keep = pagesToKeep.contains(pages.get(k).originalIndex);
                             }
                         } catch (Exception ignored) {
-                            for (PageItem p : pages) p.keep = false;
+                            Toast.makeText(MainActivity.this, "Invalid range format", Toast.LENGTH_SHORT).show();
+                            return;
                         }
                     }
                     if (pageList.getAdapter() != null) pageList.getAdapter().notifyDataSetChanged();
