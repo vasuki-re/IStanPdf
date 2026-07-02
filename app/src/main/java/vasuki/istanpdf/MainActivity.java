@@ -67,8 +67,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQ_SAVE_REORDER_PDF = 22;
     private static final int REQ_SAVE_REORDER_DOCX_EXPORT = 23;
 
-    private static final int REQ_PICK_SPLIT_PDF = 30;
-    private static final int REQ_SAVE_SPLIT_PDF = 31;
     private static final int REQ_PICK_IMAGES_TO_PDF = 32;
     private static final int REQ_SAVE_IMAGES_TO_PDF = 33;
     private static final int REQ_PICK_PDF_TO_JPG = 34;
@@ -305,12 +303,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (requestCode == REQ_PICK_SPLIT_PDF) {
-            reorderSource = data.getData();
-            loadPdfPreviewForSplit(reorderSource);
-            return;
-        }
-
         if (requestCode == REQ_PICK_IMAGES_TO_PDF) {
             List<Uri> rawUris = readSelectedUris(data);
             if (rawUris.isEmpty()) return;
@@ -484,9 +476,6 @@ public class MainActivity extends AppCompatActivity {
             List<Integer> rotations = new ArrayList<>();
             for (PageItem p : pages) rotations.add(p.rotation);
             runJob("Merging PDFs...", () -> PdfMerge.run(this, new ArrayList<>(pendingUris), rotations, destination));
-        } else if (requestCode == REQ_SAVE_SPLIT_PDF) {
-            List<PageItem> snapshot = new ArrayList<>(pages);
-            runJob("Splitting PDF...", () -> vasuki.istanpdf.pdf.PdfSplit.run(MainActivity.this, reorderSource, snapshot, destination));
         } else if (requestCode == REQ_SAVE_IMAGES_TO_PDF) {
             List<PageItem> snapshot = new ArrayList<>(pages);
             runJob("Converting Images...", () -> ImagesToPdf.run(this, new ArrayList<>(pendingUris), snapshot, destination));
@@ -587,13 +576,8 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout pdfRow1 = new LinearLayout(this);
         pdfRow1.setOrientation(LinearLayout.HORIZONTAL);
         pdfRow1.addView(dashboardCard("Merge PDF", R.drawable.merge_24px, () -> { pendingUris.clear(); pickMany(new String[]{MIME_PDF}, REQ_PICK_MERGE_PDF); }));
-        pdfRow1.addView(dashboardCard("Split PDF", R.drawable.split_24px, () -> pickOne(new String[]{MIME_PDF}, REQ_PICK_SPLIT_PDF)));
+        pdfRow1.addView(dashboardCard("Modify PDF", R.drawable.modify_pdf_24px, () -> pickOne(new String[]{MIME_PDF}, REQ_PICK_REORDER_PDF)));
         root.addView(pdfRow1);
-
-        LinearLayout pdfRow2 = new LinearLayout(this);
-        pdfRow2.setOrientation(LinearLayout.HORIZONTAL);
-        pdfRow2.addView(dashboardCard("Remove/Reorder Pages", R.drawable.remove_reorder_pdf_24px, () -> pickOne(new String[]{MIME_PDF}, REQ_PICK_REORDER_PDF)));
-        root.addView(pdfRow2);
 
         root.addView(createSectionHeader("CONVERSIONS"));
         LinearLayout convRow1 = new LinearLayout(this);
@@ -850,7 +834,7 @@ public class MainActivity extends AppCompatActivity {
 
         final Runnable[] updateCountRef = new Runnable[1];
 
-        if ("Split PDF".equals(titleText)) {
+        if (titleText.equals("Remove/Reorder PDF") || titleText.equals("Remove Pages from DOCX") || titleText.equals("Reorder Pages from DOCX")) {
             LinearLayout selectedRow = new LinearLayout(this);
             selectedRow.setOrientation(LinearLayout.HORIZONTAL);
             selectedRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -972,15 +956,13 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        boolean isSplit = titleText.startsWith("Split");
         boolean isRemoveDocx = titleText.equals("Remove Pages from DOCX");
-        boolean hideRotate = isSplit || isRemoveDocx || titleText.equals("Merge PDF");
-        boolean hideDrag = isSplit || isRemoveDocx;
+        boolean hideRotate = isRemoveDocx || titleText.equals("Merge PDF");
+        boolean hideDrag = isRemoveDocx;
         boolean isImg = titleText.equals("Images to PDF") 
                 || titleText.equals("Remove/Reorder PDF")
                 || titleText.equals("Reorder Pages from DOCX") 
                 || isRemoveDocx
-                || isSplit
                 || titleText.equals("Merge PDF");
 
         boolean isMerge = titleText.equals("Merge PDF");
@@ -1149,20 +1131,16 @@ public class MainActivity extends AppCompatActivity {
             if (pagesAdded) changedCount++;
 
             String suffix = "";
-            if (titleText.startsWith("Split")) {
-                suffix = "_split";
-            } else {
-                if (changedCount > 1) {
-                    suffix = "_modified";
-                } else if (pagesAdded) {
-                    suffix = "_added";
-                } else if (reordered) {
-                    suffix = "_reordered";
-                } else if (removed) {
-                    suffix = "_removed";
-                } else if (rotated) {
-                    suffix = "_rotated";
-                }
+            if (changedCount > 1) {
+                suffix = "_modified";
+            } else if (pagesAdded) {
+                suffix = "_added";
+            } else if (reordered) {
+                suffix = "_reordered";
+            } else if (removed) {
+                suffix = "_removed";
+            } else if (rotated) {
+                suffix = "_rotated";
             }
 
             String prefix = originalFileName != null ? originalFileName : getDisplayName(reorderSource);
@@ -1875,29 +1853,6 @@ public class MainActivity extends AppCompatActivity {
                     originalFileName = null;
                     setBusy(false, "Ready");
                     buildPageEditor("Remove/Reorder PDF", "Save PDF", docxExport, true);
-                });
-            } catch (Exception exception) {
-                showError(exception);
-            }
-        });
-    }
-
-    private void loadPdfPreviewForSplit(Uri uri) {
-        setBusy(true, "Rendering page previews...", true);
-        worker.execute(() -> {
-            try {
-                List<PageItem> rendered = renderPdfPages(uri);
-                if (rendered.size() <= 1) {
-                    throw new Exception("Cannot split a 1-page PDF");
-                }
-                for (PageItem p : rendered) p.keep = true;
-                runOnUiThread(() -> {
-                    clearPages();
-                    pages.addAll(rendered);
-                    reorderSource = uri;
-                    originalFileName = null;
-                    setBusy(false, "Ready");
-                    buildPageEditor("Split PDF", "Save PDF", false, false);
                 });
             } catch (Exception exception) {
                 showError(exception);
