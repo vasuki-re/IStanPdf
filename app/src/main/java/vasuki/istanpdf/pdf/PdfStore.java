@@ -12,6 +12,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import vasuki.istanpdf.util.ContentFiles;
+import java.io.File;
+
 final class PdfStore {
     private PdfStore() {
     }
@@ -21,11 +24,14 @@ final class PdfStore {
     }
 
     static void save(Context ctx, PDDocument doc, Uri dst) throws Exception {
-        try (OutputStream out = ctx.getContentResolver().openOutputStream(dst, "wt")) {
-            if (out == null) {
-                throw new IllegalStateException("Cannot open output file");
+        File tempOut = File.createTempFile("pdfstore_", ".pdf", ctx.getCacheDir());
+        try {
+            doc.save(tempOut);
+            ContentFiles.copyFileToUri(ctx, tempOut, dst);
+        } finally {
+            if (tempOut.exists()) {
+                tempOut.delete();
             }
-            doc.save(out);
         }
     }
 

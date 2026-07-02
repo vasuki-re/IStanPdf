@@ -29,6 +29,10 @@ public final class PdfReorder {
             com.tom_roush.pdfbox.io.MemoryUsageSetting memSetting = com.tom_roush.pdfbox.io.MemoryUsageSetting.setupMixed(50 * 1024 * 1024);
             try (PDDocument doc = PDDocument.load(tempIn, memSetting)) {
                 List<PDPage> newPages = new ArrayList<>();
+                boolean isReordered = false;
+                int lastIdx = -1;
+                List<Integer> keptIndices = new ArrayList<>();
+                
                 for (PageItem page : pages) {
                     if (page.keep) {
                         PDPage pdPage = doc.getPage(page.originalIndex);
@@ -39,6 +43,12 @@ public final class PdfReorder {
                         }
                         newPages.add(pdPage);
                         kept++;
+                        keptIndices.add(page.originalIndex);
+                        
+                        if (lastIdx != -1 && page.originalIndex < lastIdx) {
+                            isReordered = true;
+                        }
+                        lastIdx = page.originalIndex;
                     }
                 }
                 if (kept == 0) {
@@ -46,15 +56,28 @@ public final class PdfReorder {
                 }
                 
                 PDPageTree tree = doc.getPages();
-                for (int i = tree.getCount() - 1; i >= 0; i--) {
-                    tree.remove(i);
-                }
-                int progress = 0;
-                for (PDPage p : newPages) {
-                    tree.add(p);
-                    progress++;
+                if (!isReordered) {
+                    // Fast path: Just remove discarded pages
+                    for (int i = tree.getCount() - 1; i >= 0; i--) {
+                        if (!keptIndices.contains(i)) {
+                            tree.remove(i);
+                        }
+                    }
                     if (callback != null) {
-                        callback.onProgress(progress, newPages.size());
+                        callback.onProgress(kept, kept);
+                    }
+                } else {
+                    // Slow path: Rebuild tree chronologically
+                    for (int i = tree.getCount() - 1; i >= 0; i--) {
+                        tree.remove(i);
+                    }
+                    int progress = 0;
+                    for (PDPage p : newPages) {
+                        tree.add(p);
+                        progress++;
+                        if (callback != null) {
+                            callback.onProgress(progress, newPages.size());
+                        }
                     }
                 }
                 PdfStore.save(ctx, doc, dst);
