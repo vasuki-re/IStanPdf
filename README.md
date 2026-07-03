@@ -118,19 +118,6 @@
 
 ---
 
-## Known Issues
-
-- **DOCX Remove Pages:** Some DOCX files with structural issues fail to save during the "Remove Pages" operation.
-  - **Workaround:** Use "Reorder Pages" instead - it internally converts the DOCX to PDF to bypass the limitation.
-  - **Caveat:** If you later convert the resulting PDF back to DOCX, some elements may no longer be editable.
-
-- **App Size:** IStanPdf is larger than a typical utility app because it bundles LibreOffice binaries, which power the DOCX operations.
-
-- **UI:** The interface is functional but a bit rough right now. I'm planning some micro-optimizations to make it more accessible.
-- **Monolith Architecture:** Core operations currently live in a singleton `MainActivity`. I plan to refactor this into a modular architecture in future updates to make debugging and maintenance easier.
-
----
-
 ## TODOs
 
 - [ ] **Refactor Architecture:** Refactor code from monolith to a better architecture for easier debugging.
@@ -144,16 +131,6 @@
 ## Why IStanPdf?
 
 As a CS student, I regularly needed PDF and DOCX tools but found most online options too slow or restricted by paywalls. I couldn't find a lightweight offline alternative, so I built this.
-
-### Why Vibecoding?
-
-Vibecoding doesn't mean you don't know how it's done. I am a 1st-year CS Engineering Student, and I am actively learning. My ultimate aim is to manually code everything and eventually ditch vibecoding. 
-
-| Pros | Cons |
-| :--- | :--- |
-| Fast prototyping | Can introduce bugs |
-| Rapid development | Extra debugging time |
-| Helpful for learning | Model hallucinations |
 
 ---
 
