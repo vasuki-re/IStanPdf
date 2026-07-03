@@ -53,9 +53,7 @@
         <h3> PDF Tools</h3>
         <ul>
           <li><b>Merge PDF:</b> Combine multiple PDF files into one.</li>
-          <li><b>Split PDF:</b> Extract pages by specifying a page range.</li>
-          <li><b>Remove Pages:</b> Delete specific pages from a PDF.</li>
-          <li><b>Reorder Pages:</b> Rearrange pages within a PDF.</li>
+          <li><b>Modify PDF:</b> Remove or Reorder pages from PDF.</li>
         </ul>
       </div>
     </td>
