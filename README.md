@@ -32,12 +32,12 @@ Tired of uploading your private documents to freemium websites just to merge a P
 ## Showcase 📸
 
 <div align="center">
-  <img src="assets/ui.jpg" width="16%" />
-  <img src="assets/merge.jpg" width="16%" />
-  <img src="assets/modify_pdf.jpg" width="16%" />
-  <img src="assets/img2pdf.jpg" width="16%" />
-  <img src="assets/rmpage_docx.jpg" width="16%" />
-  <img src="assets/reorder_docx.jpg" width="16%" />
+  <img src="assets/ui.jpg" width="30%" />
+  <img src="assets/merge.jpg" width="30%" />
+  <img src="assets/modify_pdf.jpg" width="30%" />
+  <img src="assets/img2pdf.jpg" width="30%" />
+  <img src="assets/rmpage_docx.jpg" width="30%" />
+  <img src="assets/reorder_docx.jpg" width="30%" />
 </div>
 
 <br>
