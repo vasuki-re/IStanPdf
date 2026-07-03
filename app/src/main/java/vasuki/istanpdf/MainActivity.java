@@ -718,7 +718,7 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMargins(dp(8), dp(8), dp(8), dp(8));
+        params.setMargins(dp(8), dp(20), dp(8), dp(8));
         card.setLayoutParams(params);
         return card;
     }
