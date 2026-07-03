@@ -36,24 +36,6 @@ public final class LibreOfficeDocumentEngine {
         }
     }
 
-    public static void saveDocx(Context context, File input, Uri destination) throws Exception {
-        requireNonEmptyDocx(input);
-        File output = null;
-        try {
-            output = File.createTempFile("istanpdf_libreoffice_", ".docx", context.getCacheDir());
-            saveAs(context, input, output, "docx");
-            
-            if (!output.exists() || output.length() == 0) {
-                throw new IllegalStateException("LibreOffice failed to generate output DOCX");
-            }
-            ContentFiles.copyFileToUri(context, output, destination);
-        } finally {
-            if (output != null && output.exists()) {
-                output.delete();
-            }
-        }
-    }
-
     private static void requireNonEmptyDocx(File input) throws IOException {
         if (input == null || !input.exists() || input.length() == 0L) {
             throw new IOException("Corrupt DOCX file");

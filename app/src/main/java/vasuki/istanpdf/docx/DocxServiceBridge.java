@@ -63,14 +63,6 @@ public final class DocxServiceBridge {
         runLibreOfficeDocxOperation(ctx, intent, "Saving DOCX");
     }
 
-    public static void convertPdfToDocxViaLibreOffice(Context ctx, Uri pdfUri, Uri destination) throws Exception {
-        Intent intent = new Intent(ctx, DocxPreviewService.class);
-        intent.putExtra(DocxPreviewService.EXTRA_OPERATION, "export_pdf_to_docx");
-        intent.putExtra(DocxPreviewService.EXTRA_DOCX_URI, pdfUri.toString());
-        intent.putExtra(DocxPreviewService.EXTRA_DESTINATION_URI, destination.toString());
-        runLibreOfficeDocxOperation(ctx, intent, "Converting PDF to DOCX");
-    }
-
     private static Bundle runLibreOfficeDocxOperation(Context ctx, Intent operationIntent, String failureMessage) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger resultCode = new AtomicInteger(DocxPreviewService.RESULT_ERROR);

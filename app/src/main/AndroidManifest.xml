@@ -4,26 +4,109 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:extractNativeLibs="true"
         android:largeHeap="true"
-        android:icon="@drawable/icon"
+        android:icon="@drawable/ic_launcher_olive"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/icon"
+        android:roundIcon="@drawable/ic_launcher_olive"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode"
+            android:screenOrientation="portrait" />
+            
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode"
             android:screenOrientation="portrait">
+        </activity>
+
+        <activity-alias
+            android:name=".LauncherOlive"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_launcher_olive"
+            android:roundIcon="@drawable/ic_launcher_olive"
+            android:exported="true"
+            android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        
+        <activity-alias
+            android:name=".LauncherRose"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_launcher_rose"
+            android:roundIcon="@drawable/ic_launcher_rose"
+            android:exported="true"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherTerracotta"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_launcher_terracotta"
+            android:roundIcon="@drawable/ic_launcher_terracotta"
+            android:exported="true"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherSand"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_launcher_sand"
+            android:roundIcon="@drawable/ic_launcher_sand"
+            android:exported="true"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherAqua"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_launcher_aqua"
+            android:roundIcon="@drawable/ic_launcher_aqua"
+            android:exported="true"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherGold"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_launcher_gold"
+            android:roundIcon="@drawable/ic_launcher_gold"
+            android:exported="true"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <service
             android:name=".libreoffice.DocxPreviewService"
             android:exported="false"

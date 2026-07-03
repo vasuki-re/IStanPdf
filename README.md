@@ -14,7 +14,7 @@
 
 </div>
 
-Tired of uploading your private documents to freemium websites just to merge a PDF or delete a page? I was too. 
+Tired of uploading your private documents to sluggish freemium websites  to perform PDF & DOCX operations? I was too. 
 
 **IStanPdf** is a completely free, 100% offline Android app built to replace online freemium services. No subscriptions, no internet requirements, and no file size limits. Everything happens directly on your device.
 

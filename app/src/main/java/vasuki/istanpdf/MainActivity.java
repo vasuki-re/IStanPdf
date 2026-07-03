@@ -1,11 +1,8 @@
 package vasuki.istanpdf;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.ClipData;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -13,8 +10,6 @@ import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
-import android.os.IBinder;
-import android.os.ResultReceiver;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +17,6 @@ import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,15 +38,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import vasuki.istanpdf.model.PageItem;
-import vasuki.istanpdf.libreoffice.DocxPreviewService;
 import vasuki.istanpdf.pdf.ImagesToPdf;
 import vasuki.istanpdf.pdf.PdfMerge;
 import vasuki.istanpdf.pdf.PdfReorder;
@@ -75,8 +64,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQ_PICK_DOCX_ADD = 37;
     private static final int REQ_PICK_PDF_ADD = 38;
     private static final int REQ_PICK_MERGE_PDF_ADD = 39;
-
-    private static final long LIBREOFFICE_OPERATION_TIMEOUT_MS = 120000L;
 
     private static final String MIME_PDF = "application/pdf";
     private static final String MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -106,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isHome = true;
     private boolean pagesAdded = false;
     private int activeReq;
+    private String themeToken;
     private ActivityResultLauncher<Intent> docLauncher;
     private static final String WAITING_TEXT = "Ready";
     private android.os.CountDownTimer activeBlinkTimer;
@@ -174,12 +162,123 @@ public class MainActivity extends AppCompatActivity {
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
+        applySystemBarTheme();
 
         regularFont = Typeface.createFromAsset(getAssets(), "vasuki.ttf");
         boldFont = Typeface.createFromAsset(getAssets(), "vasuki_bold.ttf");
         pruneStaleCacheFiles();
+        themeToken = ThemePrefs.token(this);
         buildHome();
         blinkHandler.postDelayed(blinkRunnable, 20000);
+
+        android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        if (!prefs.getBoolean("donation_shown", false)) {
+            prefs.edit().putBoolean("donation_shown", true).apply();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    showDonationDialog(() -> checkForUpdates());
+                }
+            }, 1500);
+        } else {
+            checkForUpdates();
+        }
+    }
+
+    private void checkForUpdates() {
+        android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        if (!prefs.getBoolean("check_updates", true)) return;
+
+        new Thread(() -> {
+            try {
+                java.net.URL url = new java.net.URL("https://cdn.jsdelivr.net/gh/vasuki-re/IStanPdf@Mitsuba/changelog.txt");
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                
+                java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+                String line;
+                String versionname = "";
+                long remoteVersionCode = 0;
+                String link = "";
+                StringBuilder changelog = new StringBuilder();
+                boolean parsingChangelog = false;
+                
+                while ((line = in.readLine()) != null) {
+                    if (parsingChangelog) {
+                        changelog.append(line).append("\n");
+                    } else if (line.startsWith("versionname:")) {
+                        versionname = line.substring("versionname:".length()).trim();
+                    } else if (line.startsWith("versioncode:")) {
+                        try { remoteVersionCode = Long.parseLong(line.substring("versioncode:".length()).trim()); } catch (Exception ignored) {}
+                    } else if (line.startsWith("link:")) {
+                        link = line.substring("link:".length()).trim();
+                    } else if (line.startsWith("changelog:")) {
+                        parsingChangelog = true;
+                    }
+                }
+                in.close();
+                
+                long currentVersionCode = 0;
+                try {
+                    currentVersionCode = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+                } catch (Exception ignored) {}
+
+                if (remoteVersionCode > currentVersionCode) {
+                    String finalVersionName = versionname;
+                    String finalLink = link;
+                    String finalChangelog = changelog.toString().trim();
+                    
+                    runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        
+                        TextView msg = text(finalChangelog, 15, R.color.istan_text_muted, false);
+                        msg.setPadding(0, dp(8), 0, dp(16));
+                        msg.setLineSpacing(dp(4), 1.1f);
+                        
+                        showCustomDialog("Update Available: " + finalVersionName, msg, "Later", null, "Download", () -> {
+                            String architecture = "arm";
+                            for (String abi : android.os.Build.SUPPORTED_ABIS) {
+                                if (abi.contains("arm64")) {
+                                    architecture = "arm64";
+                                    break;
+                                }
+                            }
+                            String downloadUrl = finalLink.replace("*", architecture);
+                            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(downloadUrl)));
+                        });
+                    });
+                }
+            } catch (Exception ignored) {
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String latestThemeToken = ThemePrefs.token(this);
+        if (themeToken != null && !themeToken.equals(latestThemeToken)) {
+            themeToken = latestThemeToken;
+            applySystemBarTheme();
+            if (isHome) {
+                buildHome();
+            }
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (ThemePrefs.themeMode(this) == ThemePrefs.THEME_AUTO) {
+            String latestThemeToken = ThemePrefs.token(this);
+            if (!latestThemeToken.equals(themeToken)) {
+                themeToken = latestThemeToken;
+                applySystemBarTheme();
+                if (isHome) {
+                    buildHome();
+                }
+            }
+        }
     }
 
     @Override
@@ -561,15 +660,39 @@ public class MainActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));
 
-        TextView title = text("", 36, R.color.istan_text, true);
+        LinearLayout heroRow = new LinearLayout(this);
+        heroRow.setOrientation(LinearLayout.HORIZONTAL);
+        heroRow.setGravity(Gravity.CENTER_VERTICAL);
+        root.addView(heroRow);
+
+        TextView title = text("", 40, R.color.istan_text, true);
         android.text.SpannableString ss = new android.text.SpannableString("IStanPdf");
-        ss.setSpan(new android.text.style.ForegroundColorSpan(Color.BLACK), 0, 5, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ss.setSpan(new android.text.style.ForegroundColorSpan(color(R.color.istan_text)), 0, 5, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         ss.setSpan(new android.text.style.ForegroundColorSpan(color(R.color.istan_olive)), 5, 8, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         title.setText(ss);
-        root.addView(title);
+        heroRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        MaterialCardView settingsButton = new MaterialCardView(this);
+        settingsButton.setCardBackgroundColor(color(R.color.istan_surface));
+        settingsButton.setRadius(dp(24));
+        settingsButton.setStrokeWidth(dp(1));
+        settingsButton.setStrokeColor(color(R.color.istan_outline));
+        settingsButton.setCardElevation(0);
+        settingsButton.setUseCompatPadding(false);
+        settingsButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
+
+        ImageView menuIcon = new ImageView(this);
+        menuIcon.setImageResource(R.drawable.menu);
+        menuIcon.setColorFilter(color(R.color.istan_olive_dark));
+        menuIcon.setPadding(dp(10), dp(10), dp(10), dp(10));
+        settingsButton.addView(menuIcon, new FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER));
+
+        LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        settingsLp.setMargins(dp(12), 0, 0, 0);
+        heroRow.addView(settingsButton, settingsLp);
 
         TextView subtitle = text("Offline app for PDF and DOCX operations", 16, R.color.istan_text_muted, false);
-        subtitle.setPadding(0, dp(4), 0, dp(24));
+        subtitle.setPadding(0, dp(4), 0, dp(40));
         root.addView(subtitle);
 
         root.addView(createSectionHeader("PDF TOOLS"));
@@ -607,7 +730,7 @@ public class MainActivity extends AppCompatActivity {
         statusCard.setPadding(dp(16), dp(10), dp(20), dp(10));
         android.graphics.drawable.GradientDrawable statusBg = new android.graphics.drawable.GradientDrawable();
         statusBg.setColor(color(R.color.istan_surface));
-        statusBg.setCornerRadius(dp(30));
+        statusBg.setCornerRadius(dp(24));
         statusBg.setStroke(dp(1), color(R.color.istan_outline));
         statusCard.setBackground(statusBg);
 
@@ -630,7 +753,13 @@ public class MainActivity extends AppCompatActivity {
         scParams.gravity = Gravity.CENTER_HORIZONTAL;
         root.addView(statusCard, scParams);
 
-        TextView footerText = text("1.1-Yotsuba", 15, R.color.istan_text_muted, false);
+        String versionName = "";
+        try {
+            versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        TextView footerText = text(versionName, 15, R.color.istan_text_muted, false);
         LinearLayout.LayoutParams ftParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ftParams.gravity = Gravity.CENTER_HORIZONTAL;
@@ -642,10 +771,11 @@ public class MainActivity extends AppCompatActivity {
 
     private View dashboardCard(String title, int iconResId, Runnable action) {
         MaterialCardView card = new MaterialCardView(this);
-        card.setCardBackgroundColor(Color.WHITE);
-        card.setRadius(dp(16));
-        card.setStrokeWidth(0);
-        card.setCardElevation(dp(2));
+        card.setCardBackgroundColor(color(R.color.istan_surface));
+        card.setRadius(dp(24));
+        card.setStrokeWidth(dp(1));
+        card.setStrokeColor(color(R.color.istan_outline));
+        card.setCardElevation(0);
         card.setUseCompatPadding(false);
 
         LinearLayout row = new LinearLayout(this);
@@ -687,10 +817,11 @@ public class MainActivity extends AppCompatActivity {
 
     private View kofiCard(String title, int iconResId, Runnable action) {
         MaterialCardView card = new MaterialCardView(this);
-        card.setCardBackgroundColor(Color.WHITE);
-        card.setRadius(dp(16));
-        card.setStrokeWidth(0);
-        card.setCardElevation(dp(2));
+        card.setCardBackgroundColor(color(R.color.istan_surface));
+        card.setRadius(dp(24));
+        card.setStrokeWidth(dp(1));
+        card.setStrokeColor(color(R.color.istan_outline));
+        card.setCardElevation(0);
         card.setUseCompatPadding(false);
 
         LinearLayout row = new LinearLayout(this);
@@ -701,9 +832,12 @@ public class MainActivity extends AppCompatActivity {
         card.addView(row);
 
         if (iconResId != 0) {
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(iconResId);
-            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            FrameLayout icon = new FrameLayout(this);
+            addKofiIconLayer(icon, R.drawable.ic_kofi_background, R.color.istan_surface);
+            addKofiIconLayer(icon, R.drawable.ic_kofi_body, R.color.istan_olive_dark);
+            addKofiIconLayer(icon, R.drawable.ic_kofi_cutout, R.color.istan_surface);
+            addKofiIconLayer(icon, R.drawable.ic_kofi_handle, R.color.istan_olive_dark);
+            addKofiIconLayer(icon, R.drawable.ic_kofi_heart, R.color.istan_olive);
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(32), dp(26));
             iconParams.setMargins(0, 0, dp(10), 0);
             row.addView(icon, iconParams);
@@ -718,22 +852,33 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMargins(dp(8), dp(20), dp(8), dp(8));
+        params.setMargins(dp(8), dp(8), dp(8), dp(8));
         card.setLayoutParams(params);
         return card;
     }
 
+    private void addKofiIconLayer(FrameLayout icon, int drawableRes, int colorRes) {
+        ImageView layer = new ImageView(this);
+        layer.setImageResource(drawableRes);
+        layer.setColorFilter(color(colorRes));
+        layer.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        icon.addView(layer, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
     private TextView createSectionHeader(String title) {
-        TextView header = text(title, 14, R.color.istan_olive_dark, true);
+        TextView header = text(title, 12, R.color.istan_text_muted, true);
         header.setAllCaps(true);
-        header.setPadding(dp(6), dp(20), 0, dp(4));
+        header.setLetterSpacing(0.1f);
+        header.setPadding(dp(6), dp(32), 0, dp(8));
         return header;
     }
 
     private View actionButton(String title, boolean primary, Runnable action) {
         MaterialCardView card = new MaterialCardView(this);
-        card.setCardBackgroundColor(color(primary ? R.color.istan_olive : R.color.istan_surface));
-        card.setRadius(dp(16));
+        int cardColor = color(primary ? R.color.istan_olive : R.color.istan_surface);
+        card.setCardBackgroundColor(cardColor);
+        card.setRadius(dp(24));
         if (!primary) {
             card.setStrokeWidth(dp(1));
             card.setStrokeColor(color(R.color.istan_outline));
@@ -750,7 +895,7 @@ public class MainActivity extends AppCompatActivity {
         card.addView(row);
 
         TextView label = text(title, 15, R.color.istan_text, false);
-        label.setTextColor(primary ? Color.WHITE : color(R.color.istan_text));
+        label.setTextColor(primary ? ThemePrefs.contrastText(cardColor) : color(R.color.istan_text));
         label.setGravity(Gravity.CENTER);
         row.addView(label);
 
@@ -786,7 +931,7 @@ public class MainActivity extends AppCompatActivity {
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
         View separator = new View(this);
-        separator.setBackgroundColor(color(R.color.istan_outline));
+        separator.setBackgroundColor(ThemePrefs.isAmoled(this) ? 0xFF333333 : 0xFFB4B8AA);
         outer.addView(separator, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
 
         LinearLayout header = new LinearLayout(this);
@@ -801,7 +946,7 @@ public class MainActivity extends AppCompatActivity {
         statusCard.setPadding(dp(16), dp(10), dp(20), dp(10));
         android.graphics.drawable.GradientDrawable statusBg = new android.graphics.drawable.GradientDrawable();
         statusBg.setColor(color(R.color.istan_surface));
-        statusBg.setCornerRadius(dp(30));
+        statusBg.setCornerRadius(dp(24));
         statusBg.setStroke(dp(1), color(R.color.istan_outline));
         statusCard.setBackground(statusBg);
 
@@ -853,9 +998,9 @@ public class MainActivity extends AppCompatActivity {
 
             MaterialCardView editBtn = new MaterialCardView(this);
             editBtn.setCardBackgroundColor(Color.TRANSPARENT);
-            editBtn.setRadius(dp(8));
+            editBtn.setRadius(dp(24));
             editBtn.setStrokeWidth(dp(1));
-            editBtn.setStrokeColor(color(R.color.istan_olive));
+            editBtn.setStrokeColor(color(R.color.istan_outline));
             editBtn.setCardElevation(0);
             editBtn.setRippleColorResource(android.R.color.transparent);
 
@@ -866,10 +1011,10 @@ public class MainActivity extends AppCompatActivity {
 
             ImageView editIcon = new ImageView(this);
             editIcon.setImageResource(R.drawable.edit_minimal_24px);
-            editIcon.setColorFilter(color(R.color.istan_olive));
+            editIcon.setColorFilter(color(R.color.istan_text_muted));
             editLayout.addView(editIcon, new LinearLayout.LayoutParams(dp(16), dp(16)));
 
-            TextView editTxt = text("Edit Range", 14, R.color.istan_olive, false);
+            TextView editTxt = text("Edit Range", 14, R.color.istan_text_muted, false);
             editTxt.setPadding(dp(6), 0, 0, 0);
             editLayout.addView(editTxt);
 
@@ -891,6 +1036,20 @@ public class MainActivity extends AppCompatActivity {
                 input.setHint("Type range (e.g. 1-3, 5)...");
                 input.setHintTextColor(color(R.color.istan_text_muted));
                 input.setPadding(dp(16), dp(16), dp(16), dp(16));
+                
+                int accentColor = color(R.color.istan_olive);
+                input.setBackgroundTintList(android.content.res.ColorStateList.valueOf(accentColor));
+                input.setHighlightColor(android.graphics.Color.argb(76, android.graphics.Color.red(accentColor), android.graphics.Color.green(accentColor), android.graphics.Color.blue(accentColor)));
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    android.graphics.drawable.Drawable cursor = input.getTextCursorDrawable();
+                    if (cursor != null) { cursor.setTint(accentColor); input.setTextCursorDrawable(cursor); }
+                    android.graphics.drawable.Drawable handle = input.getTextSelectHandle();
+                    if (handle != null) { handle.setTint(accentColor); input.setTextSelectHandle(handle); }
+                    android.graphics.drawable.Drawable handleLeft = input.getTextSelectHandleLeft();
+                    if (handleLeft != null) { handleLeft.setTint(accentColor); input.setTextSelectHandleLeft(handleLeft); }
+                    android.graphics.drawable.Drawable handleRight = input.getTextSelectHandleRight();
+                    if (handleRight != null) { handleRight.setTint(accentColor); input.setTextSelectHandleRight(handleRight); }
+                }
                 
                 StringBuilder sb = new StringBuilder();
                 int start = -1;
@@ -1015,11 +1174,12 @@ public class MainActivity extends AppCompatActivity {
         if ("Images to PDF".equals(titleText) || "Reorder Pages from DOCX".equals(titleText) || titleText.equals("Remove/Reorder PDF") || "Merge PDF".equals(titleText)) {
             MaterialCardView addCard = new MaterialCardView(this);
             addCard.setCardBackgroundColor(color(R.color.istan_surface));
+            addCard.setRadius(dp(24));
             addCard.setCardElevation(0);
             
             android.graphics.drawable.GradientDrawable dashBg = new android.graphics.drawable.GradientDrawable();
             dashBg.setColor(Color.TRANSPARENT);
-            dashBg.setCornerRadius(dp(12));
+            dashBg.setCornerRadius(dp(24));
             dashBg.setStroke(dp(1), color(R.color.istan_outline), dp(4), dp(4));
             addCard.setBackground(dashBg);
 
@@ -1215,7 +1375,7 @@ public class MainActivity extends AppCompatActivity {
 
             MaterialCardView card = new MaterialCardView(MainActivity.this);
             card.setCardBackgroundColor(color(R.color.istan_surface));
-            card.setRadius(dp(16));
+            card.setRadius(dp(24));
             card.setStrokeWidth(dp(1));
             card.setStrokeColor(color(R.color.istan_outline));
             card.setCardElevation(0);
@@ -1241,7 +1401,7 @@ public class MainActivity extends AppCompatActivity {
                 FrameLayout previewFrame = new FrameLayout(MainActivity.this);
                 android.graphics.drawable.GradientDrawable frameBg = new android.graphics.drawable.GradientDrawable();
                 frameBg.setColor(Color.WHITE);
-                frameBg.setStroke(dp(1), Color.parseColor("#BDBDBD"));
+                frameBg.setStroke(dp(1), color(R.color.istan_outline));
                 previewFrame.setBackground(frameBg);
                 previewFrame.addView(preview, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
                 row.addView(previewFrame, new LinearLayout.LayoutParams(dp(54), dp(72)));
@@ -1435,8 +1595,8 @@ public class MainActivity extends AppCompatActivity {
 
                     MaterialCardView imgCard = new MaterialCardView(MainActivity.this);
                     imgCard.setCardBackgroundColor(Color.BLACK);
-                    imgCard.setRadius(dp(12));
-                    imgCard.setCardElevation(dp(8));
+                    imgCard.setRadius(dp(24));
+                    imgCard.setCardElevation(0);
                     imgCard.setStrokeColor(Color.parseColor("#33FFFFFF"));
                     imgCard.setStrokeWidth(dp(1));
 
@@ -1621,8 +1781,8 @@ public class MainActivity extends AppCompatActivity {
 
                     MaterialCardView imgCard = new MaterialCardView(MainActivity.this);
                     imgCard.setCardBackgroundColor(Color.BLACK);
-                    imgCard.setRadius(dp(12));
-                    imgCard.setCardElevation(dp(8));
+                    imgCard.setRadius(dp(24));
+                    imgCard.setCardElevation(0);
                     imgCard.setStrokeColor(Color.parseColor("#33FFFFFF"));
                     imgCard.setStrokeWidth(dp(1));
 
@@ -2139,8 +2299,8 @@ public class MainActivity extends AppCompatActivity {
         dialogRoot.setOrientation(LinearLayout.VERTICAL);
         android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
         gd.setColor(color(R.color.istan_surface));
-        gd.setCornerRadius(dp(18));
-        gd.setStroke(dp(1), color(R.color.istan_olive));
+        gd.setCornerRadius(dp(24));
+        gd.setStroke(dp(1), color(R.color.istan_outline));
         dialogRoot.setBackground(gd);
         dialogRoot.setPadding(dp(20), dp(20), dp(20), dp(20));
 
@@ -2166,7 +2326,7 @@ public class MainActivity extends AppCompatActivity {
         btnRow.addView(cancel);
 
         TextView positive = text(positiveStr, 14, R.color.istan_olive, true);
-        positive.setPadding(dp(16), dp(8), dp(0), dp(8));
+        positive.setPadding(dp(16), dp(8), dp(16), dp(8));
         positive.setOnClickListener(v -> {
             dialog.dismiss();
             if (positiveAction != null) positiveAction.run();
@@ -2259,7 +2419,8 @@ public class MainActivity extends AppCompatActivity {
         panel.setPadding(dp(32), dp(32), dp(32), dp(24));
         android.graphics.drawable.GradientDrawable panelBg = new android.graphics.drawable.GradientDrawable();
         panelBg.setColor(color(R.color.istan_surface));
-        panelBg.setCornerRadius(dp(28));
+        panelBg.setCornerRadius(dp(24));
+        panelBg.setStroke(dp(1), color(R.color.istan_outline));
         panel.setBackground(panelBg);
 
         loadingSpinner = new com.google.android.material.progressindicator.CircularProgressIndicator(this);
@@ -2289,13 +2450,13 @@ public class MainActivity extends AppCompatActivity {
 
         MaterialCardView cancelBtn = new MaterialCardView(this);
         cancelBtn.setCardBackgroundColor(Color.TRANSPARENT);
-        cancelBtn.setRadius(dp(20));
+        cancelBtn.setRadius(dp(24));
         cancelBtn.setStrokeWidth(dp(1));
         cancelBtn.setStrokeColor(color(R.color.istan_outline));
         cancelBtn.setCardElevation(0);
         cancelBtn.setUseCompatPadding(false);
 
-        TextView cancelText = text("Cancel", 15, R.color.istan_olive_dark, false);
+        TextView cancelText = text("Cancel", 15, R.color.istan_text_muted, false);
         cancelText.setPadding(dp(24), dp(10), dp(24), dp(10));
         cancelBtn.addView(cancelText);
         
@@ -2436,7 +2597,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int color(int colorRes) {
-        return getColor(colorRes);
+        return ThemePrefs.resolveColor(this, colorRes);
+    }
+
+    private void applySystemBarTheme() {
+        androidx.core.view.WindowInsetsControllerCompat controller =
+                androidx.core.view.WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        boolean lightBars = !ThemePrefs.isAmoled(this);
+        controller.setAppearanceLightStatusBars(lightBars);
+        controller.setAppearanceLightNavigationBars(lightBars);
     }
 
     private int dp(int value) {
@@ -2472,6 +2641,17 @@ public class MainActivity extends AppCompatActivity {
 
     private interface Job {
         void run() throws Exception;
+    }
+
+    private void showDonationDialog(Runnable onComplete) {
+        TextView msg = text("My phone display recently broke, and the replacement cost is $40. If this app has been useful to you, a small contribution towards the repair would be deeply appreciated.\n\nIf not, please don't worry - I am still incredibly grateful to have you as a user.", 15, R.color.istan_text_muted, false);
+        msg.setPadding(0, dp(8), 0, dp(16));
+        msg.setLineSpacing(dp(4), 1.1f);
+        
+        showCustomDialog("A Small Request", msg, "No", onComplete, "Donate", () -> {
+            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/ramakanthgacharya")));
+            if (onComplete != null) onComplete.run();
+        });
     }
 
     private void pruneStaleCacheFiles() {

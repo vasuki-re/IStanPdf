@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/background" />
+    <item>
+        <inset android:inset="12.5%" android:drawable="@drawable/ic_icon_sand" />
+    </item>
+</layer-list>

@@ -57,7 +57,6 @@ public final class PdfReorder {
                 
                 PDPageTree tree = doc.getPages();
                 if (!isReordered) {
-                    // Fast path: Just remove discarded pages
                     for (int i = tree.getCount() - 1; i >= 0; i--) {
                         if (!keptIndices.contains(i)) {
                             tree.remove(i);
@@ -67,7 +66,6 @@ public final class PdfReorder {
                         callback.onProgress(kept, kept);
                     }
                 } else {
-                    // Slow path: Rebuild tree chronologically
                     for (int i = tree.getCount() - 1; i >= 0; i--) {
                         tree.remove(i);
                     }

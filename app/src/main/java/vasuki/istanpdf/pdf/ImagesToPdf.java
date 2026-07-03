@@ -11,12 +11,10 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream;
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle;
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
 import vasuki.istanpdf.model.PageItem;
-import vasuki.istanpdf.util.ContentFiles;
 
 public final class ImagesToPdf {
     private static final int MAX_IMAGE_DIMENSION = 4096;
