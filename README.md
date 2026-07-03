@@ -14,7 +14,6 @@
     <a href="#-showcase"><b>Showcase</b></a> •
     <a href="#-features"><b>Features</b></a> •
     <a href="#-download"><b>Download</b></a> •
-    <a href="#-known-issues"><b>Known Issues</b></a> •
     <a href="#-contributing"><b>Contributing</b></a> •
     <a href="#-donate"><b>Donate</b></a>
   </p>
@@ -125,12 +124,6 @@
 - [ ] **Compress PDF:** Introduce Compress PDF feature.
 - [X] **Optimize DOCX:** Optimize DOCX operations.
 - [ ] **Auto DOCX Repair:** Introduce auto DOCX Repair feature to fix structural issues in DOCX making it difficult to be saved.
-
----
-
-## Why IStanPdf?
-
-As a CS student, I regularly needed PDF and DOCX tools but found most online options too slow or restricted by paywalls. I couldn't find a lightweight offline alternative, so I built this.
 
 ---
 
