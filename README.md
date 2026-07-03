@@ -60,7 +60,7 @@
       <div align="left">
         <h3> Conversions</h3>
         <ul>
-          <li><b>Images to PDF:</b> Convert one or more images into a single PDF document.</li>
+          <li><b>Images to PDF:</b> Convert images into a PDF document.</li>
           <li><b>PDF to Image:</b> Extract PDF pages and save them as images.</li>
         </ul>
       </div>
