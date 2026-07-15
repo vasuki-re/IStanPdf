@@ -11,7 +11,9 @@
   </a>
   <br>
   <br>
-
+  ![GitHub Downloads](https://img.shields.io/github/downloads/vasuki-re/IStanPdf/total.svg)
+  <br>
+  <br>
 </div>
 
 Tired of uploading your private documents to sluggish freemium websites  to perform PDF & DOCX operations? I was too. 
