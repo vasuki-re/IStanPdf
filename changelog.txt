@@ -1,0 +1,10 @@
+versionname:2.0-Mitsuba
+versioncode:2
+link:https://github.com/vasuki-re/IStanPdf/releases/download/v2.0-Mitsuba/IStanPdf_v2.0-*.apk
+changelog:
+- Added SettingsActivity to control app accent and theme
+- Added Dark theme support with 6 dynamic accents
+- Dynamically fetch version name for footer via PackageManager
+- Debounce launcher icon restart logic for predictable OS handling
+- Apply dynamic accent tinting to EditText cursors and highlights
+- Standardize Material 3 spacing, paddings, and corner radii
