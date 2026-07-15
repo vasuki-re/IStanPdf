@@ -1,7 +1,6 @@
-![GitHub Downloads](https://img.shields.io/github/downloads/vasuki-re/IStanPdf/total.svg)
 <div align="center">
 
-  <img src="assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
 
   <h1>IStanPdf</h1>
 
@@ -9,6 +8,11 @@
 
   <a href="https://github.com/vasuki-re/IStanPdf/releases/latest">
     <img src="https://img.shields.io/badge/Download-Latest_Release-6366f1?style=for-the-badge&logo=android" alt="Download" />
+  </a>
+  <br>
+  <br>
+  <a href="https://github.com/vasuki-re/IStanPdf/releases">
+    <img src="https://img.shields.io/github/downloads/vasuki-re/IStanPdf/total.svg?style=flat" alt="GitHub Downloads" />
   </a>
   <br>
   <br>
@@ -32,12 +36,12 @@ Tired of uploading your private documents to sluggish freemium websites  to perf
 ## Showcase 📸
 
 <div align="center">
-  <img src="assets/ui.jpg" width="30%" />
-  <img src="assets/merge.jpg" width="30%" />
-  <img src="assets/modify_pdf.jpg" width="30%" />
-  <img src="assets/img2pdf.jpg" width="30%" />
-  <img src="assets/rmpage_docx.jpg" width="30%" />
-  <img src="assets/reorder_docx.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/ui.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/merge.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/modify_pdf.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/img2pdf.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/rmpage_docx.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/reorder_docx.jpg" width="30%" />
 </div>
 
 <br>
@@ -45,7 +49,7 @@ Tired of uploading your private documents to sluggish freemium websites  to perf
 ## Todos 📌
 
 - [ ] **Architecture:** Refactor the monolith for better stability (Rust core integration planned).
-- [ ] **UI/UX:** Add Material You (Monet) theming and a true Dark Mode.
+- [x] **UI/UX:** Add Material You (Monet) theming and a true Dark Mode.
 - [ ] **Features:** Add PDF compression.
 - [ ] **Stability:** Auto-repair structural issues in DOCX files.
 - [x] **Performance:** Optimize DOCX operations.
