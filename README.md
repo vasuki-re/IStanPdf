@@ -1,3 +1,4 @@
+![GitHub Downloads](https://img.shields.io/github/downloads/vasuki-re/IStanPdf/total.svg)
 <div align="center">
 
   <img src="assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
@@ -9,9 +10,6 @@
   <a href="https://github.com/vasuki-re/IStanPdf/releases/latest">
     <img src="https://img.shields.io/badge/Download-Latest_Release-6366f1?style=for-the-badge&logo=android" alt="Download" />
   </a>
-  <br>
-  <br>
-  ![GitHub Downloads](https://img.shields.io/github/downloads/vasuki-re/IStanPdf/total.svg)
   <br>
   <br>
 </div>
