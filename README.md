@@ -37,11 +37,14 @@ Tired of uploading your private documents to sluggish freemium websites  to perf
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/ui.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/ui_dark.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/merge.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/modify_pdf.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/img2pdf.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/rmpage_docx.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/reorder_docx.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/settings.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/settings_dark.jpg" width="30%" />
 </div>
 
 <br>
