@@ -13,7 +13,7 @@
     </style>
 
     <style name="Widget.IStan.Button" parent="Widget.Material3.Button">
-        <item name="cornerRadius">18dp</item>
+        <item name="cornerRadius">100dp</item>
         <item name="backgroundTint">@color/istan_olive</item>
         <item name="android:textColor">@android:color/white</item>
     </style>

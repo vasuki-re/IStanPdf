@@ -26,8 +26,6 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 public class SettingsActivity extends AppCompatActivity {
     private Typeface regularFont;
     private Typeface boldFont;
-    private final android.os.Handler iconHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-    private Runnable iconRunnable;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -40,6 +38,7 @@ public class SettingsActivity extends AppCompatActivity {
         boldFont = Typeface.createFromAsset(getAssets(), "vasuki_bold.ttf");
         
         buildSettings(0);
+        applySystemBarTheme();
     }
 
     @Override
@@ -140,13 +139,8 @@ public class SettingsActivity extends AppCompatActivity {
                 if (ThemePrefs.accentIndex(this) == index) return;
                 
                 ThemePrefs.setAccentIndex(this, index);
+                applySystemBarTheme();
                 buildSettings(scrollView.getScrollY());
-                if (iconRunnable != null) iconHandler.removeCallbacks(iconRunnable);
-                iconRunnable = () -> {
-                    android.widget.Toast.makeText(this, "Applying accent & restarting...", android.widget.Toast.LENGTH_SHORT).show();
-                    ThemePrefs.applyLauncherIconAndRestart(this);
-                };
-                iconHandler.postDelayed(iconRunnable, 500);
             });
             circle.setOnLongClickListener(v -> {
                 showAccentPill(circle, ThemePrefs.ACCENTS[index].name);
@@ -220,6 +214,31 @@ public class SettingsActivity extends AppCompatActivity {
         updateRowLp.setMargins(0, dp(40), 0, 0);
         body.addView(updateRow, updateRowLp);
 
+        LinearLayout perfRow = new LinearLayout(this);
+        perfRow.setGravity(Gravity.CENTER_VERTICAL);
+        perfRow.setPadding(0, 0, 0, 0);
+
+        TextView perfTitle = text("Initialize LibreOffice on startup", 18, R.color.istan_text, true);
+        perfRow.addView(perfTitle, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        com.google.android.material.materialswitch.MaterialSwitch perfSwitch = new com.google.android.material.materialswitch.MaterialSwitch(this);
+        perfSwitch.setChecked(prefs.getBoolean("improve_docx_perf", false));
+        perfSwitch.setThumbTintList(new android.content.res.ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                new int[]{color(R.color.istan_olive), color(R.color.istan_text_muted)}));
+        perfSwitch.setTrackTintList(new android.content.res.ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                new int[]{ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)}));
+        perfSwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+            prefs.edit().putBoolean("improve_docx_perf", isChecked).apply();
+        });
+        perfRow.addView(perfSwitch, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout.LayoutParams perfRowLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
+        perfRowLp.setMargins(0, dp(40), 0, 0);
+        body.addView(perfRow, perfRowLp);
+
         LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         bodyLp.setMargins(0, 0, 0, dp(18));
         body.setLayoutParams(bodyLp);
@@ -233,7 +252,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         android.graphics.drawable.GradientDrawable background = new android.graphics.drawable.GradientDrawable();
         background.setColor(color(R.color.istan_surface_high));
-        background.setCornerRadius(dp(14));
+        background.setCornerRadius(dp(8));
         background.setStroke(dp(1), color(R.color.istan_outline));
         label.setBackground(background);
 

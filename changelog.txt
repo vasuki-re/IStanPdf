@@ -2,13 +2,11 @@ versionname:2.0-Mitsuba
 versioncode:2
 link:https://github.com/vasuki-re/IStanPdf/releases/download/v2.0-Mitsuba/IStanPdf_v2.0-*.apk
 changelog:
-- LibreOffice Engine Optimization: Implemented Custom LibreOffice with unnecessary features disabled to reduce overall app size.
-- Engine Pre-loading: Implemented async background pre-loading for the LibreOffice engine, which is disabled by default. If toggle is enabled from settings, it will improve performance during docx operations.
-- iText 7 Migration: Completely replaced the heavy PdfBox-Android library with the modern, efficient iText 7 engine (AGPL) which reduced overall apk size.
-- I/O Improvements: Removed the slow global PDFBoxResourceLoader.init() requirement. Upgraded PDF save streams in PdfStore to use a 64KB buffered output stream directly to Android's SAF URI.
-- Dynamic Icons: Redesigned the accent icon switching mechanism. It now swaps the icon instantly in the background with a 500ms debounce when changing colors, completely eliminating the "App isn't installed" toast error and the need to restart the app.
-- Improved M3 Design: Riced UI Design by micro optimizations.
-- Fixed Split Range Logic: Fixed Split Range to sync with reordering of page changes and update range according to it, also changing order of pages updates ui.
-- Status Bar Fix: Fixed a bug where the status bar color didn't match the active theme in settings by injecting applySystemBarTheme() into the SettingsActivity lifecycle.
-- Donation Dialog Removed: Removed OneTime Donation Dialog to improve User Experience.
-- UPI Donation Support: Added UPI Donation Support for Indian users.
+- Optimized LibreOffice Engine: Custom-compiled to remove unused features, significantly reducing APK size.
+- Engine Pre-loading: Added an optional background pre-loader (via Settings) for faster DOCX conversions.
+- iText 7 Migration: Replaced PdfBox-Android with iText 7, improving performance and reducing app size.
+- Faster I/O: Removed slow global PDF initialization and optimized PDF saving directly to Android storage.
+- Seamless Dynamic Icons: Changing accent colors now updates the launcher icon instantly in the background without app restarts or errors.
+- UI Polish: Refined Material 3 design and fixed status bar theming issues in Settings.
+- Improved PDF Editing: Fixed the split range logic to accurately sync page reordering and UI updates.
+- UX Improvements: Removed the startup donation popup for a cleaner experience and added UPI donation support for Indian users.

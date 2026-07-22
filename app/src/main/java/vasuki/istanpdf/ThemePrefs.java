@@ -38,6 +38,9 @@ public final class ThemePrefs {
             "vasuki.istanpdf.LauncherGold"
     };
 
+    private static android.os.Handler iconHandler;
+    private static Runnable iconRunnable;
+
     public static int accentIndex(Context context) {
         int index = prefs(context).getInt(KEY_ACCENT_INDEX, 0);
         if (index < 0 || index >= ACCENTS.length) return 0;
@@ -47,33 +50,34 @@ public final class ThemePrefs {
     public static void setAccentIndex(Context context, int index) {
         if (index < 0 || index >= ACCENTS.length) return;
         prefs(context).edit().putInt(KEY_ACCENT_INDEX, index).apply();
+        
+        if (iconHandler == null) {
+            iconHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        }
+        if (iconRunnable != null) {
+            iconHandler.removeCallbacks(iconRunnable);
+        }
+        final Context appContext = context.getApplicationContext();
+        iconRunnable = () -> applyLauncherIconSilent(appContext);
+        iconHandler.postDelayed(iconRunnable, 500);
     }
 
-    public static void applyLauncherIconAndRestart(android.app.Activity activity) {
-        int targetIndex = accentIndex(activity);
-        boolean changed = false;
+    public static void applyLauncherIconSilent(Context context) {
+        int targetIndex = accentIndex(context);
         try {
-            android.content.pm.PackageManager pm = activity.getPackageManager();
+            android.content.pm.PackageManager pm = context.getPackageManager();
             for (int i = 0; i < LAUNCHER_ALIASES.length; i++) {
                 int desiredState = (i == targetIndex)
                         ? android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                         : android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
                 
-                android.content.ComponentName component = new android.content.ComponentName(activity, LAUNCHER_ALIASES[i]);
+                android.content.ComponentName component = new android.content.ComponentName(context, LAUNCHER_ALIASES[i]);
                 if (pm.getComponentEnabledSetting(component) != desiredState) {
                     pm.setComponentEnabledSetting(component, desiredState, android.content.pm.PackageManager.DONT_KILL_APP);
-                    changed = true;
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }
-
-        if (changed) {
-            android.content.Intent intent = new android.content.Intent(activity, MainActivity.class);
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            activity.startActivity(intent);
-            Runtime.getRuntime().exit(0);
         }
     }
 

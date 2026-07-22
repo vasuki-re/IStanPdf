@@ -26,6 +26,12 @@ public final class DocxServiceBridge {
     private DocxServiceBridge() {
     }
 
+    public static void preLoadEngine(Context ctx) {
+        Intent intent = new Intent(ctx, DocxPreviewService.class);
+        intent.putExtra(DocxPreviewService.EXTRA_OPERATION, DocxPreviewService.OP_INIT);
+        ctx.startService(intent);
+    }
+
     public static File exportDocxToPdfViaLibreOffice(Context ctx, Uri docx) throws Exception {
         Intent intent = new Intent(ctx, DocxPreviewService.class);
         intent.putExtra(DocxPreviewService.EXTRA_OPERATION, DocxPreviewService.OP_EXPORT_DOCX_TO_PDF);

@@ -31,6 +31,7 @@ public class DocxPreviewService extends Service {
     public static final String EXTRA_ERROR = "error";
     public static final String OP_EXPORT_DOCX_TO_PDF = "export_docx_to_pdf";
     public static final String OP_SAVE_EDITED_DOCX = "save_edited_docx";
+    public static final String OP_INIT = "init_engine";
     public static final int RESULT_OK = 1;
     public static final int RESULT_ERROR = 2;
 
@@ -50,7 +51,10 @@ public class DocxPreviewService extends Service {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Service was cancelled via timeout");
                 }
-                if (OP_EXPORT_DOCX_TO_PDF.equals(operation)) {
+                if (OP_INIT.equals(operation)) {
+                    LibreOfficeDocumentEngine.initialize(this);
+                    if (Thread.currentThread().isInterrupted()) return;
+                } else if (OP_EXPORT_DOCX_TO_PDF.equals(operation)) {
                     File pdf = LibreOfficeDocumentEngine.exportDocxToPdf(this, Uri.parse(requireStringExtra(intent, EXTRA_DOCX_URI)));
                     if (Thread.currentThread().isInterrupted()) {
                         if (pdf != null && pdf.exists()) pdf.delete();

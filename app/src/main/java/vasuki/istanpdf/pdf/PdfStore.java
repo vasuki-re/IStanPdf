@@ -5,33 +5,20 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
 
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
-import com.tom_roush.pdfbox.pdmodel.PDDocument;
-
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-
-import vasuki.istanpdf.util.ContentFiles;
-import java.io.File;
+import java.io.OutputStream;
 
 final class PdfStore {
     private PdfStore() {
     }
 
-    static void init(Context ctx) {
-        PDFBoxResourceLoader.init(ctx);
-    }
-
-    static void save(Context ctx, PDDocument doc, Uri dst) throws Exception {
-        File tempOut = File.createTempFile("pdfstore_", ".pdf", ctx.getCacheDir());
-        try {
-            doc.save(tempOut);
-            ContentFiles.copyFileToUri(ctx, tempOut, dst);
-        } finally {
-            if (tempOut.exists()) {
-                tempOut.delete();
-            }
-        }
+    static OutputStream openDst(Context ctx, Uri dst) throws IOException {
+        OutputStream raw = ctx.getContentResolver().openOutputStream(dst, "wt");
+        if (raw == null) throw new IOException("Cannot open destination file");
+        return new BufferedOutputStream(raw, 64 * 1024);
     }
 
     static String base(Context ctx, Uri uri) {

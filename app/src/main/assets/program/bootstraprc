@@ -1,4 +1,4 @@
             [Bootstrap]
             InstallMode=<installmode>
-            ProductKey=LibreOffice 25.8
+            ProductKey=LibreOffice 27.2
 UserInstallation=file://$APP_DATA_DIR

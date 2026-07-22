@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".IStanPdfApp"
         android:allowBackup="true"
         android:extractNativeLibs="true"
         android:largeHeap="true"
@@ -111,5 +112,13 @@
             android:name=".libreoffice.DocxPreviewService"
             android:exported="false"
             android:process=":libreoffice" />
+
+        <receiver
+            android:name=".UpdateReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -65,19 +65,6 @@ class NativeLibLoader {
         protected static synchronized void load() {
             if (done)
                 return;
-            System.loadLibrary("nspr4");
-            System.loadLibrary("plds4");
-            System.loadLibrary("plc4");
-            System.loadLibrary("nssutil3");
-            System.loadLibrary("freebl3");
-            System.loadLibrary("sqlite3");
-            System.loadLibrary("softokn3");
-            System.loadLibrary("nss3");
-            System.loadLibrary("nssckbi");
-            System.loadLibrary("nssdbm3");
-            System.loadLibrary("smime3");
-            System.loadLibrary("ssl3");
-
             System.loadLibrary("c++_shared");
             System.loadLibrary("lo-native-code");
             done = true;

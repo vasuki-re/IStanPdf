@@ -172,15 +172,10 @@ public class MainActivity extends AppCompatActivity {
         blinkHandler.postDelayed(blinkRunnable, 20000);
 
         android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
-        if (!prefs.getBoolean("donation_shown", false)) {
-            prefs.edit().putBoolean("donation_shown", true).apply();
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (!isFinishing() && !isDestroyed()) {
-                    showDonationDialog(() -> checkForUpdates());
-                }
-            }, 1500);
-        } else {
-            checkForUpdates();
+        checkForUpdates();
+
+        if (prefs.getBoolean("improve_docx_perf", false)) {
+            vasuki.istanpdf.docx.DocxServiceBridge.preLoadEngine(this);
         }
     }
 
@@ -287,6 +282,7 @@ public class MainActivity extends AppCompatActivity {
         if (activeBlinkTimer != null) { activeBlinkTimer.cancel(); activeBlinkTimer = null; }
         blinkHandler.removeCallbacks(blinkRunnable);
         clearPages();
+        
         super.onDestroy();
     }
 
@@ -485,31 +481,37 @@ public class MainActivity extends AppCompatActivity {
                                 int size = dp(280);
                                 Bitmap thumb = loadThumbnail(addedUri, size);
                                 addedPdf = new File(getCacheDir(), "img_" + System.currentTimeMillis() + ".pdf");
-                                com.tom_roush.pdfbox.pdmodel.PDDocument imgDoc = new com.tom_roush.pdfbox.pdmodel.PDDocument();
-                                com.tom_roush.pdfbox.pdmodel.PDPage imgPage = new com.tom_roush.pdfbox.pdmodel.PDPage(
-                                        new com.tom_roush.pdfbox.pdmodel.common.PDRectangle(thumb.getWidth(), thumb.getHeight()));
-                                imgDoc.addPage(imgPage);
-                                com.tom_roush.pdfbox.pdmodel.PDPageContentStream cs = new com.tom_roush.pdfbox.pdmodel.PDPageContentStream(imgDoc, imgPage);
+                                float iw = thumb.getWidth(), ih = thumb.getHeight();
                                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
                                 thumb.compress(Bitmap.CompressFormat.JPEG, 95, baos);
-                                com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject pdImg = com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject.createFromByteArray(
-                                        imgDoc, baos.toByteArray(), "img");
-                                cs.drawImage(pdImg, 0, 0, thumb.getWidth(), thumb.getHeight());
-                                cs.close();
-                                imgDoc.save(addedPdf);
+                                com.itextpdf.io.image.ImageData imgData = com.itextpdf.io.image.ImageDataFactory.createJpeg(baos.toByteArray());
+                                com.itextpdf.kernel.pdf.PdfDocument imgDoc = new com.itextpdf.kernel.pdf.PdfDocument(
+                                        new com.itextpdf.kernel.pdf.PdfWriter(new java.io.FileOutputStream(addedPdf)));
+                                com.itextpdf.kernel.geom.PageSize ps = new com.itextpdf.kernel.geom.PageSize(iw, ih);
+                                com.itextpdf.kernel.pdf.PdfPage imgPage = imgDoc.addNewPage(ps);
+                                com.itextpdf.kernel.pdf.canvas.PdfCanvas pdfCanvas = new com.itextpdf.kernel.pdf.canvas.PdfCanvas(imgPage);
+                                pdfCanvas.addImageFittedIntoRectangle(imgData, new com.itextpdf.kernel.geom.Rectangle(0, 0, iw, ih), false);
                                 imgDoc.close();
                             } else {
                                 addedPdf = vasuki.istanpdf.util.ContentFiles.copyUriToCache(MainActivity.this, addedUri, ".pdf");
                             }
                             File mergedFile = new File(getCacheDir(), "merged_" + System.currentTimeMillis() + ".pdf");
-                            com.tom_roush.pdfbox.io.MemoryUsageSetting memSetting = com.tom_roush.pdfbox.io.MemoryUsageSetting.setupMixed(50 * 1024 * 1024);
-                            try (java.io.InputStream srcIn = getContentResolver().openInputStream(reorderSource);
-                                 com.tom_roush.pdfbox.pdmodel.PDDocument srcDoc = com.tom_roush.pdfbox.pdmodel.PDDocument.load(srcIn, memSetting);
-                                 com.tom_roush.pdfbox.pdmodel.PDDocument addDoc = com.tom_roush.pdfbox.pdmodel.PDDocument.load(addedPdf, memSetting)) {
-                                for (int p = 0; p < addDoc.getNumberOfPages(); p++) {
-                                    srcDoc.addPage(addDoc.getPage(p));
-                                }
-                                srcDoc.save(mergedFile);
+                            java.io.File srcFile = vasuki.istanpdf.util.ContentFiles.copyUriToCache(MainActivity.this, reorderSource, ".pdf");
+                            try {
+                                com.itextpdf.kernel.pdf.PdfDocument srcDoc = new com.itextpdf.kernel.pdf.PdfDocument(
+                                        new com.itextpdf.kernel.pdf.PdfReader(srcFile));
+                                com.itextpdf.kernel.pdf.PdfDocument addDoc = new com.itextpdf.kernel.pdf.PdfDocument(
+                                        new com.itextpdf.kernel.pdf.PdfReader(addedPdf));
+                                com.itextpdf.kernel.pdf.PdfDocument destDoc = new com.itextpdf.kernel.pdf.PdfDocument(
+                                        new com.itextpdf.kernel.pdf.PdfWriter(new java.io.FileOutputStream(mergedFile)));
+                                com.itextpdf.kernel.utils.PdfMerger pdfMerger = new com.itextpdf.kernel.utils.PdfMerger(destDoc);
+                                pdfMerger.merge(srcDoc, 1, srcDoc.getNumberOfPages());
+                                pdfMerger.merge(addDoc, 1, addDoc.getNumberOfPages());
+                                addDoc.close();
+                                srcDoc.close();
+                                destDoc.close();
+                            } finally {
+                                if (srcFile.exists()) srcFile.delete();
                             }
                             Uri mergedUri = Uri.fromFile(mergedFile);
                             List<PageItem> allRendered = renderPdfPages(mergedUri);
@@ -674,7 +676,7 @@ public class MainActivity extends AppCompatActivity {
 
         MaterialCardView settingsButton = new MaterialCardView(this);
         settingsButton.setCardBackgroundColor(color(R.color.istan_surface));
-        settingsButton.setRadius(dp(24));
+        settingsButton.setRadius(dp(100));
         settingsButton.setStrokeWidth(dp(1));
         settingsButton.setStrokeColor(color(R.color.istan_outline));
         settingsButton.setCardElevation(0);
@@ -716,8 +718,8 @@ public class MainActivity extends AppCompatActivity {
         docxRow1.addView(dashboardCard("Reorder Pages", R.drawable.reorder_docx_24px, () -> pickOne(new String[]{MIME_DOCX}, REQ_PICK_REORDER_DOCX_EXPORT)));
         root.addView(docxRow1);
         
-        root.addView(kofiCard("Support me on Ko-fi", R.drawable.ic_kofi, () -> {
-            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/ramakanthgacharya")));
+        root.addView(kofiCard("Support the Developer", R.drawable.ic_kofi, () -> {
+            showDonationPicker(null);
         }));
         
         View topSpacer = new View(this);
@@ -730,7 +732,7 @@ public class MainActivity extends AppCompatActivity {
         statusCard.setPadding(dp(16), dp(10), dp(20), dp(10));
         android.graphics.drawable.GradientDrawable statusBg = new android.graphics.drawable.GradientDrawable();
         statusBg.setColor(color(R.color.istan_surface));
-        statusBg.setCornerRadius(dp(24));
+        statusBg.setCornerRadius(dp(28));
         statusBg.setStroke(dp(1), color(R.color.istan_outline));
         statusCard.setBackground(statusBg);
 
@@ -772,7 +774,7 @@ public class MainActivity extends AppCompatActivity {
     private View dashboardCard(String title, int iconResId, Runnable action) {
         MaterialCardView card = new MaterialCardView(this);
         card.setCardBackgroundColor(color(R.color.istan_surface));
-        card.setRadius(dp(24));
+        card.setRadius(dp(16));
         card.setStrokeWidth(dp(1));
         card.setStrokeColor(color(R.color.istan_outline));
         card.setCardElevation(0);
@@ -818,7 +820,7 @@ public class MainActivity extends AppCompatActivity {
     private View kofiCard(String title, int iconResId, Runnable action) {
         MaterialCardView card = new MaterialCardView(this);
         card.setCardBackgroundColor(color(R.color.istan_surface));
-        card.setRadius(dp(24));
+        card.setRadius(dp(16));
         card.setStrokeWidth(dp(1));
         card.setStrokeColor(color(R.color.istan_outline));
         card.setCardElevation(0);
@@ -878,7 +880,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialCardView card = new MaterialCardView(this);
         int cardColor = color(primary ? R.color.istan_olive : R.color.istan_surface);
         card.setCardBackgroundColor(cardColor);
-        card.setRadius(dp(24));
+        card.setRadius(dp(16));
         if (!primary) {
             card.setStrokeWidth(dp(1));
             card.setStrokeColor(color(R.color.istan_outline));
@@ -946,7 +948,7 @@ public class MainActivity extends AppCompatActivity {
         statusCard.setPadding(dp(16), dp(10), dp(20), dp(10));
         android.graphics.drawable.GradientDrawable statusBg = new android.graphics.drawable.GradientDrawable();
         statusBg.setColor(color(R.color.istan_surface));
-        statusBg.setCornerRadius(dp(24));
+        statusBg.setCornerRadius(dp(28));
         statusBg.setStroke(dp(1), color(R.color.istan_outline));
         statusCard.setBackground(statusBg);
 
@@ -998,7 +1000,7 @@ public class MainActivity extends AppCompatActivity {
 
             MaterialCardView editBtn = new MaterialCardView(this);
             editBtn.setCardBackgroundColor(Color.TRANSPARENT);
-            editBtn.setRadius(dp(24));
+            editBtn.setRadius(dp(100));
             editBtn.setStrokeWidth(dp(1));
             editBtn.setStrokeColor(color(R.color.istan_outline));
             editBtn.setCardElevation(0);
@@ -1054,11 +1056,9 @@ public class MainActivity extends AppCompatActivity {
                 StringBuilder sb = new StringBuilder();
                 int start = -1;
                 int end = -1;
-                List<Integer> kept = new ArrayList<>();
-                for (PageItem p : pages) { if (p.keep) kept.add(p.originalIndex + 1); }
-                Collections.sort(kept);
-                for (int i = 0; i < kept.size(); i++) {
-                    int num = kept.get(i);
+                for (PageItem p : pages) {
+                    if (!p.keep) continue;
+                    int num = p.originalIndex + 1;
                     if (start == -1) {
                         start = num;
                         end = num;
@@ -1095,15 +1095,56 @@ public class MainActivity extends AppCompatActivity {
                                     if (bounds.length == 2) {
                                         int startIdx = Integer.parseInt(bounds[0].trim());
                                         int endIdx = Integer.parseInt(bounds[1].trim());
-                                        for (int k = startIdx; k <= endIdx; k++) pagesToKeep.add(k - 1);
+                                        if (startIdx <= endIdx) {
+                                            for (int k = startIdx; k <= endIdx; k++) pagesToKeep.add(k - 1);
+                                        } else {
+                                            for (int k = startIdx; k >= endIdx; k--) pagesToKeep.add(k - 1);
+                                        }
                                     }
                                 } else {
                                     pagesToKeep.add(Integer.parseInt(p) - 1);
                                 }
                             }
-                            for (int k = 0; k < pages.size(); k++) {
-                                pages.get(k).keep = pagesToKeep.contains(pages.get(k).originalIndex);
+                            
+                            List<PageItem> newPages = new ArrayList<>();
+                            List<Uri> newUris = new ArrayList<>();
+                            List<Integer> processedIndices = new ArrayList<>();
+                            
+                            for (int originalIdx : pagesToKeep) {
+                                if (processedIndices.contains(originalIdx)) continue;
+                                for (int i = 0; i < pages.size(); i++) {
+                                    PageItem p = pages.get(i);
+                                    if (p.originalIndex == originalIdx) {
+                                        p.keep = true;
+                                        newPages.add(p);
+                                        if ("Merge PDF".equals(titleText) && i < pendingUris.size()) {
+                                            newUris.add(pendingUris.get(i));
+                                        }
+                                        processedIndices.add(originalIdx);
+                                        break;
+                                    }
+                                }
                             }
+                            
+                            for (int i = 0; i < pages.size(); i++) {
+                                PageItem p = pages.get(i);
+                                if (!processedIndices.contains(p.originalIndex)) {
+                                    p.keep = false;
+                                    newPages.add(p);
+                                    if ("Merge PDF".equals(titleText) && i < pendingUris.size()) {
+                                        newUris.add(pendingUris.get(i));
+                                    }
+                                }
+                            }
+                            
+                            pages.clear();
+                            pages.addAll(newPages);
+                            
+                            if ("Merge PDF".equals(titleText)) {
+                                pendingUris.clear();
+                                pendingUris.addAll(newUris);
+                            }
+                            
                         } catch (Exception ignored) {
                             Toast.makeText(MainActivity.this, "Invalid range format", Toast.LENGTH_SHORT).show();
                             return;
@@ -1174,12 +1215,12 @@ public class MainActivity extends AppCompatActivity {
         if ("Images to PDF".equals(titleText) || "Reorder Pages from DOCX".equals(titleText) || titleText.equals("Remove/Reorder PDF") || "Merge PDF".equals(titleText)) {
             MaterialCardView addCard = new MaterialCardView(this);
             addCard.setCardBackgroundColor(color(R.color.istan_surface));
-            addCard.setRadius(dp(24));
+            addCard.setRadius(dp(28));
             addCard.setCardElevation(0);
             
             android.graphics.drawable.GradientDrawable dashBg = new android.graphics.drawable.GradientDrawable();
             dashBg.setColor(Color.TRANSPARENT);
-            dashBg.setCornerRadius(dp(24));
+            dashBg.setCornerRadius(dp(28));
             dashBg.setStroke(dp(1), color(R.color.istan_outline), dp(4), dp(4));
             addCard.setBackground(dashBg);
 
@@ -1375,7 +1416,7 @@ public class MainActivity extends AppCompatActivity {
 
             MaterialCardView card = new MaterialCardView(MainActivity.this);
             card.setCardBackgroundColor(color(R.color.istan_surface));
-            card.setRadius(dp(24));
+            card.setRadius(dp(16));
             card.setStrokeWidth(dp(1));
             card.setStrokeColor(color(R.color.istan_outline));
             card.setCardElevation(0);
@@ -1561,7 +1602,7 @@ public class MainActivity extends AppCompatActivity {
             if (isImg) {
                 if (holder.titleText != null) {
                     holder.titleText.setVisibility(View.VISIBLE);
-                    holder.titleText.setText(item.displayName != null && !item.displayName.trim().isEmpty() ? item.displayName : "Page " + (position + 1));
+                    holder.titleText.setText(item.displayName != null && !item.displayName.trim().isEmpty() ? item.displayName : "Page " + (item.originalIndex + 1));
                 }
                 holder.info.setText(item.keep ? "Selected" : "Unselected");
                 holder.info.setTextColor(color(item.keep ? R.color.istan_olive : R.color.istan_text_muted));
@@ -1595,7 +1636,7 @@ public class MainActivity extends AppCompatActivity {
 
                     MaterialCardView imgCard = new MaterialCardView(MainActivity.this);
                     imgCard.setCardBackgroundColor(Color.BLACK);
-                    imgCard.setRadius(dp(24));
+                    imgCard.setRadius(dp(12));
                     imgCard.setCardElevation(0);
                     imgCard.setStrokeColor(Color.parseColor("#33FFFFFF"));
                     imgCard.setStrokeWidth(dp(1));
@@ -1781,7 +1822,7 @@ public class MainActivity extends AppCompatActivity {
 
                     MaterialCardView imgCard = new MaterialCardView(MainActivity.this);
                     imgCard.setCardBackgroundColor(Color.BLACK);
-                    imgCard.setRadius(dp(24));
+                    imgCard.setRadius(dp(12));
                     imgCard.setCardElevation(0);
                     imgCard.setStrokeColor(Color.parseColor("#33FFFFFF"));
                     imgCard.setStrokeWidth(dp(1));
@@ -2289,7 +2330,7 @@ public class MainActivity extends AppCompatActivity {
         return uris;
     }
 
-    public void showCustomDialog(String titleStr, View content, String negativeStr, Runnable negativeAction, String positiveStr, Runnable positiveAction) {
+    public android.app.Dialog showCustomDialog(String titleStr, View content, String negativeStr, Runnable negativeAction, String positiveStr, Runnable positiveAction) {
         android.app.Dialog dialog = new android.app.Dialog(this);
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
         dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
@@ -2299,10 +2340,10 @@ public class MainActivity extends AppCompatActivity {
         dialogRoot.setOrientation(LinearLayout.VERTICAL);
         android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
         gd.setColor(color(R.color.istan_surface));
-        gd.setCornerRadius(dp(24));
+        gd.setCornerRadius(dp(28));
         gd.setStroke(dp(1), color(R.color.istan_outline));
         dialogRoot.setBackground(gd);
-        dialogRoot.setPadding(dp(20), dp(20), dp(20), dp(20));
+        dialogRoot.setPadding(dp(24), dp(24), dp(24), dp(24));
 
         TextView title = text(titleStr, 20, R.color.istan_text, true);
         title.setPadding(0, 0, 0, dp(12));
@@ -2317,26 +2358,31 @@ public class MainActivity extends AppCompatActivity {
         btnRow.setGravity(Gravity.END);
         btnRow.setPadding(0, dp(12), 0, 0);
 
-        TextView cancel = text(negativeStr != null ? negativeStr : "Cancel", 14, R.color.istan_text_muted, true);
-        cancel.setPadding(dp(16), dp(8), dp(16), dp(8));
-        cancel.setOnClickListener(v -> {
-            dialog.dismiss();
-            if (negativeAction != null) negativeAction.run();
-        });
-        btnRow.addView(cancel);
+        if (negativeStr != null) {
+            TextView cancel = text(negativeStr, 14, R.color.istan_text_muted, true);
+            cancel.setPadding(dp(16), dp(8), dp(16), dp(8));
+            cancel.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (negativeAction != null) negativeAction.run();
+            });
+            btnRow.addView(cancel);
+        }
 
-        TextView positive = text(positiveStr, 14, R.color.istan_olive, true);
-        positive.setPadding(dp(16), dp(8), dp(16), dp(8));
-        positive.setOnClickListener(v -> {
-            dialog.dismiss();
-            if (positiveAction != null) positiveAction.run();
-        });
-        btnRow.addView(positive);
+        if (positiveStr != null) {
+            TextView positive = text(positiveStr, 14, R.color.istan_olive, true);
+            positive.setPadding(dp(16), dp(8), dp(16), dp(8));
+            positive.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (positiveAction != null) positiveAction.run();
+            });
+            btnRow.addView(positive);
+        }
 
         dialogRoot.addView(btnRow);
         dialog.setContentView(dialogRoot);
         dialog.getWindow().setLayout((int)(getResources().getDisplayMetrics().widthPixels * 0.85), android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         dialog.show();
+        return dialog;
     }
 
     private void runJob(String message, Job job) {
@@ -2419,7 +2465,7 @@ public class MainActivity extends AppCompatActivity {
         panel.setPadding(dp(32), dp(32), dp(32), dp(24));
         android.graphics.drawable.GradientDrawable panelBg = new android.graphics.drawable.GradientDrawable();
         panelBg.setColor(color(R.color.istan_surface));
-        panelBg.setCornerRadius(dp(24));
+        panelBg.setCornerRadius(dp(28));
         panelBg.setStroke(dp(1), color(R.color.istan_outline));
         panel.setBackground(panelBg);
 
@@ -2450,7 +2496,7 @@ public class MainActivity extends AppCompatActivity {
 
         MaterialCardView cancelBtn = new MaterialCardView(this);
         cancelBtn.setCardBackgroundColor(Color.TRANSPARENT);
-        cancelBtn.setRadius(dp(24));
+        cancelBtn.setRadius(dp(100));
         cancelBtn.setStrokeWidth(dp(1));
         cancelBtn.setStrokeColor(color(R.color.istan_outline));
         cancelBtn.setCardElevation(0);
@@ -2643,15 +2689,61 @@ public class MainActivity extends AppCompatActivity {
         void run() throws Exception;
     }
 
-    private void showDonationDialog(Runnable onComplete) {
-        TextView msg = text("My phone display recently broke, and the replacement cost is $40. If this app has been useful to you, a small contribution towards the repair would be deeply appreciated.\n\nIf not, please don't worry - I am still incredibly grateful to have you as a user.", 15, R.color.istan_text_muted, false);
-        msg.setPadding(0, dp(8), 0, dp(16));
-        msg.setLineSpacing(dp(4), 1.1f);
-        
-        showCustomDialog("A Small Request", msg, "No", onComplete, "Donate", () -> {
+    private void showDonationPicker(Runnable onComplete) {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(0, dp(12), 0, dp(4));
+
+        android.app.Dialog[] dialogRef = new android.app.Dialog[1];
+
+        Runnable clickKofi = () -> {
             startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/ramakanthgacharya")));
+            if (dialogRef[0] != null) dialogRef[0].dismiss();
             if (onComplete != null) onComplete.run();
-        });
+        };
+
+        Runnable clickUpi = () -> {
+            try {
+                startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("upi://pay?pa=ramakanthacharya@slc&pn=Ramakanth")));
+            } catch (Exception e) {
+                android.widget.Toast.makeText(MainActivity.this, "No UPI app found", android.widget.Toast.LENGTH_SHORT).show();
+            }
+            if (dialogRef[0] != null) dialogRef[0].dismiss();
+            if (onComplete != null) onComplete.run();
+        };
+
+        com.google.android.material.card.MaterialCardView card1 = new com.google.android.material.card.MaterialCardView(this);
+        card1.setCardBackgroundColor(Color.TRANSPARENT);
+        card1.setRadius(dp(16));
+        card1.setStrokeWidth(dp(1));
+        card1.setStrokeColor(color(R.color.istan_outline));
+        card1.setCardElevation(0);
+        card1.setOnClickListener(v -> clickKofi.run());
+
+          TextView opt1 = text("Ko-fi (Global)", 15, R.color.istan_text, false);
+        opt1.setPadding(dp(20), dp(16), dp(20), dp(16));
+        card1.addView(opt1);
+
+        LinearLayout.LayoutParams lp1 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp1.setMargins(0, 0, 0, dp(12));
+        content.addView(card1, lp1);
+
+        com.google.android.material.card.MaterialCardView card2 = new com.google.android.material.card.MaterialCardView(this);
+        card2.setCardBackgroundColor(Color.TRANSPARENT);
+        card2.setRadius(dp(16));
+        card2.setStrokeWidth(dp(1));
+        card2.setStrokeColor(color(R.color.istan_outline));
+        card2.setCardElevation(0);
+        card2.setOnClickListener(v -> clickUpi.run());
+
+          TextView opt2 = text("UPI (India)", 15, R.color.istan_text, false);
+        opt2.setPadding(dp(20), dp(16), dp(20), dp(16));
+        card2.addView(opt2);
+
+        LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        content.addView(card2, lp2);
+
+        dialogRef[0] = showCustomDialog("Support the Developer", content, "Cancel", onComplete, null, null);
     }
 
     private void pruneStaleCacheFiles() {

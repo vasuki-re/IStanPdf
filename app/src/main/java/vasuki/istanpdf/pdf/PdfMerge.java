@@ -3,11 +3,16 @@ package vasuki.istanpdf.pdf;
 import android.content.Context;
 import android.net.Uri;
 
-import com.tom_roush.pdfbox.multipdf.PDFMergerUtility;
-import com.tom_roush.pdfbox.pdmodel.PDDocument;
-import com.tom_roush.pdfbox.pdmodel.PDPage;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfName;
+import com.itextpdf.kernel.pdf.PdfNumber;
+import com.itextpdf.kernel.pdf.PdfPage;
+import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.utils.PdfMerger;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,39 +28,49 @@ public final class PdfMerge {
 
     public static void run(Context ctx, List<Uri> src, List<Integer> rotations, Uri dst,
                             PdfProgressCallback callback) throws Exception {
-        PdfStore.init(ctx);
         File tempOut = File.createTempFile("merged_", ".pdf", ctx.getCacheDir());
         List<File> tempIns = new ArrayList<>();
-        PDFMergerUtility merger = new PDFMergerUtility();
-        PDDocument merged = new PDDocument();
         try {
-            com.tom_roush.pdfbox.io.MemoryUsageSetting memSetting =
-                    com.tom_roush.pdfbox.io.MemoryUsageSetting.setupMixed(50 * 1024 * 1024);
+            PdfDocument merged = new PdfDocument(new PdfWriter(new FileOutputStream(tempOut)));
+            PdfMerger merger = new PdfMerger(merged);
+            List<int[]> rotationRanges = new ArrayList<>();
+            int pageOffset = 0;
+            try {
+                for (int i = 0; i < src.size(); i++) {
+                    Uri uri = src.get(i);
+                    int rotation = rotations != null && i < rotations.size() ? rotations.get(i) : 0;
+                    File tempIn = ContentFiles.copyUriToCache(ctx, uri, ".pdf");
+                    tempIns.add(tempIn);
 
-            for (int i = 0; i < src.size(); i++) {
-                Uri uri = src.get(i);
-                int rotation = rotations != null && i < rotations.size() ? rotations.get(i) : 0;
-                File tempIn = ContentFiles.copyUriToCache(ctx, uri, ".pdf");
-                tempIns.add(tempIn);
-
-                try (PDDocument doc = PDDocument.load(tempIn, memSetting)) {
-                    if (rotation != 0) {
-                        for (int p = 0; p < doc.getNumberOfPages(); p++) {
-                            PDPage page = doc.getPage(p);
-                            page.setRotation(page.getRotation() + rotation);
+                    PdfDocument srcDoc = new PdfDocument(new PdfReader(tempIn));
+                    try {
+                        int srcPages = srcDoc.getNumberOfPages();
+                        if (rotation != 0) {
+                            rotationRanges.add(new int[]{pageOffset + 1, pageOffset + srcPages, rotation});
                         }
+                        merger.merge(srcDoc, 1, srcPages);
+                        pageOffset += srcPages;
+                    } finally {
+                        srcDoc.close();
                     }
-                    merger.appendDocument(merged, doc);
+
+                    if (callback != null) {
+                        callback.onProgress(i + 1, src.size());
+                    }
                 }
 
-                if (callback != null) {
-                    callback.onProgress(i + 1, src.size());
+                for (int[] range : rotationRanges) {
+                    for (int p = range[0]; p <= range[1]; p++) {
+                        PdfPage page = merged.getPage(p);
+                        int existing = page.getRotation();
+                        page.put(PdfName.Rotate, new PdfNumber(existing + range[2]));
+                    }
                 }
+            } finally {
+                merged.close();
             }
-            merged.save(tempOut);
             ContentFiles.copyFileToUri(ctx, tempOut, dst);
         } finally {
-            merged.close();
             if (tempOut.exists()) tempOut.delete();
             for (File tempIn : tempIns) {
                 if (tempIn.exists()) tempIn.delete();

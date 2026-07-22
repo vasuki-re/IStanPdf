@@ -4,7 +4,7 @@ core = "1.17.0"
 appcompat = "1.7.1"
 material = "1.13.0"
 constraintlayout = "2.2.1"
-pdfboxAndroid = "2.0.27.0"
+itext7 = "8.0.5"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -15,4 +15,6 @@ androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
+itext7-kernel = { group = "com.itextpdf", name = "kernel", version.ref = "itext7" }
+itext7-io = { group = "com.itextpdf", name = "io", version.ref = "itext7" }
+itext7-layout = { group = "com.itextpdf", name = "layout", version.ref = "itext7" }
