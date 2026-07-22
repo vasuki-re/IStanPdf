@@ -189,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
-                
                 java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
                 String line;
                 String versionname = "";
@@ -226,11 +225,9 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         if (isFinishing() || isDestroyed()) return;
                         
-                        TextView msg = text(finalChangelog, 15, R.color.istan_text_muted, false);
-                        msg.setPadding(0, dp(8), 0, dp(16));
-                        msg.setLineSpacing(dp(4), 1.1f);
+                        View changelogView = createChangelogView(finalChangelog);
                         
-                        showCustomDialog("Update Available: " + finalVersionName, msg, "Later", null, "Download", () -> {
+                        showCustomDialog("Update Available: " + finalVersionName, changelogView, "Later", null, "Download", () -> {
                             String architecture = "arm";
                             for (String abi : android.os.Build.SUPPORTED_ABIS) {
                                 if (abi.contains("arm64")) {
@@ -246,6 +243,99 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ignored) {
             }
         }).start();
+    }
+
+    private CharSequence parseMarkdownText(String text) {
+        android.text.SpannableStringBuilder builder = new android.text.SpannableStringBuilder();
+        int currentIndex = 0;
+        while (currentIndex < text.length()) {
+            int startBold = text.indexOf("**", currentIndex);
+            if (startBold != -1) {
+                int endBold = text.indexOf("**", startBold + 2);
+                if (endBold != -1) {
+                    builder.append(text.substring(currentIndex, startBold));
+                    int startSpan = builder.length();
+                    builder.append(text.substring(startBold + 2, endBold));
+                    builder.setSpan(new CustomTypefaceSpan(boldFont), startSpan, builder.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    builder.setSpan(new android.text.style.ForegroundColorSpan(color(R.color.istan_text)), startSpan, builder.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    currentIndex = endBold + 2;
+                    continue;
+                }
+            }
+            builder.append(text.substring(currentIndex));
+            break;
+        }
+        return builder;
+    }
+
+    private View createChangelogView(String changelogText) {
+        ScrollView scrollView = new ScrollView(this) {
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                int maxHeight = (int) (getResources().getDisplayMetrics().heightPixels * 0.70);
+                int heightSize = View.MeasureSpec.getSize(heightMeasureSpec);
+                if (maxHeight > 0 && (View.MeasureSpec.getMode(heightMeasureSpec) == View.MeasureSpec.UNSPECIFIED || heightSize > maxHeight)) {
+                    heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST);
+                }
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            }
+        };
+        scrollView.setVerticalScrollBarEnabled(false);
+        scrollView.setFadingEdgeLength(dp(16));
+        scrollView.setVerticalFadingEdgeEnabled(true);
+        
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(0, dp(4), 0, dp(12));
+        
+        String[] lines = changelogText.split("\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) {
+                View space = new View(this);
+                space.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(4)));
+                container.addView(space);
+                continue;
+            }
+            
+            if (line.startsWith("- ")) {
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setPadding(0, 0, 0, dp(4));
+                
+                TextView bullet = text("•", 15, R.color.istan_olive, true);
+                bullet.setPadding(dp(8), dp(1), dp(8), 0);
+                
+                TextView body = text("", 15, R.color.istan_text_muted, false);
+                body.setLineSpacing(dp(2), 1.0f);
+                body.setText(parseMarkdownText(line.substring(2)));
+                
+                row.addView(bullet);
+                row.addView(body);
+                container.addView(row);
+            } else if (line.startsWith("[") && line.endsWith("]")) {
+                TextView header = text(line.substring(1, line.length() - 1), 17, R.color.istan_olive, true);
+                header.setPadding(dp(4), dp(8), 0, dp(4));
+                container.addView(header);
+            } else {
+                TextView body = text("", 15, R.color.istan_text_muted, false);
+                body.setLineSpacing(dp(2), 1.0f);
+                body.setPadding(dp(8), 0, dp(8), dp(4));
+                body.setText(parseMarkdownText(line));
+                container.addView(body);
+            }
+        }
+        
+        scrollView.addView(container);
+        
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.weight = 1.0f;
+        scrollView.setLayoutParams(params);
+        
+        return scrollView;
     }
 
     @Override
