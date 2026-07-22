@@ -1,6 +1,6 @@
-versionname:2.0-Mitsuba
-versioncode:2
-link:https://github.com/vasuki-re/IStanPdf/releases/download/v2.0-Mitsuba/IStanPdf_v2.0-*.apk
+versionname:2.5-Mitsuba
+versioncode:3
+link:https://github.com/vasuki-re/IStanPdf/releases/download/v2.5-Mitsuba/IStanPdf_v2.5-*.apk
 changelog:
 - Optimized LibreOffice Engine: Custom-compiled to remove unused features, significantly reducing APK size.
 - Engine Pre-loading: Added an optional background pre-loader (via Settings) for faster DOCX conversions.
