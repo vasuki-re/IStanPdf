@@ -2,11 +2,12 @@ versionname:2.5-Mitsuba
 versioncode:3
 link:https://github.com/vasuki-re/IStanPdf/releases/download/v2.5-Mitsuba/IStanPdf_v2.5-*.apk
 changelog:
-- Optimized LibreOffice Engine: Custom-compiled to remove unused features, significantly reducing APK size.
-- Engine Pre-loading: Added an optional background pre-loader (via Settings) for faster DOCX conversions.
-- iText 7 Migration: Replaced PdfBox-Android with iText 7, improving performance and reducing app size.
-- Faster I/O: Removed slow global PDF initialization and optimized PDF saving directly to Android storage.
-- Seamless Dynamic Icons: Changing accent colors now updates the launcher icon instantly in the background without app restarts or errors.
-- UI Polish: Refined Material 3 design and fixed status bar theming issues in Settings.
-- Improved PDF Editing: Fixed the split range logic to accurately sync page reordering and UI updates.
-- UX Improvements: Removed the startup donation popup for a cleaner experience and added UPI donation support for Indian users.
+- License: Updated project license to AGPL v3.
+- LibreOffice: Custom-compiled engine significantly reduces APK size.
+- Performance: Added optional background pre-loader for faster DOCX operations.
+- PDF Engine: Migrated to iText 7 for lighter, faster PDF processing.
+- I/O: Optimized PDF saving directly to Android storage.
+- UI: Refined Material 3 design and fixed status bar theming.
+- Icons: Accent colors update launcher icon instantly without app restarts.
+- Fixes: Synced split range logic accurately with page reordering.
+- UX: Removed startup donation popup; added UPI option to the Support the developer pill.
