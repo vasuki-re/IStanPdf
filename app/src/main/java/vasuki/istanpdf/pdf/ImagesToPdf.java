@@ -29,20 +29,9 @@ public final class ImagesToPdf {
     }
 
     public static void run(Context ctx, List<Uri> src, List<PageItem> pages, Uri dst) throws Exception {
-        run(ctx, src, pages, dst, null);
-    }
-
-    public static void run(Context ctx, List<Uri> src, List<PageItem> pages, Uri dst,
-                            PdfProgressCallback callback) throws Exception {
         try (OutputStream out = PdfStore.openDst(ctx, dst)) {
             PdfDocument pdfDoc = new PdfDocument(new PdfWriter(out));
             try {
-                int progress = 0;
-                int total = 0;
-                for (PageItem p : pages) {
-                    if (p.keep) total++;
-                }
-
                 for (PageItem pageItem : pages) {
                     if (!pageItem.keep) continue;
                     Uri uri = src.get(pageItem.originalIndex);
@@ -111,11 +100,6 @@ public final class ImagesToPdf {
 
                     PdfCanvas canvas = new PdfCanvas(page);
                     canvas.addImageFittedIntoRectangle(imageData, new Rectangle(0, 0, pw, ph), false);
-
-                    progress++;
-                    if (callback != null) {
-                        callback.onProgress(progress, total);
-                    }
                 }
             } finally {
                 pdfDoc.close();

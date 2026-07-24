@@ -16,10 +16,6 @@ public final class PdfToJpegZip {
     }
 
     public static void run(Context ctx, Uri src, Uri dst) throws Exception {
-        run(ctx, src, dst, null);
-    }
-
-    public static void run(Context ctx, Uri src, Uri dst, PdfProgressCallback callback) throws Exception {
         String base = PdfStore.base(ctx, src);
         java.io.File tempPdf = null;
         ParcelFileDescriptor fd = null;
@@ -62,9 +58,6 @@ public final class PdfToJpegZip {
                         } finally {
                             bmp.recycle();
                         }
-                    }
-                    if (callback != null) {
-                        callback.onProgress(i + 1, total);
                     }
                 }
             }

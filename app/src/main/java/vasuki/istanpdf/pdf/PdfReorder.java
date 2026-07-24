@@ -22,11 +22,6 @@ public final class PdfReorder {
     }
 
     public static int run(Context ctx, Uri src, List<PageItem> pages, Uri dst) throws Exception {
-        return run(ctx, src, pages, dst, null);
-    }
-
-    public static int run(Context ctx, Uri src, List<PageItem> pages, Uri dst,
-                           PdfProgressCallback callback) throws Exception {
         int kept = 0;
         File tempIn = vasuki.istanpdf.util.ContentFiles.copyUriToCache(ctx, src, ".pdf");
         try {
@@ -58,9 +53,6 @@ public final class PdfReorder {
                             int r = (existing + rotation) % 360;
                             if (r < 0) r += 360;
                             dstPage.put(PdfName.Rotate, new PdfNumber(r));
-                        }
-                        if (callback != null) {
-                            callback.onProgress(i, kept);
                         }
                     }
                 } finally {

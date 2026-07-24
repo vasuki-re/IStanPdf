@@ -2,7 +2,6 @@ package vasuki.istanpdf.util;
 
 import android.content.Context;
 import android.net.Uri;
-import android.provider.OpenableColumns;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,19 +35,6 @@ public final class ContentFiles {
             }
             copy(input, output);
         }
-    }
-
-    public static String displayName(Context context, Uri uri) {
-        try (android.database.Cursor cursor = context.getContentResolver()
-                .query(uri, null, null, null, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                if (index >= 0) {
-                    return cursor.getString(index);
-                }
-            }
-        }
-        return "Selected file";
     }
 
     private static void copy(InputStream input, OutputStream output) throws IOException {

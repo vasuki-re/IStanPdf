@@ -31,11 +31,6 @@ public final class UnoCommandHelper {
     }
 
    
-    public static void postAndWait(Document doc, String command, String arguments) throws InterruptedException {
-        postAndWait(doc, command, arguments, DEFAULT_TIMEOUT_MS);
-    }
-
-   
     public static void postAndWait(Document doc, String command, String arguments, long timeoutMs)
             throws InterruptedException {
         synchronized (lock) {
@@ -57,9 +52,5 @@ public final class UnoCommandHelper {
 
     public static void postFireAndForget(Document doc, String command) {
         doc.postUnoCommand(command, "", false);
-    }
-
-    public static void postFireAndForget(Document doc, String command, String arguments) {
-        doc.postUnoCommand(command, arguments, false);
     }
 }

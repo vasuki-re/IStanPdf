@@ -23,11 +23,6 @@ public final class PdfMerge {
     }
 
     public static void run(Context ctx, List<Uri> src, List<Integer> rotations, Uri dst) throws Exception {
-        run(ctx, src, rotations, dst, null);
-    }
-
-    public static void run(Context ctx, List<Uri> src, List<Integer> rotations, Uri dst,
-                            PdfProgressCallback callback) throws Exception {
         File tempOut = File.createTempFile("merged_", ".pdf", ctx.getCacheDir());
         List<File> tempIns = new ArrayList<>();
         try {
@@ -52,10 +47,6 @@ public final class PdfMerge {
                         pageOffset += srcPages;
                     } finally {
                         srcDoc.close();
-                    }
-
-                    if (callback != null) {
-                        callback.onProgress(i + 1, src.size());
                     }
                 }
 
