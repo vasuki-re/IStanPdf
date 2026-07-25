@@ -165,9 +165,96 @@ public class MainActivity extends AppCompatActivity {
 
         android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
         checkForUpdates();
+        showSponsorDialogOnStartup();
 
         if (prefs.getBoolean("improve_docx_perf", false)) {
             AppModule.get().docxEngine().preLoad();
+        }
+    }
+
+    private void showSponsorDialogOnStartup() {
+        android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        if (prefs.getBoolean("never_show_sponsor", false)) {
+            return;
+        }
+
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        dialog.setCancelable(false);
+
+        LinearLayout dialogRoot = new LinearLayout(this);
+        dialogRoot.setOrientation(LinearLayout.VERTICAL);
+        android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+        gd.setColor(color(R.color.istan_surface));
+        gd.setCornerRadius(dp(28));
+        gd.setStroke(dp(1), color(R.color.istan_outline));
+        dialogRoot.setBackground(gd);
+        dialogRoot.setPadding(dp(24), dp(24), dp(24), dp(24));
+
+        TextView title = text("Sponsor this project", 22, R.color.istan_text, true);
+        title.setGravity(Gravity.CENTER);
+        title.setPadding(0, 0, 0, dp(16));
+        dialogRoot.addView(title);
+
+        TextView body = text("This project is completely community-driven and relies on donations to keep development alive. If you find this app useful, please consider sponsoring!", 14, R.color.istan_text_muted, false);
+        body.setGravity(Gravity.CENTER);
+        body.setLineSpacing(0, 1.2f);
+        body.setPadding(0, 0, 0, dp(24));
+        dialogRoot.addView(body);
+
+        LinearLayout checkRow = new LinearLayout(this);
+        checkRow.setOrientation(LinearLayout.HORIZONTAL);
+        checkRow.setGravity(Gravity.CENTER_VERTICAL);
+        checkRow.setPadding(dp(8), 0, 0, dp(24));
+
+        android.widget.CheckBox checkBox = new android.widget.CheckBox(this);
+        checkBox.setButtonTintList(android.content.res.ColorStateList.valueOf(color(R.color.istan_text)));
+        checkRow.addView(checkBox);
+
+        TextView checkText = text("Never show again", 14, R.color.istan_text, false);
+        checkText.setPadding(dp(8), 0, 0, 0);
+        checkText.setOnClickListener(v -> checkBox.setChecked(!checkBox.isChecked()));
+        checkRow.addView(checkText);
+
+        dialogRoot.addView(checkRow);
+
+        TextView btnSponsor = text("💖 Sponsor on GitHub", 16, android.R.color.white, true);
+        btnSponsor.setGravity(Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable btnGd = new android.graphics.drawable.GradientDrawable();
+        btnGd.setColor(color(R.color.istan_olive));
+        btnGd.setCornerRadius(dp(100));
+        btnSponsor.setBackground(btnGd);
+        btnSponsor.setPadding(0, dp(16), 0, dp(16));
+        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        btnParams.bottomMargin = dp(12);
+        btnSponsor.setLayoutParams(btnParams);
+        btnSponsor.setOnClickListener(v -> {
+            if (checkBox.isChecked()) {
+                prefs.edit().putBoolean("never_show_sponsor", true).apply();
+            }
+            dialog.dismiss();
+            showDonationPicker(null);
+        });
+        dialogRoot.addView(btnSponsor);
+
+        TextView btnNotNow = text("Not now", 14, R.color.istan_text, true);
+        btnNotNow.setGravity(Gravity.CENTER);
+        btnNotNow.setPadding(0, dp(12), 0, dp(12));
+        btnNotNow.setOnClickListener(v -> {
+            if (checkBox.isChecked()) {
+                prefs.edit().putBoolean("never_show_sponsor", true).apply();
+            }
+            dialog.dismiss();
+        });
+        dialogRoot.addView(btnNotNow);
+
+        dialog.setContentView(dialogRoot);
+        dialog.show();
+
+        android.view.Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout((int)(getResources().getDisplayMetrics().widthPixels * 0.9), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
 
