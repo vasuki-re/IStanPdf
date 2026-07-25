@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class UnoCommandHelper {
 
-    private static final long DEFAULT_TIMEOUT_MS = 5000;
+    private static final long DEFAULT_TIMEOUT_MS = 1000;
 
     private static final Object lock = new Object();
 

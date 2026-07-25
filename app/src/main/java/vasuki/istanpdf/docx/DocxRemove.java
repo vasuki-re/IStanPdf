@@ -99,16 +99,16 @@ public final class DocxRemove {
                 throw new InterruptedException("Operation cancelled");
             }
             doc.setPart(page.originalIndex);
-            UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel");
-            UnoCommandHelper.postAndWait(doc, ".uno:Delete");
             if (page.originalIndex == last) {
+                UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel");
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete");
                 if (page.originalIndex > 0) {
                     UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace");
                 }
                 last--;
             } else {
-                UnoCommandHelper.postFireAndForget(doc, ".uno:GoRight");
-                UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace");
+                UnoCommandHelper.postAndWait(doc, ".uno:GoToStartOfNextPageSel");
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete");
             }
         }
     }

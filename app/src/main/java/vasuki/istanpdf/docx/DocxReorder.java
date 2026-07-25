@@ -104,15 +104,15 @@ public final class DocxReorder {
             if (Thread.interrupted()) throw new InterruptedException("Operation cancelled");
             int pageIdx = indices.get(i);
             doc.setPart(pageIdx);
-            UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel");
-            UnoCommandHelper.postAndWait(doc, ".uno:Delete");
             if (pageIdx == currentTotal - 1) {
+                UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel");
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete");
                 if (pageIdx > 0) {
                     UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace");
                 }
             } else {
-                UnoCommandHelper.postFireAndForget(doc, ".uno:GoRight");
-                UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace");
+                UnoCommandHelper.postAndWait(doc, ".uno:GoToStartOfNextPageSel");
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete");
             }
             currentTotal--;
         }
@@ -146,15 +146,15 @@ public final class DocxReorder {
         for (int k = count - 1; k >= 0; k--) {
             if (Thread.interrupted()) throw new InterruptedException("Operation cancelled");
             doc.setPart(k);
-            UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel");
-            UnoCommandHelper.postAndWait(doc, ".uno:Delete");
             if (k == count - 1) {
+                UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel");
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete");
                 if (k > 0) {
                     UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace");
                 }
             } else {
-                UnoCommandHelper.postFireAndForget(doc, ".uno:GoRight");
-                UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace");
+                UnoCommandHelper.postAndWait(doc, ".uno:GoToStartOfNextPageSel");
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete");
             }
         }
     }
