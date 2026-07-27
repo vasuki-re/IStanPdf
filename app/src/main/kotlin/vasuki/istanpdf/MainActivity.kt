@@ -703,6 +703,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (requestCode == REQ_PICK_DOCX_TO_PDF) {
+            val docxUri = data.data ?: return
+            editorViewModel.clearPendingUris()
+            editorViewModel.pendingUris.add(docxUri)
+            val prefix = getDisplayName(docxUri)
+            createDocument(MIME_PDF, "${prefix}_converted.pdf", REQ_SAVE_DOCX_TO_PDF)
+            return
+        }
+
         val destination = data.data ?: return
         val pages = editorViewModel.pages
         val pendingUris = editorViewModel.pendingUris
@@ -715,6 +724,19 @@ class MainActivity : AppCompatActivity() {
             runJob("Converting Images...") { AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination) }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG) {
             runJob("Converting to JPGs...") { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination) }
+        } else if (requestCode == REQ_SAVE_DOCX_TO_PDF) {
+            runJob("Converting DOCX to PDF...") {
+                val docxUri = pendingUris[0]
+                val pdfFile = AppModule.get().docxToPdf.execute(docxUri)
+                contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
+                    contentResolver.openOutputStream(destination)?.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (pdfFile.exists()) {
+                    pdfFile.delete()
+                }
+            }
         } else if (requestCode == REQ_SAVE_REORDER_PDF || requestCode == REQ_SAVE_REORDER_DOCX_EXPORT) {
             val source = editorViewModel.reorderSource ?: return
             val snapshot = ArrayList(pages)
@@ -766,6 +788,7 @@ class MainActivity : AppCompatActivity() {
             override fun onModifyPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_REORDER_PDF) }
             override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp"), REQ_PICK_IMAGES_TO_PDF) }
             override fun onPdfToImage() { pickOne(arrayOf(MIME_PDF), REQ_PICK_PDF_TO_JPG) }
+            override fun onDocxToPdf() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
             override fun onDocxRemovePages() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX) }
             override fun onDocxReorderPages() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX_EXPORT) }
             override fun onSupportDeveloper() { showDonationPicker(null) }
@@ -851,18 +874,8 @@ class MainActivity : AppCompatActivity() {
 
         if ("Images to PDF" == titleText) {
         } else if (!removed && !reordered && !rotated && !pagesAdded) {
-            if ("Reorder Pages from DOCX" == titleText) {
-                val msg = text("No pages were modified. Do you still want to save the document as a PDF?", 14, R.color.istan_text_muted, false)
-                msg.setPadding(0, dp(8), 0, dp(8))
-                showCustomDialog("Save without changes?", msg, "Cancel", null, "Save as PDF") {
-                    val prefix = editorViewModel.originalFileName ?: getDisplayName(editorViewModel.reorderSource)
-                    createDocument(MIME_PDF, "$prefix.pdf", REQ_SAVE_REORDER_PDF)
-                }
-                return
-            } else {
-                status?.text = "No changes to save."
-                return
-            }
+            status?.text = "No changes to save."
+            return
         }
 
         var changedCount = 0
@@ -1492,6 +1505,9 @@ class MainActivity : AppCompatActivity() {
         private const val REQ_PICK_DOCX_ADD = 37
         private const val REQ_PICK_PDF_ADD = 38
         private const val REQ_PICK_MERGE_PDF_ADD = 39
+
+        private const val REQ_PICK_DOCX_TO_PDF = 40
+        private const val REQ_SAVE_DOCX_TO_PDF = 41
 
         private const val MIME_PDF = "application/pdf"
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
