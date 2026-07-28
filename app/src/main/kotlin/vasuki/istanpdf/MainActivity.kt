@@ -59,50 +59,10 @@ class MainActivity : AppCompatActivity() {
     private var activeReq = 0
     private var themeToken: String? = null
     private lateinit var docLauncher: ActivityResultLauncher<Intent>
-    private var activeBlinkTimer: CountDownTimer? = null
-
+    
     private lateinit var editorViewModel: EditorViewModel
 
-    private val blinkHandler = Handler(Looper.getMainLooper())
-    private val blinkRunnable = object : Runnable {
-        private var isDev = false
-        override fun run() {
-            if (status != null && (loadingOverlay == null || loadingOverlay!!.visibility != View.VISIBLE)) {
-                val current = status!!.text.toString()
-                if (current == "Ready" || current == "Dev By Ramakanth") {
-                    isDev = !isDev
-                    val nextText = if (isDev) "Dev By Ramakanth" else "Ready"
-                    val animDuration = (400 / 0.3f).toInt()
-                    activeBlinkTimer = object : CountDownTimer(animDuration.toLong(), 16L) {
-                        var textSwapped = false
-                        override fun onTick(millisUntilFinished: Long) {
-                            if (loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
-                                cancel()
-                                status!!.alpha = 1f
-                                return
-                            }
-                            val progress = 1f - (millisUntilFinished.toFloat() / animDuration)
-                            if (progress < 0.5f) {
-                                status!!.alpha = 1f - (progress * 2f)
-                            } else {
-                                if (!textSwapped) {
-                                    status!!.text = nextText
-                                    textSwapped = true
-                                }
-                                status!!.alpha = (progress - 0.5f) * 2f
-                            }
-                        }
-                        override fun onFinish() {
-                            status!!.text = nextText
-                            status!!.alpha = 1f
-                        }
-                    }.start()
-                }
-            }
-            blinkHandler.postDelayed(this, 20000)
-        }
-    }
-
+        
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -132,8 +92,7 @@ class MainActivity : AppCompatActivity() {
         pruneStaleCacheFiles()
         themeToken = ThemePrefs.token(this)
         buildHome()
-        blinkHandler.postDelayed(blinkRunnable, 20000)
-
+        
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         checkForUpdates()
         showSponsorDialogOnStartup()
@@ -412,10 +371,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         worker.shutdownNow()
-        activeBlinkTimer?.cancel()
-        activeBlinkTimer = null
-        blinkHandler.removeCallbacks(blinkRunnable)
-        editorViewModel.clearPages()
+                                editorViewModel.clearPages()
 
         super.onDestroy()
     }
@@ -1232,7 +1188,7 @@ class MainActivity : AppCompatActivity() {
         textView.textSize = sp.toFloat()
         textView.setTextColor(color(colorRes))
         textView.typeface = if (bold) boldFont else regularFont
-        textView.includeFontPadding = true
+        textView.includeFontPadding = false
         return textView
     }
 

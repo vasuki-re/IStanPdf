@@ -26,13 +26,21 @@ object ThemePrefs {
     data class Accent(val name: String, val base: Int, val dark: Int)
 
     val ACCENTS = arrayOf(
-        Accent("Olive", Color.parseColor("#728241"), Color.parseColor("#5C6B32")),
-        Accent("Rose", Color.parseColor("#DF9D99"), Color.parseColor("#D7827E")),
-        Accent("Terracotta", Color.parseColor("#B5684A"), Color.parseColor("#85432F")),
-        Accent("Sand", Color.parseColor("#DBBC7F"), Color.parseColor("#80602F")),
-        Accent("Aqua", Color.parseColor("#83C092"), Color.parseColor("#3F7355")),
-        Accent("Gold", Color.parseColor("#F6C177"), Color.parseColor("#846022"))
+        Accent("Olive", Color.parseColor("#AEC09A"), Color.parseColor("#8FA67B")),
+        Accent("Rose", Color.parseColor("#E2B6B3"), Color.parseColor("#D49A96")),
+        Accent("Terracotta", Color.parseColor("#C28B7B"), Color.parseColor("#A66B5A")),
+        Accent("Sand", Color.parseColor("#DFCA98"), Color.parseColor("#C2A970")),
+        Accent("Aqua", Color.parseColor("#98C9A7"), Color.parseColor("#76A886")),
+        Accent("Gold", Color.parseColor("#E5CD94"), Color.parseColor("#C9AE6D"))
     )
+
+    enum class TypeScale(val sp: Float, val isBold: Boolean, val letterSpacing: Float = 0f, val isAllCaps: Boolean = false) {
+        HEADLINE(32f, true, -0.02f, false),
+        TITLE(22f, true, 0f, false),
+        BODY(16f, false, 0f, false),
+        LABEL(14f, true, 0f, false),
+        CAPTION(12f, false, 0.04f, true)
+    }
 
     private val LAUNCHER_ALIASES = arrayOf(
         "vasuki.istanpdf.LauncherOlive",
@@ -127,7 +135,7 @@ object ThemePrefs {
             R.color.istan_surface_high -> if (amoled) Color.parseColor("#1A1A1A") else tint(accent.base, Color.WHITE, 0.80f)
             R.color.istan_text -> if (amoled) Color.WHITE else Color.parseColor("#1C1C1C")
             R.color.istan_text_muted -> if (amoled) Color.parseColor("#B9B9B9") else Color.parseColor("#505548")
-            R.color.istan_outline -> if (amoled) Color.parseColor("#333333") else tint(accent.dark, Color.WHITE, 0.62f)
+            R.color.istan_outline -> if (amoled) Color.parseColor("#1A1A1A") else tint(accent.dark, Color.WHITE, 0.62f)
             else -> context.getColor(colorRes)
         }
     }

@@ -120,26 +120,31 @@ class SettingsActivity : AppCompatActivity() {
         scrollView.post { scrollView.scrollTo(0, scrollY) }
     }
 
-    private fun settingsContent(scrollView: ScrollView): View {
+        private fun settingsContent(scrollView: ScrollView): View {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-
         val selected = ThemePrefs.accentIndex(this)
         val amoled = ThemePrefs.isAmoled(this)
 
-        val accentHeader = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        body.addView(accentHeader, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        val appearanceGroup = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = roundedBackground(color(R.color.istan_surface), dp(16), dp(1))
+            clipToOutline = true
+            setPadding(0, dp(8), 0, dp(8))
+        }
 
-        val accentTitle = text("Accent", 18, R.color.istan_text, true)
-        accentHeader.addView(accentTitle)
+        val accentRow = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(8))
+        }
+        val accentTitle = text("Accent", 16, R.color.istan_text, true)
+        accentRow.addView(accentTitle)
 
         val circles = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(0, dp(12), 0, 0)
+            setPadding(0, dp(16), 0, 0)
         }
-        body.addView(circles, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        accentRow.addView(circles, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         for (i in ThemePrefs.ACCENTS.indices) {
             val circle = QuadrantCircleView(this).apply {
@@ -157,13 +162,19 @@ class SettingsActivity : AppCompatActivity() {
             }
             circles.addView(circle, LinearLayout.LayoutParams(0, dp(56), 1f))
         }
+        appearanceGroup.addView(accentRow)
+
+        appearanceGroup.addView(View(this).apply {
+            setBackgroundColor(color(R.color.istan_outline))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+            setMargins(dp(16), dp(16), dp(16), dp(16))
+        })
 
         val themeRow = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 0)
+            setPadding(dp(16), 0, dp(16), dp(8))
         }
-
-        val themeTitle = text("Theme", 18, R.color.istan_text, true)
+        val themeTitle = text("Theme", 16, R.color.istan_text, true)
         themeRow.addView(themeTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
         val modes = FrameLayout(this).apply {
@@ -176,8 +187,7 @@ class SettingsActivity : AppCompatActivity() {
             isSingleSelection = true
             isSelectionRequired = true
         }
-        modes.addView(modeGroup, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        modes.addView(modeGroup, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
 
         val auto = addThemeModeButton(modeGroup, "Auto", ThemePrefs.THEME_AUTO, mode)
         val light = addThemeModeButton(modeGroup, "Light", ThemePrefs.THEME_LIGHT, mode)
@@ -198,73 +208,62 @@ class SettingsActivity : AppCompatActivity() {
         }
         addThemeDivider(modes, 1, mode)
         addThemeDivider(modes, 2, mode)
+        appearanceGroup.addView(themeRow)
 
-        val themeRowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply {
-            setMargins(0, dp(40), 0, 0)
+        body.addView(appearanceGroup, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(24)
+        })
+
+        val generalGroup = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = roundedBackground(color(R.color.istan_surface), dp(16), dp(1))
+            clipToOutline = true
         }
-        body.addView(themeRow, themeRowLp)
 
         val updateRow = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 0)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
         }
-
-        val updateTitle = text("Check for Updates", 18, R.color.istan_text, true)
+        val updateTitle = text("Check for Updates", 16, R.color.istan_text, true)
         updateRow.addView(updateTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val switchStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-
         val updateSwitch = MaterialSwitch(this).apply {
             isChecked = prefs.getBoolean("check_updates", true)
-            thumbTintList = ColorStateList(switchStates,
-                intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
-            trackTintList = ColorStateList(switchStates,
-                intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f),
-                    color(R.color.istan_outline)))
-            setOnCheckedChangeListener { _, isChecked ->
-                prefs.edit().putBoolean("check_updates", isChecked).apply()
-            }
+            thumbTintList = ColorStateList(switchStates, intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
+            trackTintList = ColorStateList(switchStates, intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)))
+            setOnCheckedChangeListener { _, isChecked -> prefs.edit().putBoolean("check_updates", isChecked).apply() }
         }
-        updateRow.addView(updateSwitch, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        updateRow.addView(updateSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        generalGroup.addView(updateRow)
 
-        val updateRowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply {
-            setMargins(0, dp(40), 0, 0)
-        }
-        body.addView(updateRow, updateRowLp)
+        generalGroup.addView(View(this).apply {
+            setBackgroundColor(color(R.color.istan_outline))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+            setMargins(dp(16), 0, dp(16), 0)
+        })
 
         val perfRow = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 0)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
         }
-
-        val perfTitle = text("Initialize LibreOffice on startup", 18, R.color.istan_text, true)
+        val perfTitle = text("Initialize LibreOffice on startup", 16, R.color.istan_text, true)
         perfRow.addView(perfTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-
         val perfSwitch = MaterialSwitch(this).apply {
             isChecked = prefs.getBoolean("improve_docx_perf", false)
-            thumbTintList = ColorStateList(switchStates,
-                intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
-            trackTintList = ColorStateList(switchStates,
-                intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f),
-                    color(R.color.istan_outline)))
-            setOnCheckedChangeListener { _, isChecked ->
-                prefs.edit().putBoolean("improve_docx_perf", isChecked).apply()
-            }
+            thumbTintList = ColorStateList(switchStates, intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
+            trackTintList = ColorStateList(switchStates, intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)))
+            setOnCheckedChangeListener { _, isChecked -> prefs.edit().putBoolean("improve_docx_perf", isChecked).apply() }
         }
-        perfRow.addView(perfSwitch, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        perfRow.addView(perfSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        generalGroup.addView(perfRow)
 
-        val perfRowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply {
-            setMargins(0, dp(40), 0, 0)
-        }
-        body.addView(perfRow, perfRowLp)
+        body.addView(generalGroup, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(24)
+        })
 
-        body.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            setMargins(0, 0, 0, dp(18))
-        }
+        body.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         return body
     }
 

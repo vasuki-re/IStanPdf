@@ -68,7 +68,7 @@ class HomeViewBuilder(
 
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-        root.setPadding(dp(20), dp(28), dp(20), dp(16))
+        root.setPadding(dp(20), dp(32), dp(20), dp(16))
 
         scrollView.addView(root, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -80,7 +80,7 @@ class HomeViewBuilder(
         heroRow.gravity = Gravity.CENTER_VERTICAL
         root.addView(heroRow)
 
-        val title = text("", 40, R.color.istan_text, true)
+        val title = text("", 40, R.color.istan_text, true).apply { letterSpacing = -0.02f }
         val ss = SpannableString("IStanPdf")
         ss.setSpan(ForegroundColorSpan(color(R.color.istan_text)), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         ss.setSpan(ForegroundColorSpan(color(R.color.istan_olive)), 5, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -99,15 +99,15 @@ class HomeViewBuilder(
         val menuIcon = ImageView(activity)
         menuIcon.setImageResource(R.drawable.menu)
         menuIcon.setColorFilter(color(R.color.istan_olive_dark))
-        menuIcon.setPadding(dp(10), dp(10), dp(10), dp(10))
-        settingsButton.addView(menuIcon, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER))
+        menuIcon.setPadding(dp(8), dp(8), dp(8), dp(8))
+        settingsButton.addView(menuIcon, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
 
-        val settingsLp = LinearLayout.LayoutParams(dp(44), dp(44))
-        settingsLp.setMargins(dp(12), 0, 0, 0)
+        val settingsLp = LinearLayout.LayoutParams(dp(48), dp(48))
+        settingsLp.setMargins(dp(16), 0, 0, 0)
         heroRow.addView(settingsButton, settingsLp)
 
         val subtitle = text("Offline app for PDF and DOCX operations", 16, R.color.istan_text_muted, false)
-        subtitle.setPadding(0, dp(4), 0, dp(40))
+        subtitle.setPadding(0, dp(4), 0, dp(48))
         root.addView(subtitle)
 
         root.addView(createSectionHeader("PDF TOOLS"))
@@ -148,10 +148,10 @@ class HomeViewBuilder(
         statusCard.orientation = LinearLayout.HORIZONTAL
         statusCard.gravity = Gravity.CENTER
         statusCard.isBaselineAligned = false
-        statusCard.setPadding(dp(16), dp(10), dp(20), dp(10))
+        statusCard.setPadding(dp(16), dp(8), dp(24), dp(8))
         val statusBg = GradientDrawable()
         statusBg.setColor(color(R.color.istan_surface))
-        statusBg.cornerRadius = dp(28).toFloat()
+        statusBg.cornerRadius = dp(32).toFloat()
         statusBg.setStroke(dp(1), color(R.color.istan_outline))
         statusCard.background = statusBg
 
@@ -160,9 +160,9 @@ class HomeViewBuilder(
         dot.shape = GradientDrawable.OVAL
         dot.setColor(color(R.color.istan_olive))
         statusIndicator!!.setImageDrawable(dot)
-        statusCard.addView(statusIndicator, LinearLayout.LayoutParams(dp(12), dp(12)))
+        statusCard.addView(statusIndicator, LinearLayout.LayoutParams(dp(16), dp(16)))
 
-        status = text(WAITING_TEXT, 15, R.color.istan_olive, false)
+        status = text(WAITING_TEXT, 16, R.color.istan_olive, false)
         status!!.gravity = Gravity.CENTER_VERTICAL
         status!!.setPadding(dp(8), 0, 0, 0)
         statusCard.addView(status, LinearLayout.LayoutParams(
@@ -174,7 +174,7 @@ class HomeViewBuilder(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        scParams.setMargins(0, 0, 0, dp(24))
+        scParams.setMargins(0, dp(16), 0, dp(24))
         scParams.gravity = Gravity.CENTER_HORIZONTAL
         root.addView(statusCard, scParams)
 
@@ -184,7 +184,7 @@ class HomeViewBuilder(
             e.printStackTrace()
             ""
         }
-        val footerText = text(versionName, 15, R.color.istan_text_muted, false)
+        val footerText = text(versionName, 16, R.color.istan_text_muted, false)
         val ftParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
@@ -255,7 +255,7 @@ class HomeViewBuilder(
         val row = LinearLayout(activity)
         row.gravity = Gravity.CENTER_VERTICAL
         row.isBaselineAligned = false
-        row.setPadding(dp(12), dp(20), dp(12), dp(20))
+        row.setPadding(dp(12), dp(20), dp(16), dp(20))
         row.orientation = LinearLayout.HORIZONTAL
         card.addView(row)
 
@@ -282,7 +282,7 @@ class HomeViewBuilder(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        params.setMargins(dp(8), dp(8), dp(8), dp(8))
+        params.setMargins(dp(8), dp(8), dp(8), dp(16))
         card.layoutParams = params
         return card
     }
@@ -302,7 +302,7 @@ class HomeViewBuilder(
         val header = text(title, 12, R.color.istan_text_muted, true)
         header.isAllCaps = true
         header.letterSpacing = 0.1f
-        header.setPadding(dp(6), dp(32), 0, dp(8))
+        header.setPadding(dp(8), dp(32), 0, dp(8))
         return header
     }
 
@@ -312,7 +312,7 @@ class HomeViewBuilder(
         textView.textSize = sp.toFloat()
         textView.setTextColor(color(colorRes))
         textView.typeface = if (bold) boldFont else regularFont
-        textView.includeFontPadding = true
+        textView.includeFontPadding = false
         return textView
     }
 
