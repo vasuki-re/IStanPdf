@@ -698,42 +698,46 @@ class EditorViewBuilder(
                     cardLp.gravity = Gravity.CENTER
                     cardContainer.addView(imgCard, cardLp)
 
-                    val bottomControls = LinearLayout(activity)
-                    bottomControls.orientation = LinearLayout.HORIZONTAL
-                    bottomControls.gravity = Gravity.CENTER_VERTICAL
-                    bottomControls.isBaselineAligned = false
-                    bottomControls.setPadding(dp(24), dp(8), dp(24), dp(8))
-
+                    val bottomBar = FrameLayout(activity)
                     val pageCounter = text("", 16, R.color.istan_surface, true)
                     pageCounter.setTextColor(Color.WHITE)
-                    bottomControls.addView(pageCounter)
+                    val pcLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    pcLp.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                    pcLp.setMargins(dp(24), 0, 0, 0)
+                    bottomBar.addView(pageCounter, pcLp)
 
-                    val spacerBottom = View(activity)
-                    bottomControls.addView(spacerBottom, LinearLayout.LayoutParams(0, 0, 1f))
+                    val pillBg = android.graphics.drawable.GradientDrawable()
+                    pillBg.setColor(Color.parseColor("#22FFFFFF"))
+                    pillBg.cornerRadius = dp(32).toFloat()
+                    val controlsPill = LinearLayout(activity)
+                    controlsPill.orientation = LinearLayout.HORIZONTAL
+                    controlsPill.gravity = Gravity.CENTER_VERTICAL
+                    controlsPill.isBaselineAligned = false
+                    controlsPill.background = pillBg
+                    controlsPill.setPadding(dp(4), dp(4), dp(4), dp(4))
 
-                    val backTxt = TextView(activity)
-                    backTxt.text = "Back"
-                    backTxt.setTextColor(Color.parseColor("#AAAAAA"))
-                    backTxt.textSize = 14f
-                    backTxt.setPadding(0, 0, dp(16), 0)
-                    bottomControls.addView(backTxt)
+                    val backBtn = TextView(activity)
+                    backBtn.text = "‹"
+                    backBtn.setTextColor(Color.WHITE)
+                    backBtn.textSize = 28f
+                    backBtn.gravity = Gravity.CENTER
+                    backBtn.typeface = boldFont
+                    backBtn.setPadding(0, 0, dp(2), dp(2))
+                    controlsPill.addView(backBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
 
                     val rotLeft = ImageView(activity)
                     rotLeft.setImageResource(R.drawable.rotate_left)
                     rotLeft.setColorFilter(Color.WHITE)
-                    rotLeft.setPadding(dp(8), dp(8), dp(8), dp(8))
+                    rotLeft.setPadding(dp(11), dp(11), dp(11), dp(11))
                     if (hideRotate) rotLeft.visibility = View.GONE
-                    bottomControls.addView(rotLeft, LinearLayout.LayoutParams(dp(40), dp(40)))
+                    controlsPill.addView(rotLeft, LinearLayout.LayoutParams(dp(48), dp(48)))
 
                     val rotRight = ImageView(activity)
                     rotRight.setImageResource(R.drawable.rotate_right)
                     rotRight.setColorFilter(Color.WHITE)
-                    rotRight.setPadding(dp(8), dp(8), dp(8), dp(8))
+                    rotRight.setPadding(dp(11), dp(11), dp(11), dp(11))
                     if (hideRotate) rotRight.visibility = View.GONE
-                    bottomControls.addView(rotRight, LinearLayout.LayoutParams(dp(40), dp(40)))
-
-                    val sepCb = View(activity)
-                    bottomControls.addView(sepCb, LinearLayout.LayoutParams(dp(16), 0))
+                    controlsPill.addView(rotRight, LinearLayout.LayoutParams(dp(48), dp(48)))
 
                     val cbColors = android.content.res.ColorStateList(
                         arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
@@ -742,14 +746,21 @@ class EditorViewBuilder(
                     val keepBox = CheckBox(activity)
                     keepBox.buttonTintList = cbColors
                     keepBox.text = "Keep"
-                    keepBox.textSize = 14f
+                    keepBox.textSize = 16f
                     keepBox.setTextColor(Color.WHITE)
-                    keepBox.setPadding(dp(8), 0, 0, 0)
-                    val keepLpDialog = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    keepBox.setPadding(dp(2), 0, dp(14), 0)
+                    val keepLpDialog = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48))
                     keepLpDialog.gravity = Gravity.CENTER_VERTICAL
-                    bottomControls.addView(keepBox, keepLpDialog)
+                    controlsPill.addView(keepBox, keepLpDialog)
 
-                    dialogRoot.addView(bottomControls, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                    val pillLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    pillLp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                    pillLp.setMargins(0, 0, dp(16), 0)
+                    bottomBar.addView(controlsPill, pillLp)
+
+                    val bottomBarLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64))
+                    bottomBarLp.setMargins(0, dp(4), 0, dp(8))
+                    dialogRoot.addView(bottomBar, bottomBarLp)
 
                     val currentPos = intArrayOf(holder.bindingAdapterPosition)
 
@@ -833,7 +844,7 @@ class EditorViewBuilder(
                         }
                     })
 
-                    backTxt.setOnClickListener { dialog.dismiss() }
+                    backBtn.setOnClickListener { dialog.dismiss() }
                     closeBtn.setOnClickListener { dialog.dismiss() }
                     dialog.setContentView(dialogRoot)
                     dialog.show()
@@ -892,42 +903,46 @@ class EditorViewBuilder(
                     cardLp2.gravity = Gravity.CENTER
                     cardContainer.addView(imgCard, cardLp2)
 
-                    val bottomControls = LinearLayout(activity)
-                    bottomControls.orientation = LinearLayout.HORIZONTAL
-                    bottomControls.gravity = Gravity.CENTER_VERTICAL
-                    bottomControls.isBaselineAligned = false
-                    bottomControls.setPadding(dp(24), dp(8), dp(24), dp(8))
-
+                    val bottomBar2 = FrameLayout(activity)
                     val pageCounter = text("", 16, R.color.istan_surface, true)
                     pageCounter.setTextColor(Color.WHITE)
-                    bottomControls.addView(pageCounter)
+                    val pcLp2 = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    pcLp2.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                    pcLp2.setMargins(dp(24), 0, 0, 0)
+                    bottomBar2.addView(pageCounter, pcLp2)
 
-                    val spacerBottom = View(activity)
-                    bottomControls.addView(spacerBottom, LinearLayout.LayoutParams(0, 0, 1f))
+                    val pillBg2 = android.graphics.drawable.GradientDrawable()
+                    pillBg2.setColor(Color.parseColor("#22FFFFFF"))
+                    pillBg2.cornerRadius = dp(32).toFloat()
+                    val controlsPill2 = LinearLayout(activity)
+                    controlsPill2.orientation = LinearLayout.HORIZONTAL
+                    controlsPill2.gravity = Gravity.CENTER_VERTICAL
+                    controlsPill2.isBaselineAligned = false
+                    controlsPill2.background = pillBg2
+                    controlsPill2.setPadding(dp(4), dp(4), dp(4), dp(4))
 
-                    val backTxt = TextView(activity)
-                    backTxt.text = "Back"
-                    backTxt.setTextColor(Color.parseColor("#AAAAAA"))
-                    backTxt.textSize = 14f
-                    backTxt.setPadding(0, 0, dp(16), 0)
-                    bottomControls.addView(backTxt)
+                    val backBtn2 = TextView(activity)
+                    backBtn2.text = "‹"
+                    backBtn2.setTextColor(Color.WHITE)
+                    backBtn2.textSize = 28f
+                    backBtn2.gravity = Gravity.CENTER
+                    backBtn2.typeface = boldFont
+                    backBtn2.setPadding(0, 0, dp(2), dp(2))
+                    controlsPill2.addView(backBtn2, LinearLayout.LayoutParams(dp(48), dp(48)))
 
                     val rotLeft = ImageView(activity)
                     rotLeft.setImageResource(R.drawable.rotate_left)
                     rotLeft.setColorFilter(Color.WHITE)
-                    rotLeft.setPadding(dp(8), dp(8), dp(8), dp(8))
+                    rotLeft.setPadding(dp(11), dp(11), dp(11), dp(11))
                     if (hideRotate) rotLeft.visibility = View.GONE
-                    bottomControls.addView(rotLeft, LinearLayout.LayoutParams(dp(40), dp(40)))
+                    controlsPill2.addView(rotLeft, LinearLayout.LayoutParams(dp(48), dp(48)))
 
                     val rotRight = ImageView(activity)
                     rotRight.setImageResource(R.drawable.rotate_right)
                     rotRight.setColorFilter(Color.WHITE)
-                    rotRight.setPadding(dp(8), dp(8), dp(8), dp(8))
+                    rotRight.setPadding(dp(11), dp(11), dp(11), dp(11))
                     if (hideRotate) rotRight.visibility = View.GONE
-                    bottomControls.addView(rotRight, LinearLayout.LayoutParams(dp(40), dp(40)))
-
-                    val sepCb = View(activity)
-                    bottomControls.addView(sepCb, LinearLayout.LayoutParams(dp(16), 0))
+                    controlsPill2.addView(rotRight, LinearLayout.LayoutParams(dp(48), dp(48)))
 
                     val cbColors2 = android.content.res.ColorStateList(
                         arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
@@ -936,15 +951,22 @@ class EditorViewBuilder(
                     val keepBox = CheckBox(activity)
                     keepBox.buttonTintList = cbColors2
                     keepBox.text = "Keep"
-                    keepBox.textSize = 14f
+                    keepBox.textSize = 16f
                     keepBox.setTextColor(Color.WHITE)
-                    keepBox.setPadding(dp(8), 0, 0, 0)
+                    keepBox.setPadding(dp(2), 0, dp(14), 0)
                     if (actions.getPages().size <= 1) keepBox.visibility = View.GONE
-                    val keepLpDialog2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    val keepLpDialog2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48))
                     keepLpDialog2.gravity = Gravity.CENTER_VERTICAL
-                    bottomControls.addView(keepBox, keepLpDialog2)
+                    controlsPill2.addView(keepBox, keepLpDialog2)
 
-                    dialogRoot2.addView(bottomControls, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                    val pillLp2 = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    pillLp2.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                    pillLp2.setMargins(0, 0, dp(16), 0)
+                    bottomBar2.addView(controlsPill2, pillLp2)
+
+                    val bottomBarLp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64))
+                    bottomBarLp2.setMargins(0, dp(4), 0, dp(8))
+                    dialogRoot2.addView(bottomBar2, bottomBarLp2)
 
                     val currentPos = intArrayOf(holder.bindingAdapterPosition)
 
@@ -1026,7 +1048,7 @@ class EditorViewBuilder(
                         }
                     })
 
-                    backTxt.setOnClickListener { dialog.dismiss() }
+                    backBtn2.setOnClickListener { dialog.dismiss() }
                     closeBtn.setOnClickListener { dialog.dismiss() }
                     dialog.setContentView(dialogRoot2)
                     dialog.show()
