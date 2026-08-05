@@ -46,4 +46,9 @@ dependencies {
     implementation(libs.itext7.layout)
     implementation(libs.itext7.html2pdf)
     implementation(libs.commonmark)
+    implementation(libs.commonmark.tables)
+    implementation(libs.commonmark.strikethrough)
+    implementation(libs.commonmark.tasklist)
+    implementation(libs.commonmark.autolink)
+    implementation(libs.commonmark.ins)
 }

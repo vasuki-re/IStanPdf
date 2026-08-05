@@ -23,3 +23,8 @@ itext7-io = { group = "com.itextpdf", name = "io", version.ref = "itext7" }
 itext7-layout = { group = "com.itextpdf", name = "layout", version.ref = "itext7" }
 itext7-html2pdf = { group = "com.itextpdf", name = "html2pdf", version.ref = "itext7-html2pdf" }
 commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
+commonmark-tables = { group = "org.commonmark", name = "commonmark-ext-gfm-tables", version.ref = "commonmark" }
+commonmark-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
+commonmark-tasklist = { group = "org.commonmark", name = "commonmark-ext-task-list-items", version.ref = "commonmark" }
+commonmark-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
+commonmark-ins = { group = "org.commonmark", name = "commonmark-ext-ins", version.ref = "commonmark" }
