@@ -6,6 +6,8 @@ appcompat = "1.7.1"
 material = "1.13.0"
 constraintlayout = "2.2.1"
 itext7 = "8.0.5"
+commonmark = "0.24.0"
+itext7-html2pdf = "5.0.5"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -19,3 +21,5 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 itext7-kernel = { group = "com.itextpdf", name = "kernel", version.ref = "itext7" }
 itext7-io = { group = "com.itextpdf", name = "io", version.ref = "itext7" }
 itext7-layout = { group = "com.itextpdf", name = "layout", version.ref = "itext7" }
+itext7-html2pdf = { group = "com.itextpdf", name = "html2pdf", version.ref = "itext7-html2pdf" }
+commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }

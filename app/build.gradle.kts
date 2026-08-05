@@ -44,4 +44,6 @@ dependencies {
     implementation(libs.itext7.kernel)
     implementation(libs.itext7.io)
     implementation(libs.itext7.layout)
+    implementation(libs.itext7.html2pdf)
+    implementation(libs.commonmark)
 }

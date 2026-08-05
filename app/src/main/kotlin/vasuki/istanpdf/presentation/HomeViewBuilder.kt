@@ -34,6 +34,7 @@ class HomeViewBuilder(
         fun onImageToPdf()
         fun onPdfToImage()
         fun onDocxToPdf()
+        fun onMdToPdf()
         fun onDocxRemovePages()
         fun onDocxReorderPages()
         fun onSupportDeveloper()
@@ -127,9 +128,7 @@ class HomeViewBuilder(
         val convRow2 = LinearLayout(activity)
         convRow2.orientation = LinearLayout.HORIZONTAL
         convRow2.addView(dashboardCard("DOCX to PDF", R.drawable.docx2pdf_24px, actions::onDocxToPdf))
-        val emptySpacer = dashboardCard("", 0, {})
-        emptySpacer.visibility = View.INVISIBLE
-        convRow2.addView(emptySpacer)
+        convRow2.addView(dashboardCard("MD to PDF", R.drawable.md2pdf_24px, actions::onMdToPdf))
         root.addView(convRow2)
 
         root.addView(createSectionHeader("DOCX TOOLS"))

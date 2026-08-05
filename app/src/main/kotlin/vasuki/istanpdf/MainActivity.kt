@@ -668,6 +668,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (requestCode == REQ_PICK_MD_TO_PDF) {
+            val mdUri = data.data ?: return
+            editorViewModel.clearPendingUris()
+            editorViewModel.pendingUris.add(mdUri)
+            val prefix = getDisplayName(mdUri)
+            createDocument(MIME_PDF, "${prefix}_converted.pdf", REQ_SAVE_MD_TO_PDF)
+            return
+        }
+
         val destination = data.data ?: return
         val pages = editorViewModel.pages
         val pendingUris = editorViewModel.pendingUris
@@ -684,6 +693,19 @@ class MainActivity : AppCompatActivity() {
             runJob("Converting DOCX to PDF...") {
                 val docxUri = pendingUris[0]
                 val pdfFile = AppModule.get().docxToPdf.execute(docxUri)
+                contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
+                    contentResolver.openOutputStream(destination)?.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (pdfFile.exists()) {
+                    pdfFile.delete()
+                }
+            }
+        } else if (requestCode == REQ_SAVE_MD_TO_PDF) {
+            runJob("Converting Markdown to PDF...") {
+                val mdUri = pendingUris[0]
+                val pdfFile = AppModule.get().mdToPdf.execute(mdUri)
                 contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
                     contentResolver.openOutputStream(destination)?.use { output ->
                         input.copyTo(output)
@@ -745,6 +767,7 @@ class MainActivity : AppCompatActivity() {
             override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp"), REQ_PICK_IMAGES_TO_PDF) }
             override fun onPdfToImage() { pickOne(arrayOf(MIME_PDF), REQ_PICK_PDF_TO_JPG) }
             override fun onDocxToPdf() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
+            override fun onMdToPdf() { pickOne(arrayOf(MIME_MD, "text/plain"), REQ_PICK_MD_TO_PDF) }
             override fun onDocxRemovePages() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX) }
             override fun onDocxReorderPages() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX_EXPORT) }
             override fun onSupportDeveloper() { showDonationPicker(null) }
@@ -1465,8 +1488,12 @@ class MainActivity : AppCompatActivity() {
         private const val REQ_PICK_DOCX_TO_PDF = 40
         private const val REQ_SAVE_DOCX_TO_PDF = 41
 
+        private const val REQ_PICK_MD_TO_PDF = 42
+        private const val REQ_SAVE_MD_TO_PDF = 43
+
         private const val MIME_PDF = "application/pdf"
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        private const val MIME_MD = "text/markdown"
         private const val WAITING_TEXT = "Ready"
     }
 }
