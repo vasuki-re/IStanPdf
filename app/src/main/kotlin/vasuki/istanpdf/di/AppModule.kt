@@ -5,6 +5,7 @@ import vasuki.istanpdf.data.CacheManager
 import vasuki.istanpdf.data.DocxEngine
 import vasuki.istanpdf.data.DocumentManager
 import vasuki.istanpdf.data.PdfEngine
+import vasuki.istanpdf.domain.CompressPdf
 import vasuki.istanpdf.domain.DocxToPdf
 import vasuki.istanpdf.domain.ImagesToPdf
 import vasuki.istanpdf.domain.MdToPdf
@@ -25,6 +26,7 @@ class AppModule private constructor(context: Context) {
     val reorderPdf = ReorderPdf(pdfEngine)
     val imagesToPdf = ImagesToPdf(pdfEngine)
     val pdfToJpeg = PdfToJpeg(pdfEngine)
+    val compressPdf = CompressPdf(pdfEngine)
     val docxToPdf = DocxToPdf(docxEngine)
     val mdToPdf = MdToPdf(ctx)
     val saveDocx = SaveDocx(docxEngine)

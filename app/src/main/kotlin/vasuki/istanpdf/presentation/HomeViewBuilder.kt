@@ -31,6 +31,7 @@ class HomeViewBuilder(
     interface HomeActions {
         fun onMergePdf()
         fun onModifyPdf()
+        fun onCompressPdf()
         fun onImageToPdf()
         fun onPdfToImage()
         fun onDocxToPdf()
@@ -64,6 +65,7 @@ class HomeViewBuilder(
         val scrollView = ScrollView(activity)
         scrollView.isFillViewport = true
         scrollView.isVerticalScrollBarEnabled = false
+        scrollView.overScrollMode = View.OVER_SCROLL_NEVER
         val scrollParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f)
         mainContainer.addView(scrollView, scrollParams)
 
@@ -117,6 +119,16 @@ class HomeViewBuilder(
         pdfRow1.addView(dashboardCard("Merge PDF", R.drawable.merge_24px, actions::onMergePdf))
         pdfRow1.addView(dashboardCard("Modify PDF", R.drawable.modify_pdf_24px, actions::onModifyPdf))
         root.addView(pdfRow1)
+
+        val pdfRow2 = LinearLayout(activity)
+        pdfRow2.orientation = LinearLayout.HORIZONTAL
+        pdfRow2.addView(dashboardCard("Compress PDF", R.drawable.compress_pdf_24px, actions::onCompressPdf))
+        val spacer = View(activity)
+        spacer.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f).apply {
+            setMargins(dp(8), dp(8), dp(8), dp(8))
+        }
+        pdfRow2.addView(spacer)
+        root.addView(pdfRow2)
 
         root.addView(createSectionHeader("CONVERSIONS"))
         val convRow1 = LinearLayout(activity)

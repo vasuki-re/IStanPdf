@@ -59,7 +59,12 @@ class MainActivity : AppCompatActivity() {
     private var activeReq = 0
     private var themeToken: String? = null
     private lateinit var docLauncher: ActivityResultLauncher<Intent>
-    
+
+    private var compressMode = COMPRESS_MODE_RESOLUTION
+    private var compressDpi = 150
+    private var compressQuality = 70
+    private var compressTargetBytes = 0L
+
     private lateinit var editorViewModel: EditorViewModel
 
         
@@ -670,10 +675,62 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == REQ_PICK_MD_TO_PDF) {
             val mdUri = data.data ?: return
+            try {
+                val cursor = contentResolver.query(mdUri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        val fileSize = cursor.getLong(0)
+                        if (fileSize == 0L) {
+                            cursor.close()
+                            toast("Error: File is empty (0 bytes)")
+                            return
+                        }
+                    }
+                    cursor.close()
+                }
+            } catch (_: Exception) {}
             editorViewModel.clearPendingUris()
             editorViewModel.pendingUris.add(mdUri)
             val prefix = getDisplayName(mdUri)
             createDocument(MIME_PDF, "${prefix}_converted.pdf", REQ_SAVE_MD_TO_PDF)
+            return
+        }
+
+        if (requestCode == REQ_PICK_COMPRESS_PDF) {
+            val pdfUri = data.data ?: return
+            try {
+                val cursor = contentResolver.query(pdfUri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        val fileSize = cursor.getLong(0)
+                        if (fileSize == 0L) {
+                            cursor.close()
+                            toast("Error: PDF file is empty (0 bytes)")
+                            return
+                        }
+                    }
+                    cursor.close()
+                }
+            } catch (_: Exception) {}
+            editorViewModel.clearPendingUris()
+            editorViewModel.pendingUris.add(pdfUri)
+            worker.submit {
+                val hasImages = try {
+                    AppModule.get().compressPdf.hasEmbeddedImages(pdfUri)
+                } catch (_: Exception) { true }
+                runOnUiThread {
+                    if (!hasImages) {
+                        showCustomDialog(
+                            "No Images Found",
+                            text("This PDF has no embedded images. Compression may not significantly reduce file size.", 14, R.color.istan_text_muted, false),
+                            "Cancel", null,
+                            "Continue", Runnable { showCompressModeDialog(pdfUri) }
+                        )
+                    } else {
+                        showCompressModeDialog(pdfUri)
+                    }
+                }
+            }
             return
         }
 
@@ -713,6 +770,20 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (pdfFile.exists()) {
                     pdfFile.delete()
+                }
+            }
+        } else if (requestCode == REQ_SAVE_COMPRESS_PDF) {
+            val source = pendingUris[0]
+            if (compressMode == COMPRESS_MODE_RESOLUTION) {
+                runJob("Compressing PDF...") {
+                    AppModule.get().compressPdf.executeByResolution(source, destination, compressDpi, compressQuality)
+                }
+            } else {
+                runJob("Compressing PDF...") {
+                    val actual = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
+                    if (actual > compressTargetBytes) {
+                        runOnUiThread { toast("Could not reach target. Saved at ${actual / 1024} KB.") }
+                    }
                 }
             }
         } else if (requestCode == REQ_SAVE_REORDER_PDF || requestCode == REQ_SAVE_REORDER_DOCX_EXPORT) {
@@ -764,6 +835,7 @@ class MainActivity : AppCompatActivity() {
         val homeView = builder.build(object : HomeViewBuilder.HomeActions {
             override fun onMergePdf() { editorViewModel.clearPendingUris(); pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF) }
             override fun onModifyPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_REORDER_PDF) }
+            override fun onCompressPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_COMPRESS_PDF) }
             override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp"), REQ_PICK_IMAGES_TO_PDF) }
             override fun onPdfToImage() { pickOne(arrayOf(MIME_PDF), REQ_PICK_PDF_TO_JPG) }
             override fun onDocxToPdf() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
@@ -1404,6 +1476,127 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showCompressModeDialog(pdfUri: Uri) {
+        val content = LinearLayout(this)
+        content.orientation = LinearLayout.VERTICAL
+        content.setPadding(0, dp(12), 0, dp(4))
+
+        val dialogRef = arrayOfNulls<android.app.Dialog>(1)
+
+        val card1 = MaterialCardView(this)
+        card1.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+        card1.radius = dp(16).toFloat()
+        card1.strokeWidth = dp(1)
+        card1.strokeColor = color(R.color.istan_outline)
+        card1.cardElevation = 0f
+        card1.setOnClickListener {
+            dialogRef[0]?.dismiss()
+            compressMode = COMPRESS_MODE_RESOLUTION
+            showResolutionPresetDialog(pdfUri)
+        }
+
+        val opt1 = text("By Resolution", 15, R.color.istan_text, false)
+        opt1.setPadding(dp(20), dp(16), dp(20), dp(16))
+        card1.addView(opt1)
+
+        val lp1 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        lp1.setMargins(0, 0, 0, dp(12))
+        content.addView(card1, lp1)
+
+        val card2 = MaterialCardView(this)
+        card2.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+        card2.radius = dp(16).toFloat()
+        card2.strokeWidth = dp(1)
+        card2.strokeColor = color(R.color.istan_outline)
+        card2.cardElevation = 0f
+        card2.setOnClickListener {
+            dialogRef[0]?.dismiss()
+            compressMode = COMPRESS_MODE_SIZE
+            showSizeInputDialog(pdfUri)
+        }
+
+        val opt2 = text("By Size", 15, R.color.istan_text, false)
+        opt2.setPadding(dp(20), dp(16), dp(20), dp(16))
+        card2.addView(opt2)
+
+        val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        content.addView(card2, lp2)
+
+        dialogRef[0] = showCustomDialog("Compression Mode", content, "Cancel", null, null, null)
+    }
+
+    private fun showResolutionPresetDialog(pdfUri: Uri) {
+        val content = LinearLayout(this)
+        content.orientation = LinearLayout.VERTICAL
+        content.setPadding(0, dp(12), 0, dp(4))
+
+        val dialogRef = arrayOfNulls<android.app.Dialog>(1)
+
+        val presets = arrayOf(
+            Triple("Highest Compression", 72, 40),
+            Triple("Balanced", 150, 70)
+        )
+
+        for ((index, preset) in presets.withIndex()) {
+            val card = MaterialCardView(this)
+            card.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+            card.radius = dp(16).toFloat()
+            card.strokeWidth = dp(1)
+            card.strokeColor = color(R.color.istan_outline)
+            card.cardElevation = 0f
+            card.setOnClickListener {
+                dialogRef[0]?.dismiss()
+                compressDpi = preset.second
+                compressQuality = preset.third
+                val prefix = getDisplayName(pdfUri)
+                createDocument(MIME_PDF, "${prefix}_compressed.pdf", REQ_SAVE_COMPRESS_PDF)
+            }
+
+            val label = text(preset.first, 15, R.color.istan_text, false)
+            label.setPadding(dp(20), dp(16), dp(20), dp(16))
+            card.addView(label)
+
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            if (index < presets.size - 1) lp.setMargins(0, 0, 0, dp(12))
+            content.addView(card, lp)
+        }
+
+        dialogRef[0] = showCustomDialog("Resolution Preset", content, "Cancel", null, null, null)
+    }
+
+    private fun showSizeInputDialog(pdfUri: Uri) {
+        val content = LinearLayout(this)
+        content.orientation = LinearLayout.VERTICAL
+        content.setPadding(0, dp(8), 0, dp(4))
+
+        val input = android.widget.EditText(this)
+        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        input.hint = "Target size in KB"
+        input.textSize = 15f
+        input.typeface = regularFont
+        input.setTextColor(color(R.color.istan_text))
+        input.setHintTextColor(color(R.color.istan_text_muted))
+        input.setPadding(dp(16), dp(12), dp(16), dp(12))
+        val inputBg = android.graphics.drawable.GradientDrawable()
+        inputBg.cornerRadius = dp(12).toFloat()
+        inputBg.setStroke(dp(1), color(R.color.istan_outline))
+        input.background = inputBg
+        content.addView(input, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+
+        showCustomDialog("Target Size", content, "Cancel", null, "Compress", Runnable {
+            val kb = input.text.toString().toLongOrNull()
+            if (kb == null || kb <= 0) {
+                toast("Please enter a valid size in KB.")
+                return@Runnable
+            }
+            compressTargetBytes = kb * 1024L
+            val prefix = getDisplayName(pdfUri)
+            createDocument(MIME_PDF, "${prefix}_compressed.pdf", REQ_SAVE_COMPRESS_PDF)
+        })
+    }
+
     private fun getDisplayName(uri: Uri?): String = AppModule.get().documentManager.getDisplayName(uri)
 
     private fun showDonationPicker(onComplete: Runnable?) {
@@ -1490,6 +1683,12 @@ class MainActivity : AppCompatActivity() {
 
         private const val REQ_PICK_MD_TO_PDF = 42
         private const val REQ_SAVE_MD_TO_PDF = 43
+
+        private const val REQ_PICK_COMPRESS_PDF = 44
+        private const val REQ_SAVE_COMPRESS_PDF = 45
+
+        private const val COMPRESS_MODE_RESOLUTION = 0
+        private const val COMPRESS_MODE_SIZE = 1
 
         private const val MIME_PDF = "application/pdf"
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

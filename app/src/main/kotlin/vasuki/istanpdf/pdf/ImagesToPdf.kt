@@ -35,10 +35,7 @@ object ImagesToPdf {
                     }
 
                     val mime = opt.outMimeType
-                    val needsConversion = mime != null &&
-                            mime != "image/jpeg" &&
-                            mime != "image/png" &&
-                            mime != "image/gif"
+                    val needsConversion = mime != "image/jpeg"
 
                     val imageData: com.itextpdf.io.image.ImageData
                     var imgWidth = opt.outWidth.toFloat()

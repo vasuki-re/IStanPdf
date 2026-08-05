@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import vasuki.istanpdf.model.PageItem
 import vasuki.istanpdf.pdf.ImagesToPdf
+import vasuki.istanpdf.pdf.PdfCompress
 import vasuki.istanpdf.pdf.PdfMerge
 import vasuki.istanpdf.pdf.PdfReorder
 import vasuki.istanpdf.pdf.PdfToJpegZip
@@ -119,5 +120,19 @@ class PdfEngine(context: Context) {
     @Throws(Exception::class)
     fun pdfToJpegZip(source: Uri, destination: Uri) {
         PdfToJpegZip.run(context, source, destination)
+    }
+
+    fun hasEmbeddedImages(source: Uri): Boolean {
+        return PdfCompress.hasEmbeddedImages(context, source)
+    }
+
+    @Throws(Exception::class)
+    fun compressByResolution(source: Uri, destination: Uri, dpi: Int, quality: Int) {
+        PdfCompress.runByResolution(context, source, destination, dpi, quality)
+    }
+
+    @Throws(Exception::class)
+    fun compressBySize(source: Uri, destination: Uri, targetBytes: Long): Long {
+        return PdfCompress.runBySize(context, source, destination, targetBytes)
     }
 }
