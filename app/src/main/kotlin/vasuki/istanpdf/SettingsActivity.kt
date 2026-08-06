@@ -7,6 +7,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextPaint
@@ -20,6 +22,7 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
@@ -33,6 +36,9 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var regularFont: Typeface
     private lateinit var boldFont: Typeface
+
+    private val accentCloseHandler = Handler(Looper.getMainLooper())
+    private var accentCloseRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +59,25 @@ class SettingsActivity : AppCompatActivity() {
             applySystemBarTheme()
             buildSettings(0)
         }
+    }
+
+    override fun onDestroy() {
+        accentCloseRunnable?.let { accentCloseHandler.removeCallbacks(it) }
+        accentCloseRunnable = null
+        super.onDestroy()
+    }
+
+    private fun applyAccentAndScheduleClose(index: Int, scrollView: ScrollView) {
+        accentCloseRunnable?.let { accentCloseHandler.removeCallbacks(it) }
+        ThemePrefs.setAccentIndex(this, index)
+        buildSettings(scrollView.scrollY)
+        val toast = Toast.makeText(this, "Applying new accent. App will close to refresh the icon", Toast.LENGTH_SHORT)
+        toast.show()
+        accentCloseRunnable = Runnable {
+            toast.cancel()
+            ThemePrefs.applyLauncherIconAndKill(applicationContext)
+        }
+        accentCloseHandler.postDelayed(accentCloseRunnable!!, 1500)
     }
 
     private fun buildSettings(scrollY: Int) {
@@ -151,9 +176,7 @@ class SettingsActivity : AppCompatActivity() {
                 bind(ThemePrefs.ACCENTS[i], selected == i, amoled)
                 setOnClickListener {
                     if (ThemePrefs.accentIndex(this@SettingsActivity) == i) return@setOnClickListener
-                    ThemePrefs.setAccentIndex(this@SettingsActivity, i)
-                    applySystemBarTheme()
-                    buildSettings(scrollView.scrollY)
+                    applyAccentAndScheduleClose(i, scrollView)
                 }
                 setOnLongClickListener {
                     showAccentPill(this, ThemePrefs.ACCENTS[i].name)

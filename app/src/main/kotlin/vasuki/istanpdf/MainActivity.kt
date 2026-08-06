@@ -109,6 +109,7 @@ class MainActivity : AppCompatActivity() {
         boldFont = Typeface.createFromAsset(assets, "vasuki_bold.ttf")
         pruneStaleCacheFiles()
         themeToken = ThemePrefs.token(this)
+        ThemePrefs.ensureLauncherIcon(this)
         buildHome()
         
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)

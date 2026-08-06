@@ -117,14 +117,6 @@
             android:exported="false"
             android:process=":libreoffice" />
 
-        <receiver
-            android:name=".UpdateReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

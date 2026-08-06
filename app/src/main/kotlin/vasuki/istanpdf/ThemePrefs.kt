@@ -6,10 +6,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
-import android.os.Handler
-import android.os.Looper
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -51,9 +48,6 @@ object ThemePrefs {
         "vasuki.istanpdf.LauncherGold"
     )
 
-    private var iconHandler: Handler? = null
-    private var iconRunnable: Runnable? = null
-
     fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -65,30 +59,42 @@ object ThemePrefs {
     fun setAccentIndex(context: Context, index: Int) {
         if (index < 0 || index >= ACCENTS.size) return
         prefs(context).edit().putInt(KEY_ACCENT_INDEX, index).apply()
-
-        if (iconHandler == null) {
-            iconHandler = Handler(Looper.getMainLooper())
-        }
-        iconRunnable?.let { iconHandler?.removeCallbacks(it) }
-        val appContext = context.applicationContext
-        iconRunnable = Runnable { applyLauncherIconSilent(appContext) }
-        iconHandler?.postDelayed(iconRunnable!!, 500)
     }
 
-    fun applyLauncherIconSilent(context: Context) {
+    fun applyLauncherIconAndKill(context: Context) = applyLauncherIcon(context, killApp = true)
+
+    private fun applyLauncherIcon(context: Context, killApp: Boolean) {
         val targetIndex = accentIndex(context)
         try {
             val pm = context.packageManager
+            val pending = ArrayList<Pair<ComponentName, Int>>()
+            val target = ComponentName(context, LAUNCHER_ALIASES[targetIndex])
+            if (pm.getComponentEnabledSetting(target) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                pending.add(target to PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
+            }
             for (i in LAUNCHER_ALIASES.indices) {
-                val desiredState = if (i == targetIndex)
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                else
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-
+                if (i == targetIndex) continue
                 val component = ComponentName(context, LAUNCHER_ALIASES[i])
-                if (pm.getComponentEnabledSetting(component) != desiredState) {
-                    pm.setComponentEnabledSetting(component, desiredState, PackageManager.DONT_KILL_APP)
+                if (pm.getComponentEnabledSetting(component) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                    pending.add(component to PackageManager.COMPONENT_ENABLED_STATE_DISABLED)
                 }
+            }
+            for (i in pending.indices) {
+                val (component, state) = pending[i]
+                val flags = if (killApp && i == pending.lastIndex) 0 else PackageManager.DONT_KILL_APP
+                pm.setComponentEnabledSetting(component, state, flags)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun ensureLauncherIcon(context: Context) {
+        try {
+            val pm = context.packageManager
+            val target = ComponentName(context, LAUNCHER_ALIASES[accentIndex(context)])
+            if (pm.getComponentEnabledSetting(target) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                applyLauncherIcon(context, killApp = false)
             }
         } catch (e: Exception) {
             e.printStackTrace()
