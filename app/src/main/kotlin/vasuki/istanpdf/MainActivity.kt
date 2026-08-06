@@ -1,6 +1,7 @@
 package vasuki.istanpdf
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
@@ -30,6 +31,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.snackbar.Snackbar
 import vasuki.istanpdf.di.AppModule
 import vasuki.istanpdf.model.PageItem
 import vasuki.istanpdf.presentation.CropOverlayView
@@ -674,7 +676,7 @@ class MainActivity : AppCompatActivity() {
             editorViewModel.clearPendingUris()
             editorViewModel.pendingUris.add(pdfUri)
             val prefix = getDisplayName(pdfUri)
-            createDocument("application/zip", "${prefix}_images.zip", REQ_SAVE_PDF_TO_JPG)
+            createDocument(MIME_ZIP, "${prefix}_images.zip", REQ_SAVE_PDF_TO_JPG)
             return
         }
 
@@ -754,14 +756,14 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == REQ_SAVE_MERGE_PDF) {
             val rotations = pages.map { it.rotation }
-            runJob("Merging PDFs...") { AppModule.get().mergePdf.execute(ArrayList(pendingUris), rotations, destination) }
+            runJob("Merging PDFs...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) { AppModule.get().mergePdf.execute(ArrayList(pendingUris), rotations, destination) }
         } else if (requestCode == REQ_SAVE_IMAGES_TO_PDF) {
             val snapshot = ArrayList(pages)
-            runJob("Converting Images...") { AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination) }
+            runJob("Converting Images...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) { AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination) }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG) {
-            runJob("Converting to JPGs...") { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination) }
+            runJob("Converting to JPGs...", OutputRef(destination, MIME_ZIP, getDisplayName(destination))) { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination) }
         } else if (requestCode == REQ_SAVE_DOCX_TO_PDF) {
-            runJob("Converting DOCX to PDF...") {
+            runJob("Converting DOCX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val docxUri = pendingUris[0]
                 val pdfFile = AppModule.get().docxToPdf.execute(docxUri)
                 contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
@@ -774,7 +776,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else if (requestCode == REQ_SAVE_MD_TO_PDF) {
-            runJob("Converting Markdown to PDF...") {
+            runJob("Converting Markdown to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val mdUri = pendingUris[0]
                 val pdfFile = AppModule.get().mdToPdf.execute(mdUri)
                 contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
@@ -789,11 +791,11 @@ class MainActivity : AppCompatActivity() {
         } else if (requestCode == REQ_SAVE_COMPRESS_PDF) {
             val source = pendingUris[0]
             if (compressMode == COMPRESS_MODE_RESOLUTION) {
-                runJob("Compressing PDF...") {
+                runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                     AppModule.get().compressPdf.executeByResolution(source, destination, compressDpi, compressQuality)
                 }
             } else {
-                runJob("Compressing PDF...") {
+                runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                     val actual = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
                     if (actual > compressTargetBytes) {
                         runOnUiThread { toast("Could not reach target. Saved at ${actual / 1024} KB.") }
@@ -831,7 +833,7 @@ class MainActivity : AppCompatActivity() {
                 else -> "Saving Pages..."
             }
 
-            runJob(activeStatus) {
+            runJob(activeStatus, OutputRef(destination, if (isDocx) MIME_DOCX else MIME_PDF, getDisplayName(destination))) {
                 if (isDocx) {
                     if (snapshot.any { it.replacementFile != null }) {
                         val replFile = File(cacheDir, "replaced_${System.currentTimeMillis()}.pdf")
@@ -1703,18 +1705,76 @@ class MainActivity : AppCompatActivity() {
         fun run()
     }
 
-    private fun runJob(message: String, job: Job) {
+    private data class OutputRef(val uri: Uri, val mime: String, val name: String)
+
+    private fun runJob(message: String, output: OutputRef? = null, job: Job) {
         setBusy(true, message)
         worker.submit {
             try {
                 job.run()
                 runOnUiThread {
                     setBusy(false, "Ready")
-                    toast("Done!")
+                    if (output != null) {
+                        showOutputSnackbar(output)
+                    }
                 }
             } catch (exception: Exception) {
                 showError(exception)
             }
+        }
+    }
+
+    private fun showOutputSnackbar(output: OutputRef) {
+        val show = Runnable {
+            val root = findViewById<View>(android.R.id.content) ?: return@Runnable
+            val accent = ThemePrefs.accent(this)
+            val amoled = ThemePrefs.isAmoled(this)
+            val snackbar = Snackbar.make(root, "File saved successfully", Snackbar.LENGTH_LONG)
+            snackbar.duration = 4500
+            val background = android.graphics.drawable.GradientDrawable()
+            background.setColor(color(R.color.istan_surface))
+            background.cornerRadius = dp(16).toFloat()
+            background.setStroke(dp(1), color(R.color.istan_outline))
+            snackbar.view.background = background
+            snackbar.view.backgroundTintList = null
+            snackbar.view.elevation = dp(8).toFloat()
+            snackbar.setTextColor(color(R.color.istan_text))
+            snackbar.setActionTextColor(ThemePrefs.accentForeground(accent, amoled))
+            val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+            textView?.apply {
+                typeface = regularFont
+                textSize = 15f
+                maxLines = 3
+                includeFontPadding = false
+            }
+            val actionView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_action)
+            actionView?.typeface = boldFont
+            snackbar.setAction("Open") { openSavedFile(output) }
+            snackbar.show()
+            snackbar.view.post {
+                val lp = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
+                val bottomInset = androidx.core.view.ViewCompat.getRootWindowInsets(root)
+                    ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
+                lp.setMargins(dp(16), 0, dp(16), dp(24) + bottomInset)
+                snackbar.view.layoutParams = lp
+            }
+        }
+        if (loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
+            fakeProgressHandler.postDelayed(show, 400)
+        } else {
+            show.run()
+        }
+    }
+
+    private fun openSavedFile(output: OutputRef) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.setDataAndType(output.uri, output.mime)
+            intent.putExtra(Intent.EXTRA_TITLE, output.name)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(Intent.createChooser(intent, "Open with"))
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1932,11 +1992,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun toast(message: String) {
         runOnUiThread {
-            if ("Done!" == message) {
-                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
-            } else {
-                setBusy(false, message)
-            }
+            setBusy(false, message)
         }
     }
 
@@ -2157,6 +2213,7 @@ class MainActivity : AppCompatActivity() {
         private const val MIME_PDF = "application/pdf"
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         private const val MIME_MD = "text/markdown"
+        private const val MIME_ZIP = "application/zip"
         private const val WAITING_TEXT = "Ready"
 
         private val IMAGE_MIME_TYPES = arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp")
