@@ -8,7 +8,6 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -21,6 +20,7 @@ import android.widget.Toast
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.card.MaterialCardView
 import vasuki.istanpdf.R
 import vasuki.istanpdf.ThemePrefs
@@ -654,405 +654,12 @@ class EditorViewBuilder(
                 }
                 holder.info.text = if (item.keep) "Selected" else "Unselected"
                 holder.info.setTextColor(color(if (item.keep) R.color.istan_olive else R.color.istan_text_muted))
-
-                holder.preview.setOnClickListener {
-                    val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
-                    dialog.window!!.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                    dialog.window!!.statusBarColor = Color.parseColor("#E6252525")
-                    dialog.window!!.navigationBarColor = Color.parseColor("#E6252525")
-                    dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-                    val dialogRoot = LinearLayout(activity)
-                    dialogRoot.orientation = LinearLayout.VERTICAL
-                    dialogRoot.setBackgroundColor(Color.parseColor("#E6252525"))
-
-                    val topBar = FrameLayout(activity)
-                    val closeBtn = TextView(activity)
-                    closeBtn.text = "✕"
-                    closeBtn.setTextColor(Color.WHITE)
-                    closeBtn.textSize = 26f
-                    closeBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
-                    val clsLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    clsLp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                    topBar.addView(closeBtn, clsLp)
-                    dialogRoot.addView(topBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-                    val cardContainer = FrameLayout(activity)
-                    val containerLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-                    containerLp.setMargins(dp(12), dp(4), dp(12), dp(4))
-                    dialogRoot.addView(cardContainer, containerLp)
-
-                    val imgCard = MaterialCardView(activity)
-                    imgCard.setCardBackgroundColor(Color.BLACK)
-                    imgCard.radius = dp(12).toFloat()
-                    imgCard.cardElevation = 0f
-                    imgCard.strokeColor = Color.parseColor("#33FFFFFF")
-                    imgCard.strokeWidth = dp(1)
-
-                    val fullImg = ImageView(activity)
-                    fullImg.scaleType = ImageView.ScaleType.FIT_CENTER
-                    fullImg.adjustViewBounds = true
-                    imgCard.addView(fullImg, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-                    val cardLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    cardLp.gravity = Gravity.CENTER
-                    cardContainer.addView(imgCard, cardLp)
-
-                    val bottomBar = FrameLayout(activity)
-                    val pageCounter = text("", 16, R.color.istan_surface, true)
-                    pageCounter.setTextColor(Color.WHITE)
-                    val pcLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    pcLp.gravity = Gravity.START or Gravity.CENTER_VERTICAL
-                    pcLp.setMargins(dp(24), 0, 0, 0)
-                    bottomBar.addView(pageCounter, pcLp)
-
-                    val pillBg = android.graphics.drawable.GradientDrawable()
-                    pillBg.setColor(Color.parseColor("#22FFFFFF"))
-                    pillBg.cornerRadius = dp(32).toFloat()
-                    val controlsPill = LinearLayout(activity)
-                    controlsPill.orientation = LinearLayout.HORIZONTAL
-                    controlsPill.gravity = Gravity.CENTER_VERTICAL
-                    controlsPill.isBaselineAligned = false
-                    controlsPill.background = pillBg
-                    controlsPill.setPadding(dp(4), dp(4), dp(4), dp(4))
-
-                    val backBtn = TextView(activity)
-                    backBtn.text = "‹"
-                    backBtn.setTextColor(Color.WHITE)
-                    backBtn.textSize = 28f
-                    backBtn.gravity = Gravity.CENTER
-                    backBtn.typeface = boldFont
-                    backBtn.setPadding(0, 0, dp(2), dp(2))
-                    controlsPill.addView(backBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
-
-                    val rotLeft = ImageView(activity)
-                    rotLeft.setImageResource(R.drawable.rotate_left)
-                    rotLeft.setColorFilter(Color.WHITE)
-                    rotLeft.setPadding(dp(11), dp(11), dp(11), dp(11))
-                    if (hideRotate) rotLeft.visibility = View.GONE
-                    controlsPill.addView(rotLeft, LinearLayout.LayoutParams(dp(48), dp(48)))
-
-                    val rotRight = ImageView(activity)
-                    rotRight.setImageResource(R.drawable.rotate_right)
-                    rotRight.setColorFilter(Color.WHITE)
-                    rotRight.setPadding(dp(11), dp(11), dp(11), dp(11))
-                    if (hideRotate) rotRight.visibility = View.GONE
-                    controlsPill.addView(rotRight, LinearLayout.LayoutParams(dp(48), dp(48)))
-
-                    val cbColors = android.content.res.ColorStateList(
-                        arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
-                        intArrayOf(Color.parseColor("#888888"), color(R.color.istan_olive))
-                    )
-                    val keepBox = CheckBox(activity)
-                    keepBox.buttonTintList = cbColors
-                    keepBox.text = "Keep"
-                    keepBox.textSize = 16f
-                    keepBox.setTextColor(Color.WHITE)
-                    keepBox.setPadding(dp(2), 0, dp(14), 0)
-                    val keepLpDialog = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48))
-                    keepLpDialog.gravity = Gravity.CENTER_VERTICAL
-                    controlsPill.addView(keepBox, keepLpDialog)
-
-                    val pillLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    pillLp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                    pillLp.setMargins(0, 0, dp(16), 0)
-                    bottomBar.addView(controlsPill, pillLp)
-
-                    val bottomBarLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64))
-                    bottomBarLp.setMargins(0, dp(4), 0, dp(8))
-                    dialogRoot.addView(bottomBar, bottomBarLp)
-
-                    val currentPos = intArrayOf(holder.bindingAdapterPosition)
-
-                    val updateUi = Runnable {
-                        val pgs = actions.getPages()
-                        val p = pgs[currentPos[0]]
-                        fullImg.setImageBitmap(p.thumbnail)
-                        if (p.thumbnail != null && p.thumbnail.width > p.thumbnail.height) {
-                            imgCard.setContentPadding(dp(24), 0, dp(24), 0)
-                        } else {
-                            imgCard.setContentPadding(0, dp(48), 0, dp(48))
-                        }
-                        pageCounter.text = "${currentPos[0] + 1} / ${pgs.size}"
-                        keepBox.setOnCheckedChangeListener(null)
-                        keepBox.isChecked = p.keep
-                        keepBox.setOnCheckedChangeListener { _, checked ->
-                            p.keep = checked
-                            checkboxSyncListener?.run()
-                            val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                            if (vh is PageViewHolder) {
-                                vh.keep.isChecked = checked
-                                vh.info.text = if (checked) "Selected" else "Unselected"
-                                vh.info.setTextColor(color(if (checked) R.color.istan_olive else R.color.istan_text_muted))
-                            }
-                        }
-                    }
-
-                    updateUi.run()
-
-                    rotLeft.setOnClickListener {
-                        val pgs = actions.getPages()
-                        val p = pgs[currentPos[0]]
-                        p.rotation = (p.rotation - 90) % 360
-                        val matrix = android.graphics.Matrix()
-                        matrix.postRotate(-90f)
-                        val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
-                        p.thumbnail.recycle()
-                        p.thumbnail = newThumb
-                        updateUi.run()
-                        val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                        if (vh is PageViewHolder) vh.preview.setImageBitmap(p.thumbnail)
-                    }
-                    rotRight.setOnClickListener {
-                        val pgs = actions.getPages()
-                        val p = pgs[currentPos[0]]
-                        p.rotation = (p.rotation + 90) % 360
-                        val matrix = android.graphics.Matrix()
-                        matrix.postRotate(90f)
-                        val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
-                        p.thumbnail.recycle()
-                        p.thumbnail = newThumb
-                        updateUi.run()
-                        val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                        if (vh is PageViewHolder) vh.preview.setImageBitmap(p.thumbnail)
-                    }
-
-                    fullImg.setOnTouchListener(object : View.OnTouchListener {
-                        var startX = 0f
-                        override fun onTouch(view: View, event: MotionEvent): Boolean {
-                            when (event.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    startX = event.x
-                                    return true
-                                }
-                                MotionEvent.ACTION_UP -> {
-                                    val diff = event.x - startX
-                                    val pgs = actions.getPages()
-                                    if (diff > 150) {
-                                        currentPos[0] = (currentPos[0] - 1 + pgs.size) % pgs.size
-                                        updateUi.run()
-                                    } else if (diff < -150) {
-                                        currentPos[0] = (currentPos[0] + 1) % pgs.size
-                                        updateUi.run()
-                                    } else {
-                                        view.performClick()
-                                    }
-                                    return true
-                                }
-                            }
-                            return true
-                        }
-                    })
-
-                    backBtn.setOnClickListener { dialog.dismiss() }
-                    closeBtn.setOnClickListener { dialog.dismiss() }
-                    dialog.setContentView(dialogRoot)
-                    dialog.show()
-                }
-
             } else {
                 holder.info.text = "Page ${item.originalIndex + 1}"
-                holder.preview.setOnClickListener {
-                    val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
-                    dialog.window!!.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                    dialog.window!!.statusBarColor = Color.parseColor("#E6252525")
-                    dialog.window!!.navigationBarColor = Color.parseColor("#E6252525")
-                    dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            }
 
-                    val dialogRoot2 = LinearLayout(activity)
-                    dialogRoot2.orientation = LinearLayout.VERTICAL
-                    dialogRoot2.setBackgroundColor(Color.parseColor("#E6252525"))
-
-                    val topBar2 = FrameLayout(activity)
-                    val closeBtn = TextView(activity)
-                    closeBtn.text = "✕"
-                    closeBtn.setTextColor(Color.WHITE)
-                    closeBtn.textSize = 26f
-                    closeBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
-                    val clsLp2 = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    clsLp2.gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                    topBar2.addView(closeBtn, clsLp2)
-                    dialogRoot2.addView(topBar2, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-                    val cardContainer = FrameLayout(activity)
-                    val containerLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-                    containerLp.setMargins(dp(12), dp(4), dp(12), dp(4))
-                    dialogRoot2.addView(cardContainer, containerLp)
-
-                    val imgCard = MaterialCardView(activity)
-                    imgCard.setCardBackgroundColor(Color.BLACK)
-                    imgCard.radius = dp(12).toFloat()
-                    imgCard.cardElevation = 0f
-                    imgCard.strokeColor = Color.parseColor("#33FFFFFF")
-                    imgCard.strokeWidth = dp(1)
-
-                    val fullImg = object : ImageView(activity) {
-                        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-                            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-                            val w = measuredWidth
-                            val h = measuredHeight
-                            val maxH = (w * 1.5f).toInt()
-                            if (h > maxH) setMeasuredDimension(w, maxH)
-                        }
-                    }
-                    fullImg.scaleType = ImageView.ScaleType.CENTER_CROP
-                    fullImg.adjustViewBounds = true
-                    imgCard.addView(fullImg, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-                    val cardLp2 = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    cardLp2.gravity = Gravity.CENTER
-                    cardContainer.addView(imgCard, cardLp2)
-
-                    val bottomBar2 = FrameLayout(activity)
-                    val pageCounter = text("", 16, R.color.istan_surface, true)
-                    pageCounter.setTextColor(Color.WHITE)
-                    val pcLp2 = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    pcLp2.gravity = Gravity.START or Gravity.CENTER_VERTICAL
-                    pcLp2.setMargins(dp(24), 0, 0, 0)
-                    bottomBar2.addView(pageCounter, pcLp2)
-
-                    val pillBg2 = android.graphics.drawable.GradientDrawable()
-                    pillBg2.setColor(Color.parseColor("#22FFFFFF"))
-                    pillBg2.cornerRadius = dp(32).toFloat()
-                    val controlsPill2 = LinearLayout(activity)
-                    controlsPill2.orientation = LinearLayout.HORIZONTAL
-                    controlsPill2.gravity = Gravity.CENTER_VERTICAL
-                    controlsPill2.isBaselineAligned = false
-                    controlsPill2.background = pillBg2
-                    controlsPill2.setPadding(dp(4), dp(4), dp(4), dp(4))
-
-                    val backBtn2 = TextView(activity)
-                    backBtn2.text = "‹"
-                    backBtn2.setTextColor(Color.WHITE)
-                    backBtn2.textSize = 28f
-                    backBtn2.gravity = Gravity.CENTER
-                    backBtn2.typeface = boldFont
-                    backBtn2.setPadding(0, 0, dp(2), dp(2))
-                    controlsPill2.addView(backBtn2, LinearLayout.LayoutParams(dp(48), dp(48)))
-
-                    val rotLeft = ImageView(activity)
-                    rotLeft.setImageResource(R.drawable.rotate_left)
-                    rotLeft.setColorFilter(Color.WHITE)
-                    rotLeft.setPadding(dp(11), dp(11), dp(11), dp(11))
-                    if (hideRotate) rotLeft.visibility = View.GONE
-                    controlsPill2.addView(rotLeft, LinearLayout.LayoutParams(dp(48), dp(48)))
-
-                    val rotRight = ImageView(activity)
-                    rotRight.setImageResource(R.drawable.rotate_right)
-                    rotRight.setColorFilter(Color.WHITE)
-                    rotRight.setPadding(dp(11), dp(11), dp(11), dp(11))
-                    if (hideRotate) rotRight.visibility = View.GONE
-                    controlsPill2.addView(rotRight, LinearLayout.LayoutParams(dp(48), dp(48)))
-
-                    val cbColors2 = android.content.res.ColorStateList(
-                        arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
-                        intArrayOf(Color.parseColor("#888888"), color(R.color.istan_olive))
-                    )
-                    val keepBox = CheckBox(activity)
-                    keepBox.buttonTintList = cbColors2
-                    keepBox.text = "Keep"
-                    keepBox.textSize = 16f
-                    keepBox.setTextColor(Color.WHITE)
-                    keepBox.setPadding(dp(2), 0, dp(14), 0)
-                    if (actions.getPages().size <= 1) keepBox.visibility = View.GONE
-                    val keepLpDialog2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48))
-                    keepLpDialog2.gravity = Gravity.CENTER_VERTICAL
-                    controlsPill2.addView(keepBox, keepLpDialog2)
-
-                    val pillLp2 = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                    pillLp2.gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                    pillLp2.setMargins(0, 0, dp(16), 0)
-                    bottomBar2.addView(controlsPill2, pillLp2)
-
-                    val bottomBarLp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64))
-                    bottomBarLp2.setMargins(0, dp(4), 0, dp(8))
-                    dialogRoot2.addView(bottomBar2, bottomBarLp2)
-
-                    val currentPos = intArrayOf(holder.bindingAdapterPosition)
-
-                    val updateUi = Runnable {
-                        val pgs = actions.getPages()
-                        val p = pgs[currentPos[0]]
-                        fullImg.setImageBitmap(p.thumbnail)
-                        if (p.thumbnail != null && p.thumbnail.width > p.thumbnail.height) {
-                            imgCard.setContentPadding(dp(24), 0, dp(24), 0)
-                        } else {
-                            imgCard.setContentPadding(0, dp(48), 0, dp(48))
-                        }
-                        pageCounter.text = "${currentPos[0] + 1} / ${pgs.size}"
-                        keepBox.setOnCheckedChangeListener(null)
-                        keepBox.isChecked = p.keep
-                        keepBox.setOnCheckedChangeListener { _, checked ->
-                            p.keep = checked
-                            checkboxSyncListener?.run()
-                            val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                            if (vh is PageViewHolder) {
-                                vh.keep.isChecked = checked
-                            }
-                        }
-                    }
-
-                    updateUi.run()
-
-                    rotLeft.setOnClickListener {
-                        val pgs = actions.getPages()
-                        val p = pgs[currentPos[0]]
-                        p.rotation = (p.rotation - 90) % 360
-                        val matrix = android.graphics.Matrix()
-                        matrix.postRotate(-90f)
-                        val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
-                        p.thumbnail.recycle()
-                        p.thumbnail = newThumb
-                        updateUi.run()
-                        val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                        if (vh is PageViewHolder) vh.preview.setImageBitmap(p.thumbnail)
-                    }
-                    rotRight.setOnClickListener {
-                        val pgs = actions.getPages()
-                        val p = pgs[currentPos[0]]
-                        p.rotation = (p.rotation + 90) % 360
-                        val matrix = android.graphics.Matrix()
-                        matrix.postRotate(90f)
-                        val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
-                        p.thumbnail.recycle()
-                        p.thumbnail = newThumb
-                        updateUi.run()
-                        val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                        if (vh is PageViewHolder) vh.preview.setImageBitmap(p.thumbnail)
-                    }
-
-                    fullImg.setOnTouchListener(object : View.OnTouchListener {
-                        var startX = 0f
-                        override fun onTouch(vw: View, event: MotionEvent): Boolean {
-                            when (event.action) {
-                                MotionEvent.ACTION_DOWN -> {
-                                    startX = event.x
-                                    return true
-                                }
-                                MotionEvent.ACTION_UP -> {
-                                    val diff = event.x - startX
-                                    val pgs = actions.getPages()
-                                    if (diff > 150) {
-                                        currentPos[0] = (currentPos[0] - 1 + pgs.size) % pgs.size
-                                        updateUi.run()
-                                    } else if (diff < -150) {
-                                        currentPos[0] = (currentPos[0] + 1) % pgs.size
-                                        updateUi.run()
-                                    } else {
-                                        vw.performClick()
-                                    }
-                                    return true
-                                }
-                            }
-                            return true
-                        }
-                    })
-
-                    backBtn2.setOnClickListener { dialog.dismiss() }
-                    closeBtn.setOnClickListener { dialog.dismiss() }
-                    dialog.setContentView(dialogRoot2)
-                    dialog.show()
-                }
+            holder.preview.setOnClickListener {
+                showPreviewDialog(holder.bindingAdapterPosition)
             }
 
             holder.keep.setOnCheckedChangeListener(null)
@@ -1103,6 +710,211 @@ class EditorViewBuilder(
                 item.thumbnail.recycle()
                 item.thumbnail = newThumb
                 holder.preview.setImageBitmap(item.thumbnail)
+            }
+        }
+
+        private fun showPreviewDialog(startPosition: Int) {
+            val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar)
+            dialog.window!!.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            dialog.window!!.statusBarColor = Color.parseColor("#E6252525")
+            dialog.window!!.navigationBarColor = Color.parseColor("#E6252525")
+            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+            val dialogRoot = LinearLayout(activity)
+            dialogRoot.orientation = LinearLayout.VERTICAL
+            dialogRoot.setBackgroundColor(Color.parseColor("#E6252525"))
+
+            val topBar = FrameLayout(activity)
+            val closeBtn = TextView(activity)
+            closeBtn.text = "✕"
+            closeBtn.setTextColor(Color.WHITE)
+            closeBtn.textSize = 26f
+            closeBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
+            val clsLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            clsLp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            topBar.addView(closeBtn, clsLp)
+            dialogRoot.addView(topBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+            val pages = actions.getPages()
+            val pagerAdapter = PreviewPagerAdapter(pages)
+            val viewPager = ViewPager2(activity)
+            viewPager.adapter = pagerAdapter
+            viewPager.overScrollMode = View.OVER_SCROLL_NEVER
+            val pagerLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+            dialogRoot.addView(viewPager, pagerLp)
+
+            val bottomBar = FrameLayout(activity)
+            val pageCounter = text("", 16, R.color.istan_surface, true)
+            pageCounter.setTextColor(Color.WHITE)
+            val pcLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            pcLp.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            pcLp.setMargins(dp(24), 0, 0, 0)
+            bottomBar.addView(pageCounter, pcLp)
+
+            val pillBg = GradientDrawable()
+            pillBg.setColor(Color.parseColor("#22FFFFFF"))
+            pillBg.cornerRadius = dp(32).toFloat()
+            val controlsPill = LinearLayout(activity)
+            controlsPill.orientation = LinearLayout.HORIZONTAL
+            controlsPill.gravity = Gravity.CENTER_VERTICAL
+            controlsPill.isBaselineAligned = false
+            controlsPill.background = pillBg
+            controlsPill.setPadding(dp(4), dp(4), dp(4), dp(4))
+
+            val backBtn = TextView(activity)
+            backBtn.text = "‹"
+            backBtn.setTextColor(Color.WHITE)
+            backBtn.textSize = 28f
+            backBtn.gravity = Gravity.CENTER
+            backBtn.typeface = boldFont
+            backBtn.setPadding(0, 0, dp(2), dp(2))
+            controlsPill.addView(backBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+            val rotLeft = ImageView(activity)
+            rotLeft.setImageResource(R.drawable.rotate_left)
+            rotLeft.setColorFilter(Color.WHITE)
+            rotLeft.setPadding(dp(11), dp(11), dp(11), dp(11))
+            if (hideRotate) rotLeft.visibility = View.GONE
+            controlsPill.addView(rotLeft, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+            val rotRight = ImageView(activity)
+            rotRight.setImageResource(R.drawable.rotate_right)
+            rotRight.setColorFilter(Color.WHITE)
+            rotRight.setPadding(dp(11), dp(11), dp(11), dp(11))
+            if (hideRotate) rotRight.visibility = View.GONE
+            controlsPill.addView(rotRight, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+            val cbColors = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
+                intArrayOf(Color.parseColor("#888888"), color(R.color.istan_olive))
+            )
+            val keepBox = CheckBox(activity)
+            keepBox.buttonTintList = cbColors
+            keepBox.text = "Keep"
+            keepBox.textSize = 16f
+            keepBox.setTextColor(Color.WHITE)
+            keepBox.setPadding(dp(2), 0, dp(14), 0)
+            if (!isImg && pages.size <= 1) keepBox.visibility = View.GONE
+            val keepLpDialog = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48))
+            keepLpDialog.gravity = Gravity.CENTER_VERTICAL
+            controlsPill.addView(keepBox, keepLpDialog)
+
+            val pillLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            pillLp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            pillLp.setMargins(0, 0, dp(16), 0)
+            bottomBar.addView(controlsPill, pillLp)
+
+            val bottomBarLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64))
+            bottomBarLp.setMargins(0, dp(4), 0, dp(8))
+            dialogRoot.addView(bottomBar, bottomBarLp)
+
+            val currentPos = intArrayOf(startPosition)
+
+            val syncUi = Runnable {
+                val pgs = actions.getPages()
+                val p = pgs[currentPos[0]]
+                pageCounter.text = "${currentPos[0] + 1} / ${pgs.size}"
+                keepBox.setOnCheckedChangeListener(null)
+                keepBox.isChecked = p.keep
+                keepBox.setOnCheckedChangeListener { _, checked ->
+                    p.keep = checked
+                    checkboxSyncListener?.run()
+                    val vh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (vh is PageViewHolder) {
+                        vh.keep.isChecked = checked
+                        if (isImg) {
+                            vh.info.text = if (checked) "Selected" else "Unselected"
+                            vh.info.setTextColor(color(if (checked) R.color.istan_olive else R.color.istan_text_muted))
+                        }
+                    }
+                }
+            }
+
+            syncUi.run()
+            viewPager.setCurrentItem(startPosition, false)
+
+            viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    val oldVh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (oldVh is PreviewPagerAdapter.PreviewVH) {
+                        oldVh.image.resetZoom()
+                    }
+                    currentPos[0] = position
+                    syncUi.run()
+                }
+            })
+
+            rotLeft.setOnClickListener {
+                val pgs = actions.getPages()
+                val p = pgs[currentPos[0]]
+                p.rotation = (p.rotation - 90) % 360
+                val matrix = android.graphics.Matrix()
+                matrix.postRotate(-90f)
+                val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
+                p.thumbnail.recycle()
+                p.thumbnail = newThumb
+                val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                if (vh is PreviewPagerAdapter.PreviewVH) {
+                    vh.image.setImageBitmapAndReset(p.thumbnail)
+                }
+                val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
+                if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+            }
+            rotRight.setOnClickListener {
+                val pgs = actions.getPages()
+                val p = pgs[currentPos[0]]
+                p.rotation = (p.rotation + 90) % 360
+                val matrix = android.graphics.Matrix()
+                matrix.postRotate(90f)
+                val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
+                p.thumbnail.recycle()
+                p.thumbnail = newThumb
+                val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                if (vh is PreviewPagerAdapter.PreviewVH) {
+                    vh.image.setImageBitmapAndReset(p.thumbnail)
+                }
+                val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
+                if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+            }
+
+            backBtn.setOnClickListener { dialog.dismiss() }
+            closeBtn.setOnClickListener { dialog.dismiss() }
+            dialog.setContentView(dialogRoot)
+            dialog.show()
+        }
+
+        private inner class PreviewPagerAdapter(
+            private val pages: List<PageItem>
+        ) : RecyclerView.Adapter<PreviewPagerAdapter.PreviewVH>() {
+
+            inner class PreviewVH(
+                val container: FrameLayout,
+                val image: ZoomableImageView
+            ) : RecyclerView.ViewHolder(container)
+
+            override fun getItemCount(): Int = pages.size
+
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PreviewVH {
+                val container = FrameLayout(activity)
+                container.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+
+                val image = ZoomableImageView(activity)
+                val imgLp = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                imgLp.setMargins(dp(12), 0, dp(12), 0)
+                container.addView(image, imgLp)
+
+                return PreviewVH(container, image)
+            }
+
+            override fun onBindViewHolder(holder: PreviewVH, position: Int) {
+                val p = pages[position]
+                holder.image.setImageBitmapAndReset(p.thumbnail)
             }
         }
     }

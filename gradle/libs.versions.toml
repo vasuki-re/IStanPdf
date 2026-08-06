@@ -7,6 +7,7 @@ material = "1.13.0"
 constraintlayout = "2.2.1"
 itext7 = "8.0.5"
 commonmark = "0.24.0"
+viewpager2 = "1.1.0"
 itext7-html2pdf = "5.0.5"
 
 [plugins]
@@ -28,3 +29,4 @@ commonmark-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gf
 commonmark-tasklist = { group = "org.commonmark", name = "commonmark-ext-task-list-items", version.ref = "commonmark" }
 commonmark-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
 commonmark-ins = { group = "org.commonmark", name = "commonmark-ext-ins", version.ref = "commonmark" }
+androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }

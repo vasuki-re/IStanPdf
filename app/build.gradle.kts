@@ -51,4 +51,5 @@ dependencies {
     implementation(libs.commonmark.tasklist)
     implementation(libs.commonmark.autolink)
     implementation(libs.commonmark.ins)
+    implementation(libs.androidx.viewpager2)
 }
