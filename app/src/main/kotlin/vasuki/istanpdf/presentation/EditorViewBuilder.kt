@@ -36,6 +36,8 @@ class EditorViewBuilder(
         fun onBack()
         fun onSave(titleText: String, docxExport: Boolean)
         fun onAddItems(titleText: String)
+        fun onTakePhoto()
+        fun onCropPage(position: Int, onCropped: Runnable?)
         fun onShowCustomDialog(title: String, content: View, negativeStr: String?, negativeAction: Runnable?, positiveStr: String?, positiveAction: Runnable?)
         fun toast(message: String)
         fun getPages(): List<PageItem>
@@ -345,45 +347,68 @@ class EditorViewBuilder(
         footer.setPadding(dp(22), dp(8), dp(22), dp(18))
 
         if (titleText == "Images to PDF" || titleText == "Reorder Pages from DOCX" || titleText == "Remove/Reorder PDF" || titleText == "Merge PDF") {
-            val addCard = MaterialCardView(activity)
-            addCard.setCardBackgroundColor(color(R.color.istan_surface))
-            addCard.radius = dp(28).toFloat()
-            addCard.cardElevation = 0f
+            if (titleText == "Images to PDF" || titleText == "Reorder Pages from DOCX" || titleText == "Remove/Reorder PDF") {
+                val row = LinearLayout(activity)
+                row.orientation = LinearLayout.HORIZONTAL
+                val rowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                rowLp.setMargins(0, 0, 0, dp(12))
+                footer.addView(row, 0, rowLp)
 
-            val dashBg = GradientDrawable()
-            dashBg.setColor(Color.TRANSPARENT)
-            dashBg.cornerRadius = dp(28).toFloat()
-            dashBg.setStroke(dp(1), color(R.color.istan_outline), dp(4).toFloat(), dp(4).toFloat())
-            addCard.background = dashBg
+                var addLabel = "Add Images / PDF"
+                if (titleText == "Reorder Pages from DOCX") addLabel = "Add DOCX / PDF"
 
-            val addRow = LinearLayout(activity)
-            addRow.orientation = LinearLayout.HORIZONTAL
-            addRow.gravity = Gravity.CENTER
-            addRow.setPadding(dp(16), dp(12), dp(16), dp(12))
-            addCard.addView(addRow)
+                row.addView(
+                    buildSourceCard(R.drawable.add_24px, addLabel, 8) { actions.onAddItems(titleText) },
+                    LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                )
 
-            val circleBg = GradientDrawable()
-            circleBg.shape = GradientDrawable.OVAL
-            circleBg.setColor(color(R.color.istan_olive))
+                val camLp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                camLp.setMargins(dp(8), 0, 0, 0)
+                row.addView(
+                    buildSourceCard(R.drawable.camera_24px, "Take Photo") { actions.onTakePhoto() },
+                    camLp
+                )
+            } else {
+                val addCard = MaterialCardView(activity)
+                addCard.setCardBackgroundColor(color(R.color.istan_surface))
+                addCard.radius = dp(28).toFloat()
+                addCard.cardElevation = 0f
 
-            val plusText = text("+", 20, R.color.istan_text, false)
-            plusText.setTextColor(Color.WHITE)
-            plusText.gravity = Gravity.CENTER
-            plusText.background = circleBg
-            addRow.addView(plusText, LinearLayout.LayoutParams(dp(28), dp(28)))
+                val dashBg = GradientDrawable()
+                dashBg.setColor(Color.TRANSPARENT)
+                dashBg.cornerRadius = dp(28).toFloat()
+                dashBg.setStroke(dp(1), color(R.color.istan_outline), dp(4).toFloat(), dp(4).toFloat())
+                addCard.background = dashBg
 
-            var labelStr = "Tap to Add Images / PDF"
-            if (titleText == "Reorder Pages from DOCX") labelStr = "Tap to Add Images / DOCX / PDF"
-            else if (titleText == "Merge PDF") labelStr = "Tap to Add PDF"
-            val addTitle = text(labelStr, 15, R.color.istan_text, false)
-            addTitle.setPadding(dp(12), 0, 0, 0)
-            addRow.addView(addTitle)
+                val addRow = LinearLayout(activity)
+                addRow.orientation = LinearLayout.HORIZONTAL
+                addRow.gravity = Gravity.CENTER
+                addRow.setPadding(dp(16), dp(12), dp(16), dp(12))
+                addCard.addView(addRow)
 
-            addCard.setOnClickListener { actions.onAddItems(titleText) }
+                val circleBg = GradientDrawable()
+                circleBg.shape = GradientDrawable.OVAL
+                circleBg.setColor(color(R.color.istan_olive))
 
-            val acLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            acLp.setMargins(0, 0, 0, dp(12))
-            footer.addView(addCard, 0, acLp)
+                val plusText = text("+", 20, R.color.istan_text, false)
+                plusText.setTextColor(Color.WHITE)
+                plusText.gravity = Gravity.CENTER
+                plusText.background = circleBg
+                addRow.addView(plusText, LinearLayout.LayoutParams(dp(28), dp(28)))
+
+                var labelStr = "Tap to Add Images / PDF"
+                if (titleText == "Reorder Pages from DOCX") labelStr = "Tap to Add Images / DOCX / PDF"
+                else if (titleText == "Merge PDF") labelStr = "Tap to Add PDF"
+                val addTitle = text(labelStr, 15, R.color.istan_text, false)
+                addTitle.setPadding(dp(12), 0, 0, 0)
+                addRow.addView(addTitle)
+
+                addCard.setOnClickListener { actions.onAddItems(titleText) }
+
+                val acLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                acLp.setMargins(0, 0, 0, dp(12))
+                footer.addView(addCard, 0, acLp)
+            }
         }
 
         val save = actionButton(saveLabelText, true) { actions.onSave(titleText, docxExport) }
@@ -410,6 +435,45 @@ class EditorViewBuilder(
 
     private fun dp(value: Int): Int = Math.round(value * activity.resources.displayMetrics.density)
 
+    private fun buildSourceCard(iconResId: Int, label: String, iconInsetDp: Int = 5, action: () -> Unit): View {
+        val card = MaterialCardView(activity)
+        card.setCardBackgroundColor(color(R.color.istan_surface))
+        card.radius = dp(28).toFloat()
+        card.cardElevation = 0f
+
+        val dashBg = GradientDrawable()
+        dashBg.setColor(Color.TRANSPARENT)
+        dashBg.cornerRadius = dp(28).toFloat()
+        dashBg.setStroke(dp(1), color(R.color.istan_outline), dp(4).toFloat(), dp(4).toFloat())
+        card.background = dashBg
+
+        val col = LinearLayout(activity)
+        col.orientation = LinearLayout.VERTICAL
+        col.gravity = Gravity.CENTER
+        col.setPadding(dp(16), dp(12), dp(16), dp(12))
+        card.addView(col)
+
+        val icon = ImageView(activity)
+        icon.setImageResource(iconResId)
+        icon.setColorFilter(Color.WHITE)
+        val circleBg = GradientDrawable()
+        circleBg.shape = GradientDrawable.OVAL
+        circleBg.setColor(color(R.color.istan_olive))
+        icon.background = circleBg
+        icon.setPadding(dp(iconInsetDp), dp(iconInsetDp), dp(iconInsetDp), dp(iconInsetDp))
+        col.addView(icon, LinearLayout.LayoutParams(dp(28), dp(28)))
+
+        val labelView = text(label, 13, R.color.istan_text, false)
+        labelView.gravity = Gravity.CENTER
+        labelView.maxLines = 2
+        labelView.ellipsize = android.text.TextUtils.TruncateAt.END
+        labelView.setPadding(0, dp(8), 0, 0)
+        col.addView(labelView)
+
+        card.setOnClickListener { action() }
+        return card
+    }
+
     private fun actionButton(title: String, primary: Boolean, action: () -> Unit): View {
         val card = MaterialCardView(activity)
         val cardColor = color(if (primary) R.color.istan_olive else R.color.istan_surface)
@@ -431,7 +495,7 @@ class EditorViewBuilder(
         card.addView(row)
 
         val label = text(title, 15, R.color.istan_text, false)
-        label.setTextColor(if (primary) ThemePrefs.contrastText(cardColor) else color(R.color.istan_text))
+        label.setTextColor(if (primary) (if (ThemePrefs.isAmoled(activity)) Color.BLACK else Color.WHITE) else color(R.color.istan_text))
         label.gravity = Gravity.CENTER
         row.addView(label)
 
@@ -458,6 +522,7 @@ class EditorViewBuilder(
             val keep: CheckBox,
             val info: TextView,
             val titleText: TextView?,
+            val cropBtn: ImageView,
             val rotateLeft: ImageView,
             val rotateRight: ImageView,
             val crossBtn: TextView?
@@ -549,6 +614,12 @@ class EditorViewBuilder(
                 if (isMerge) infoText.visibility = View.GONE
                 infoBox.addView(infoText)
 
+                val cropBtn = ImageView(activity)
+                cropBtn.setImageResource(R.drawable.crop_24px)
+                cropBtn.setColorFilter(color(R.color.istan_olive_dark))
+                cropBtn.setPadding(dp(8), dp(8), dp(8), dp(8))
+                if (hideRotate) cropBtn.visibility = View.GONE
+
                 val rotateLeft = ImageView(activity)
                 rotateLeft.setImageResource(R.drawable.rotate_left)
                 rotateLeft.setColorFilter(color(R.color.istan_olive_dark))
@@ -564,6 +635,7 @@ class EditorViewBuilder(
                 val actionsBox = LinearLayout(activity)
                 actionsBox.orientation = LinearLayout.HORIZONTAL
                 actionsBox.gravity = Gravity.CENTER_VERTICAL
+                actionsBox.addView(cropBtn, LinearLayout.LayoutParams(dp(40), dp(40)))
                 actionsBox.addView(rotateLeft, LinearLayout.LayoutParams(dp(40), dp(40)))
                 actionsBox.addView(rotateRight, LinearLayout.LayoutParams(dp(40), dp(40)))
                 if (isMerge) {
@@ -577,7 +649,7 @@ class EditorViewBuilder(
                 lp.setMargins(0, 0, 0, dp(8))
                 card.layoutParams = lp
 
-                return PageViewHolder(card, preview, keepBox, infoText, titleText, rotateLeft, rotateRight, crossBtn)
+                return PageViewHolder(card, preview, keepBox, infoText, titleText, cropBtn, rotateLeft, rotateRight, crossBtn)
             } else {
                 val row = LinearLayout(activity)
                 row.orientation = LinearLayout.VERTICAL
@@ -626,7 +698,7 @@ class EditorViewBuilder(
                 lp.setMargins(0, 0, 0, dp(8))
                 card.layoutParams = lp
 
-                return PageViewHolder(card, preview, keepBox, infoText, null, rotateLeft, rotateRight, null)
+                return PageViewHolder(card, preview, keepBox, infoText, null, ImageView(activity), rotateLeft, rotateRight, null)
             }
         }
 
@@ -675,6 +747,7 @@ class EditorViewBuilder(
 
             if (isImg) {
                 holder.keep.visibility = View.VISIBLE
+                holder.cropBtn.visibility = if (hideRotate) View.GONE else View.VISIBLE
                 if (hideRotate) {
                     holder.rotateLeft.visibility = View.GONE
                     holder.rotateRight.visibility = View.GONE
@@ -690,6 +763,13 @@ class EditorViewBuilder(
                 } else {
                     holder.rotateLeft.visibility = View.VISIBLE
                     holder.rotateRight.visibility = View.VISIBLE
+                }
+            }
+
+            holder.cropBtn.setOnClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    actions.onCropPage(pos, null)
                 }
             }
 
@@ -784,6 +864,13 @@ class EditorViewBuilder(
             if (hideRotate) rotRight.visibility = View.GONE
             controlsPill.addView(rotRight, LinearLayout.LayoutParams(dp(48), dp(48)))
 
+            val cropBtn = ImageView(activity)
+            cropBtn.setImageResource(R.drawable.crop_24px)
+            cropBtn.setColorFilter(Color.WHITE)
+            cropBtn.setPadding(dp(12), dp(12), dp(12), dp(12))
+            if (hideRotate) cropBtn.visibility = View.GONE
+            controlsPill.addView(cropBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
+
             val cbColors = android.content.res.ColorStateList(
                 arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
                 intArrayOf(Color.parseColor("#888888"), color(R.color.istan_olive))
@@ -875,6 +962,19 @@ class EditorViewBuilder(
                 }
                 val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
                 if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+            }
+
+            cropBtn.setOnClickListener {
+                actions.onCropPage(currentPos[0]) {
+                    val pgs = actions.getPages()
+                    val p = pgs[currentPos[0]]
+                    val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (vh is PreviewPagerAdapter.PreviewVH) {
+                        vh.image.setImageBitmapAndReset(p.thumbnail)
+                    }
+                    val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+                }
             }
 
             backBtn.setOnClickListener { dialog.dismiss() }

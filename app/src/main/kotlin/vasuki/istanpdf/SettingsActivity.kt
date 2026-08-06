@@ -326,7 +326,7 @@ class SettingsActivity : AppCompatActivity() {
             contentDescription = label + " theme" + if (isSelected) ", selected" else ""
             setTextColor(ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(ThemePrefs.contrastText(color(R.color.istan_olive)), color(R.color.istan_text_muted))))
+                intArrayOf(if (ThemePrefs.isAmoled(this@SettingsActivity)) Color.BLACK else Color.WHITE, color(R.color.istan_text_muted))))
             backgroundTintList = ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                 intArrayOf(color(R.color.istan_olive), Color.TRANSPARENT))

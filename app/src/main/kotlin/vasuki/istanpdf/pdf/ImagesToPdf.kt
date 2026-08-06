@@ -25,7 +25,8 @@ object ImagesToPdf {
             try {
                 for (pageItem in pages) {
                     if (!pageItem.keep) continue
-                    val uri = src[pageItem.originalIndex]
+                    val uri = pageItem.replacementFile?.let { Uri.fromFile(it) }
+                        ?: src[pageItem.originalIndex]
 
                     val opt = BitmapFactory.Options()
                     opt.inJustDecodeBounds = true

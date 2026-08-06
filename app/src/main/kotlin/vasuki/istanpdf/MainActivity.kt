@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -25,15 +26,19 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import vasuki.istanpdf.di.AppModule
 import vasuki.istanpdf.model.PageItem
+import vasuki.istanpdf.presentation.CropOverlayView
 import vasuki.istanpdf.presentation.EditorViewBuilder
 import vasuki.istanpdf.presentation.EditorViewModel
 import vasuki.istanpdf.presentation.HomeViewBuilder
+import vasuki.istanpdf.util.BitmapUtils
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -59,6 +64,13 @@ class MainActivity : AppCompatActivity() {
     private var activeReq = 0
     private var themeToken: String? = null
     private lateinit var docLauncher: ActivityResultLauncher<Intent>
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private var cameraPhotoFile: File? = null
+    private var cropDialog: android.app.Dialog? = null
+    private var cropView: CropOverlayView? = null
+    private var cropBitmap: Bitmap? = null
+    private var currentEditorTitle: String? = null
+    private var cameraMergeToPdf = false
 
     private var compressMode = COMPRESS_MODE_RESOLUTION
     private var compressDpi = 150
@@ -74,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         editorViewModel = ViewModelProvider(this).get(EditorViewModel::class.java)
 
         docLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ::onDocResult)
+        cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ::onCameraResult)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
@@ -819,7 +832,17 @@ class MainActivity : AppCompatActivity() {
 
             runJob(activeStatus) {
                 if (isDocx) {
-                    AppModule.get().saveDocx.execute(source, snapshot, destination)
+                    if (snapshot.any { it.replacementFile != null }) {
+                        val replFile = File(cacheDir, "replaced_${System.currentTimeMillis()}.pdf")
+                        try {
+                            AppModule.get().pdfEngine.replacePages(source, snapshot, Uri.fromFile(replFile))
+                            AppModule.get().saveDocx.execute(Uri.fromFile(replFile), snapshot, destination)
+                        } finally {
+                            if (replFile.exists()) replFile.delete()
+                        }
+                    } else {
+                        AppModule.get().saveDocx.execute(source, snapshot, destination)
+                    }
                 } else {
                     AppModule.get().reorderPdf.execute(source, snapshot, destination)
                 }
@@ -836,7 +859,7 @@ class MainActivity : AppCompatActivity() {
             override fun onMergePdf() { editorViewModel.clearPendingUris(); pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF) }
             override fun onModifyPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_REORDER_PDF) }
             override fun onCompressPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_COMPRESS_PDF) }
-            override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp"), REQ_PICK_IMAGES_TO_PDF) }
+            override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); showImageSourceChooser() }
             override fun onPdfToImage() { pickOne(arrayOf(MIME_PDF), REQ_PICK_PDF_TO_JPG) }
             override fun onDocxToPdf() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
             override fun onMdToPdf() { pickOne(arrayOf(MIME_MD, "text/plain"), REQ_PICK_MD_TO_PDF) }
@@ -853,12 +876,18 @@ class MainActivity : AppCompatActivity() {
     private fun buildPageEditor(titleText: String, saveLabelText: String, docxExport: Boolean, allowReorder: Boolean) {
         isHome = false
         editorViewModel.pagesAdded = false
+        currentEditorTitle = titleText
 
         val builder = EditorViewBuilder(this, regularFont, boldFont)
         val editorView = builder.build(titleText, saveLabelText, docxExport, allowReorder, object : EditorViewBuilder.EditorActions {
             override fun onBack() { buildHome() }
             override fun onSave(title: String, isDocx: Boolean) { handleSave(title, isDocx) }
             override fun onAddItems(title: String) { handleAddItems(title) }
+            override fun onTakePhoto() {
+                if (currentEditorTitle != "Images to PDF") cameraMergeToPdf = true
+                launchCameraForCapture()
+            }
+            override fun onCropPage(position: Int, onCropped: Runnable?) { cropEditorPage(position, onCropped) }
             override fun onShowCustomDialog(title: String, content: View, negStr: String?, negAction: Runnable?, posStr: String?, posAction: Runnable?) {
                 showCustomDialog(title, content, negStr, negAction, posStr, posAction)
             }
@@ -879,9 +908,11 @@ class MainActivity : AppCompatActivity() {
 
         var removed = false
         var keepCount = 0
+        var cropped = false
         for (p in pages) {
             if (!p.keep) removed = true
             else keepCount++
+            if (p.replacementFile != null) cropped = true
         }
         if (keepCount == 0) {
             toast("Please select at least one page to save.")
@@ -924,7 +955,7 @@ class MainActivity : AppCompatActivity() {
         val pagesAdded = editorViewModel.pagesAdded
 
         if ("Images to PDF" == titleText) {
-        } else if (!removed && !reordered && !rotated && !pagesAdded) {
+        } else if (!removed && !reordered && !rotated && !pagesAdded && !cropped) {
             status?.text = "No changes to save."
             return
         }
@@ -934,6 +965,7 @@ class MainActivity : AppCompatActivity() {
         if (reordered) changedCount++
         if (rotated) changedCount++
         if (pagesAdded) changedCount++
+        if (cropped) changedCount++
 
         val suffix = when {
             changedCount > 1 -> "_modified"
@@ -941,6 +973,7 @@ class MainActivity : AppCompatActivity() {
             reordered -> "_reordered"
             removed -> "_removed"
             rotated -> "_rotated"
+            cropped -> "_cropped"
             else -> ""
         }
 
@@ -961,6 +994,436 @@ class MainActivity : AppCompatActivity() {
             titleText == "Remove/Reorder PDF" -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_PDF), REQ_PICK_PDF_ADD)
             "Merge PDF" == titleText -> pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF_ADD)
             else -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", "application/pdf"), REQ_PICK_IMAGES_TO_PDF_ADD)
+        }
+    }
+
+    private fun showImageSourceChooser() {
+        val content = LinearLayout(this)
+        content.orientation = LinearLayout.VERTICAL
+        content.setPadding(0, dp(12), 0, dp(4))
+
+        val dialogRef = arrayOfNulls<android.app.Dialog>(1)
+
+        val card1 = MaterialCardView(this)
+        card1.setCardBackgroundColor(Color.TRANSPARENT)
+        card1.radius = dp(16).toFloat()
+        card1.strokeWidth = dp(1)
+        card1.strokeColor = color(R.color.istan_outline)
+        card1.cardElevation = 0f
+        card1.setOnClickListener {
+            dialogRef[0]?.dismiss()
+            pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
+        }
+
+        val opt1 = text("From Gallery", 15, R.color.istan_text, false)
+        opt1.setPadding(dp(20), dp(16), dp(20), dp(16))
+        card1.addView(opt1)
+
+        val lp1 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        lp1.setMargins(0, 0, 0, dp(12))
+        content.addView(card1, lp1)
+
+        val card2 = MaterialCardView(this)
+        card2.setCardBackgroundColor(Color.TRANSPARENT)
+        card2.radius = dp(16).toFloat()
+        card2.strokeWidth = dp(1)
+        card2.strokeColor = color(R.color.istan_outline)
+        card2.cardElevation = 0f
+        card2.setOnClickListener {
+            dialogRef[0]?.dismiss()
+            launchCameraForCapture()
+        }
+
+        val opt2 = text("Take Photo", 15, R.color.istan_text, false)
+        opt2.setPadding(dp(20), dp(16), dp(20), dp(16))
+        card2.addView(opt2)
+
+        val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        content.addView(card2, lp2)
+
+        dialogRef[0] = showCustomDialog("Add Images", content, "Cancel", null, null, null)
+    }
+
+    private fun launchCameraForCapture() {
+        val file = createCameraCaptureFile() ?: run {
+            toast("Could not create a photo file.")
+            return
+        }
+        cameraPhotoFile = file
+        val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
+        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
+        captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        try {
+            cameraLauncher.launch(captureIntent)
+        } catch (e: Exception) {
+            discardCameraPhoto()
+            toast("No camera app found. Choose from gallery instead.")
+            pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
+        }
+    }
+
+    private fun createCameraCaptureFile(): File? {
+        return try {
+            val dir = File(cacheDir, "camera_capture")
+            if (!dir.exists()) dir.mkdirs()
+            File.createTempFile("istan_cam_", ".jpg", dir)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun onCameraResult(result: ActivityResult) {
+        val file = cameraPhotoFile ?: return
+        if (result.resultCode == Activity.RESULT_OK) {
+            if (file.exists() && file.length() > 0) {
+                showCropDialog(file)
+            } else {
+                val uri = result.data?.data
+                if (uri != null) {
+                    try {
+                        val copied = vasuki.istanpdf.util.ContentFiles.copyUriToCache(this, uri, ".jpg")
+                        file.delete()
+                        cameraPhotoFile = copied
+                        showCropDialog(copied)
+                    } catch (e: Exception) {
+                        discardCameraPhoto()
+                        showError(e)
+                    }
+                } else {
+                    discardCameraPhoto()
+                }
+            }
+        } else {
+            discardCameraPhoto()
+        }
+    }
+
+    private fun showCropDialog(photoFile: File) {
+        if (cropDialog != null) return
+        val bmp = try {
+            BitmapUtils.loadCameraBitmap(photoFile, CROP_MAX_DIM)
+        } catch (e: Exception) {
+            discardCameraPhoto()
+            showError(e)
+            return
+        }
+        cropBitmap = bmp
+        showCropUi("Crop Photo", bmp, {
+            cameraPhotoFile?.let { if (it.exists()) it.delete() }
+            cameraPhotoFile = null
+            clearCropState()
+            launchCameraForCapture()
+        }) { cropped ->
+            cameraPhotoFile = null
+            clearCropState()
+            if (cameraMergeToPdf) {
+                cameraMergeToPdf = false
+                appendCameraPhotoToPdfOps(cropped)
+            } else {
+                addCameraImage(cropped)
+            }
+        }
+    }
+
+    private fun showPageCropDialog(bitmap: Bitmap, onResult: (Bitmap) -> Unit) {
+        if (cropDialog != null) return
+        cropBitmap = bitmap
+        showCropUi("Crop Page", bitmap, null) { cropped ->
+            clearCropState()
+            onResult(cropped)
+        }
+    }
+
+    private fun showCropUi(title: String, bmp: Bitmap, retakeAction: (() -> Unit)?, onAdd: (Bitmap) -> Unit) {
+        val dialog = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar)
+        dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        dialog.window?.statusBarColor = Color.parseColor("#E6252525")
+        dialog.window?.navigationBarColor = Color.parseColor("#E6252525")
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+
+        val dialogRoot = LinearLayout(this)
+        dialogRoot.orientation = LinearLayout.VERTICAL
+        dialogRoot.setBackgroundColor(Color.parseColor("#E6252525"))
+
+        val topBar = FrameLayout(this)
+        val closeBtn = TextView(this)
+        closeBtn.text = "✕"
+        closeBtn.setTextColor(Color.WHITE)
+        closeBtn.textSize = 26f
+        closeBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
+        val clsLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        clsLp.gravity = Gravity.START or Gravity.CENTER_VERTICAL
+        topBar.addView(closeBtn, clsLp)
+
+        val topTitle = text(title, 18, R.color.istan_surface, true)
+        topTitle.setTextColor(Color.WHITE)
+        val ttLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        ttLp.gravity = Gravity.CENTER
+        topBar.addView(topTitle, ttLp)
+        dialogRoot.addView(topBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        val cropView = CropOverlayView(this)
+        cropView.setImage(bmp)
+        dialogRoot.addView(cropView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        this.cropView = cropView
+
+        val pillBg = android.graphics.drawable.GradientDrawable()
+        pillBg.setColor(Color.parseColor("#22FFFFFF"))
+        pillBg.cornerRadius = dp(32).toFloat()
+        val controlsPill = LinearLayout(this)
+        controlsPill.orientation = LinearLayout.HORIZONTAL
+        controlsPill.gravity = Gravity.CENTER_VERTICAL
+        controlsPill.isBaselineAligned = false
+        controlsPill.background = pillBg
+        controlsPill.setPadding(dp(4), dp(4), dp(4), dp(4))
+
+        val rotLeftBtn = cropIconButton(R.drawable.rotate_left) { rotateWorkingBitmap(-90f) }
+        controlsPill.addView(rotLeftBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+        val rotRightBtn = cropIconButton(R.drawable.rotate_right) { rotateWorkingBitmap(90f) }
+        controlsPill.addView(rotRightBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+        if (retakeAction != null) {
+            val retakeBtn = cropIconButton(R.drawable.close_24px) {
+                dialog.dismiss()
+                retakeAction()
+            }
+            controlsPill.addView(retakeBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
+        }
+
+        val addBtn = cropIconButton(R.drawable.check_24px) {
+            val cropped = try {
+                this.cropView?.cropBitmap()
+            } catch (e: Exception) {
+                null
+            }
+            dialog.dismiss()
+            if (cropped != null) {
+                onAdd(cropped)
+            } else {
+                if (retakeAction != null) discardCameraPhoto() else clearCropState()
+            }
+        }
+        controlsPill.addView(addBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+        val bottomBar = FrameLayout(this)
+        val pillLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        pillLp.gravity = Gravity.CENTER
+        bottomBar.setPadding(0, dp(14), 0, dp(20))
+        bottomBar.addView(controlsPill, pillLp)
+        dialogRoot.addView(bottomBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        closeBtn.setOnClickListener {
+            dialog.dismiss()
+            if (retakeAction != null) discardCameraPhoto() else clearCropState()
+        }
+        dialog.setOnCancelListener {
+            if (retakeAction != null) discardCameraPhoto() else clearCropState()
+        }
+        dialog.setOnDismissListener { this.cropDialog = null }
+        dialog.setContentView(dialogRoot)
+        cropDialog = dialog
+        dialog.show()
+    }
+
+    private fun cropIconButton(drawableRes: Int, action: () -> Unit): ImageView {
+        val iv = ImageView(this)
+        iv.setImageResource(drawableRes)
+        iv.setColorFilter(Color.WHITE)
+        iv.setPadding(dp(12), dp(12), dp(12), dp(12))
+        iv.setOnClickListener { action() }
+        return iv
+    }
+
+    private fun rotateWorkingBitmap(degrees: Float) {
+        val current = cropBitmap ?: return
+        val matrix = android.graphics.Matrix()
+        matrix.postRotate(degrees)
+        val rotated = try {
+            Bitmap.createBitmap(current, 0, 0, current.width, current.height, matrix, true)
+        } catch (e: Exception) {
+            null
+        } ?: return
+        cropView?.setImage(rotated)
+        if (!current.isRecycled) current.recycle()
+        cropBitmap = rotated
+    }
+
+    private fun clearCropState() {
+        cropBitmap?.let { if (!it.isRecycled) it.recycle() }
+        cropBitmap = null
+        cropView = null
+    }
+
+    private fun discardCameraPhoto() {
+        cameraMergeToPdf = false
+        cameraPhotoFile?.let { if (it.exists()) it.delete() }
+        cameraPhotoFile = null
+        clearCropState()
+    }
+
+    private fun cropEditorPage(position: Int, onCropped: Runnable?) {
+        val pages = editorViewModel.pages
+        if (position < 0 || position >= pages.size) return
+        val page = pages[position]
+        val title = currentEditorTitle
+        setBusy(true, "Preparing page for crop...", true)
+        worker.execute {
+            try {
+                val src = if (title == "Images to PDF") {
+                    val uri = if (page.originalIndex < editorViewModel.pendingUris.size) {
+                        editorViewModel.pendingUris[page.originalIndex]
+                    } else null
+                    if (uri != null) BitmapUtils.loadImageUri(this@MainActivity, uri, CROP_MAX_DIM) else null
+                } else {
+                    editorViewModel.reorderSource?.let {
+                        AppModule.get().pdfEngine.renderPage(it, page.originalIndex, CROP_MAX_DIM)
+                    }
+                }
+                if (src == null) throw IllegalStateException("Cannot load page image")
+                runOnUiThread {
+                    setBusy(false, "Ready")
+                    showPageCropDialog(src) { cropped ->
+                        applyPageCrop(page, cropped)
+                        onCropped?.run()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    setBusy(false, "Ready")
+                    showError(e)
+                }
+            }
+        }
+    }
+
+    private fun applyPageCrop(page: PageItem, cropped: Bitmap) {
+        try {
+            val file = File(cacheDir, "crop_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { out ->
+                cropped.compress(Bitmap.CompressFormat.JPEG, 92, out)
+            }
+            page.replacementFile = file
+            editorViewModel.tempImageFiles.add(file)
+
+            var thumb = BitmapUtils.scaleToFit(cropped, dp(280))
+            if (page.rotation != 0) {
+                val matrix = android.graphics.Matrix()
+                matrix.postRotate(page.rotation.toFloat())
+                val rotated = Bitmap.createBitmap(thumb, 0, 0, thumb.width, thumb.height, matrix, true)
+                if (rotated !== thumb) {
+                    if (!thumb.isRecycled) thumb.recycle()
+                    thumb = rotated
+                }
+            }
+            if (!page.thumbnail.isRecycled) page.thumbnail.recycle()
+            page.thumbnail = thumb
+            if (thumb !== cropped && !cropped.isRecycled) cropped.recycle()
+            pageList?.adapter?.notifyDataSetChanged()
+        } catch (e: Exception) {
+            showError(e)
+        }
+    }
+
+    private fun appendCameraPhotoToPdfOps(bitmap: Bitmap) {
+        setBusy(true, "Adding photo...", true)
+        worker.execute {
+            try {
+                val photoFile = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(photoFile).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                }
+                editorViewModel.tempImageFiles.add(photoFile)
+
+                val reorderSource = editorViewModel.reorderSource
+                    ?: throw IllegalStateException("No source document")
+                val photoPdf = File(cacheDir, "photo_pdf_${System.currentTimeMillis()}.pdf")
+                val iw = bitmap.width.toFloat()
+                val ih = bitmap.height.toFloat()
+                val baos = java.io.ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, baos)
+                val imgData = com.itextpdf.io.image.ImageDataFactory.createJpeg(baos.toByteArray())
+                val imgDoc = com.itextpdf.kernel.pdf.PdfDocument(
+                    com.itextpdf.kernel.pdf.PdfWriter(java.io.FileOutputStream(photoPdf)))
+                val ps = com.itextpdf.kernel.geom.PageSize(iw, ih)
+                val imgPage = imgDoc.addNewPage(ps)
+                val pdfCanvas = com.itextpdf.kernel.pdf.canvas.PdfCanvas(imgPage)
+                pdfCanvas.addImageFittedIntoRectangle(imgData, com.itextpdf.kernel.geom.Rectangle(0f, 0f, iw, ih), false)
+                imgDoc.close()
+
+                val mergedFile = File(cacheDir, "merged_${System.currentTimeMillis()}.pdf")
+                val srcFile = vasuki.istanpdf.util.ContentFiles.copyUriToCache(this@MainActivity, reorderSource, ".pdf")
+                try {
+                    val srcDoc = com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfReader(srcFile))
+                    val addDoc = com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfReader(photoPdf))
+                    val destDoc = com.itextpdf.kernel.pdf.PdfDocument(
+                        com.itextpdf.kernel.pdf.PdfWriter(java.io.FileOutputStream(mergedFile)))
+                    val pdfMerger = com.itextpdf.kernel.utils.PdfMerger(destDoc)
+                    pdfMerger.merge(srcDoc, 1, srcDoc.numberOfPages)
+                    pdfMerger.merge(addDoc, 1, addDoc.numberOfPages)
+                    addDoc.close()
+                    srcDoc.close()
+                    destDoc.close()
+                } finally {
+                    if (srcFile.exists()) srcFile.delete()
+                    if (photoPdf.exists()) photoPdf.delete()
+                }
+                val mergedUri = Uri.fromFile(mergedFile)
+                val allRendered = renderPdfPages(mergedUri)
+                val pages = editorViewModel.pages
+                val existingCount = pages.size
+                val newPages = allRendered.drop(existingCount).toMutableList()
+
+                if ("file" == reorderSource.scheme) {
+                    val oldFile = File(reorderSource.path!!)
+                    if (oldFile.exists() && oldFile.absolutePath.startsWith(cacheDir.absolutePath)) {
+                        oldFile.delete()
+                    }
+                }
+                editorViewModel.reorderSource = mergedUri
+                runOnUiThread {
+                    pages.addAll(newPages)
+                    editorViewModel.pagesAdded = true
+                    pageList?.adapter?.notifyDataSetChanged()
+                    setBusy(false, "Ready")
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    setBusy(false, "Ready")
+                    showError(e)
+                }
+            }
+        }
+    }
+
+    private fun addCameraImage(bitmap: Bitmap) {
+        try {
+            val file = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+            }
+            editorViewModel.tempImageFiles.add(file)
+            editorViewModel.pendingUris.add(Uri.fromFile(file))
+
+            val thumb = BitmapUtils.scaleToFit(bitmap, dp(280))
+            editorViewModel.pages.add(PageItem(editorViewModel.pages.size, thumb, "Camera Photo"))
+            editorViewModel.pagesAdded = true
+
+            cameraPhotoFile?.let { if (it.exists()) it.delete() }
+            cameraPhotoFile = null
+
+            runOnUiThread {
+                if (isHome) {
+                    buildPageEditor("Images to PDF", "Save PDF", false, true)
+                } else {
+                    pageList?.adapter?.notifyDataSetChanged()
+                }
+                status?.text = "Ready"
+                setStatusIndicatorColor(color(R.color.istan_olive))
+            }
+        } catch (e: Exception) {
+            showError(e)
         }
     }
 
@@ -1694,5 +2157,9 @@ class MainActivity : AppCompatActivity() {
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         private const val MIME_MD = "text/markdown"
         private const val WAITING_TEXT = "Ready"
+
+        private val IMAGE_MIME_TYPES = arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp")
+
+        private const val CROP_MAX_DIM = 2048
     }
 }

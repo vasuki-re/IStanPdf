@@ -56,6 +56,36 @@ class PdfEngine(context: Context) {
     }
 
     @Throws(Exception::class)
+    fun renderPage(uri: Uri, pageIndex: Int, targetWidth: Int): Bitmap {
+        var tempPdf: File? = null
+        var fd: ParcelFileDescriptor? = null
+        try {
+            if (uri.scheme == "file") {
+                fd = ParcelFileDescriptor.open(File(uri.path!!), ParcelFileDescriptor.MODE_READ_ONLY)
+            } else {
+                tempPdf = ContentFiles.copyUriToCache(context, uri, ".pdf")
+                fd = ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY)
+            }
+            requireNotNull(fd) { "Cannot open PDF file" }
+            PdfRenderer(fd).use { renderer ->
+                require(pageIndex in 0 until renderer.pageCount) { "Page index out of range" }
+                renderer.openPage(pageIndex).use { page ->
+                    val width = targetWidth
+                    val height = max(1, width * page.height / max(1, page.width))
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    bitmap.eraseColor(Color.WHITE)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    return bitmap
+                }
+            }
+            throw IllegalStateException("Cannot render page")
+        } finally {
+            try { fd?.close() } catch (_: Exception) {}
+            if (tempPdf?.exists() == true) tempPdf.delete()
+        }
+    }
+
+    @Throws(Exception::class)
     fun renderAllPages(
         uri: Uri,
         targetWidth: Int,
@@ -110,6 +140,11 @@ class PdfEngine(context: Context) {
     @Throws(Exception::class)
     fun reorder(source: Uri, pages: List<PageItem>, destination: Uri): Int {
         return PdfReorder.run(context, source, pages, destination)
+    }
+
+    @Throws(Exception::class)
+    fun replacePages(source: Uri, pages: List<PageItem>, destination: Uri) {
+        PdfReorder.replacePages(context, source, pages, destination)
     }
 
     @Throws(Exception::class)

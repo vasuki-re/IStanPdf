@@ -10,7 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.pow
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 object ThemePrefs {
@@ -142,23 +142,6 @@ object ThemePrefs {
 
     fun accentForeground(accent: Accent, amoled: Boolean): Int =
         if (amoled) accent.base else accent.dark
-
-    fun contrastText(background: Int): Int {
-        val luminance = relativeLuminance(background)
-        val whiteContrast = 1.05 / (luminance + 0.05)
-        val blackContrast = (luminance + 0.05) / 0.05
-        return if (whiteContrast >= blackContrast) Color.WHITE else Color.BLACK
-    }
-
-    private fun relativeLuminance(color: Int): Double =
-        0.2126 * linear(Color.red(color)) +
-        0.7152 * linear(Color.green(color)) +
-        0.0722 * linear(Color.blue(color))
-
-    private fun linear(component: Int): Double {
-        val value = component / 255.0
-        return if (value <= 0.04045) value / 12.92 else ((value + 0.055) / 1.055).pow(2.4)
-    }
 
     fun quadrantColors(accent: Accent, amoled: Boolean): IntArray {
         return if (amoled) {
