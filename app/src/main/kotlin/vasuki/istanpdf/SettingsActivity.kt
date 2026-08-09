@@ -371,7 +371,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showCameraPackageDialog(prefs: android.content.SharedPreferences, pill: TextView) {
-        val current = prefs.getString("camera_pkg", "") ?: ""
+        val current = prefs.getString("camera_pkg", "")?.takeIf { it.isNotEmpty() }
+            ?: (prefs.getString("camera_pkg_last", "") ?: "")
 
         val editText = EditText(this).apply {
             hint = "e.g. com.google.android.GoogleCamera"
@@ -462,12 +463,16 @@ class SettingsActivity : AppCompatActivity() {
             .resolveActivity(Intent(MediaStore.ACTION_IMAGE_CAPTURE), PackageManager.MATCH_DEFAULT_ONLY)
             ?.activityInfo?.packageName
         if (trimmed == defaultPkg) {
-            prefs.edit().putString("camera_pkg", "").apply()
+            prefs.edit()
+                .putString("camera_pkg", "")
+                .remove("camera_pkg_last").apply()
             pill.text = "Default"
             Toast.makeText(this, "That is already your default camera. Set to Default.", Toast.LENGTH_LONG).show()
             return
         }
-        prefs.edit().putString("camera_pkg", trimmed).apply()
+        prefs.edit()
+            .putString("camera_pkg", trimmed)
+            .putString("camera_pkg_last", trimmed).apply()
         pill.text = "Custom"
         Toast.makeText(this, "Camera set to $trimmed", Toast.LENGTH_SHORT).show()
     }
