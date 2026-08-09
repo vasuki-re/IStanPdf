@@ -1,5 +1,7 @@
 package vasuki.istanpdf
 
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
@@ -8,6 +10,9 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
+import android.provider.MediaStore
+import android.text.InputType
+import android.widget.EditText
 import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
@@ -282,12 +287,189 @@ class SettingsActivity : AppCompatActivity() {
         perfRow.addView(perfSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         generalGroup.addView(perfRow)
 
+        generalGroup.addView(View(this).apply {
+            setBackgroundColor(color(R.color.istan_outline))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+            setMargins(dp(16), 0, dp(16), 0)
+        })
+
+        val currentCameraPkg = prefs.getString("camera_pkg", "") ?: ""
+        val cameraRow = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+        }
+        val cameraTitle = text("Camera App", 16, R.color.istan_text, true)
+        cameraRow.addView(cameraTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        val cameraPill = text(
+            if (currentCameraPkg.isEmpty()) "Default" else "Custom",
+            14, R.color.istan_text, true
+        ).apply {
+            background = roundedBackground(color(R.color.istan_surface_high), dp(22), 0)
+            setPadding(dp(16), 0, dp(16), 0)
+            gravity = Gravity.CENTER_VERTICAL
+            setOnClickListener { showCameraDropdown(it, this, prefs) }
+        }
+        cameraRow.addView(cameraPill, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)))
+        generalGroup.addView(cameraRow)
+
         body.addView(generalGroup, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = dp(24)
         })
 
         body.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         return body
+    }
+
+    private fun showCameraDropdown(anchor: View, pill: TextView, prefs: android.content.SharedPreferences) {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                setColor(color(R.color.istan_surface))
+                cornerRadius = dp(12).toFloat()
+                setStroke(dp(1), color(R.color.istan_outline))
+            }
+            elevation = dp(4).toFloat()
+            setPadding(0, dp(4), 0, dp(4))
+        }
+
+        fun option(label: String, action: () -> Unit): TextView = text(label, 14, R.color.istan_text, false).apply {
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setOnClickListener { action() }
+        }
+
+        val popupRef = arrayOfNulls<PopupWindow>(1)
+
+        container.addView(option("Default") {
+            popupRef[0]?.dismiss()
+            prefs.edit().putString("camera_pkg", "").apply()
+            pill.text = "Default"
+        })
+        container.addView(View(this).apply {
+            setBackgroundColor(color(R.color.istan_outline))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+            setMargins(dp(12), 0, dp(12), 0)
+        })
+        container.addView(option("Custom") {
+            popupRef[0]?.dismiss()
+            showCameraPackageDialog(prefs, pill)
+        })
+
+        container.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val popup = PopupWindow(container, container.measuredWidth.coerceAtLeast(dp(140)), ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            isOutsideTouchable = true
+            elevation = dp(4).toFloat()
+        }
+        popupRef[0] = popup
+
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        popup.showAtLocation(anchor, Gravity.NO_GRAVITY,
+            location[0] + anchor.width - container.measuredWidth.coerceAtLeast(dp(140)),
+            location[1] + anchor.height + dp(4))
+    }
+
+    private fun showCameraPackageDialog(prefs: android.content.SharedPreferences, pill: TextView) {
+        val current = prefs.getString("camera_pkg", "") ?: ""
+
+        val editText = EditText(this).apply {
+            hint = "e.g. com.google.android.GoogleCamera"
+            setText(current)
+            textSize = 14f
+            typeface = regularFont
+            setTextColor(color(R.color.istan_text))
+            setHintTextColor(color(R.color.istan_text_muted))
+            inputType = InputType.TYPE_CLASS_TEXT
+            maxLines = 1
+            isSingleLine = true
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            background = roundedBackground(color(R.color.istan_surface_high), dp(12), dp(1))
+            setSelection(current.length)
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(8), 0, 0)
+            addView(editText, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+
+        val dialog = android.app.Dialog(this)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.setCancelable(true)
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                setColor(color(R.color.istan_surface))
+                cornerRadius = dp(28).toFloat()
+                setStroke(dp(1), color(R.color.istan_outline))
+            }
+            setPadding(dp(24), dp(24), dp(24), dp(20))
+        }
+
+        val titleView = text("Custom Camera App", 20, R.color.istan_text, true)
+        root.addView(titleView)
+        root.addView(content)
+
+        val btnRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+            setPadding(0, dp(20), 0, 0)
+        }
+        val cancelBtn = text("Cancel", 14, R.color.istan_text_muted, true).apply {
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            setOnClickListener { dialog.dismiss() }
+        }
+        val saveBtn = text("Save", 14, R.color.istan_olive, true).apply {
+            setPadding(dp(12), dp(8), 0, dp(8))
+            setOnClickListener {
+                dialog.dismiss()
+                validateAndSaveCameraPkg(editText.text.toString(), prefs, pill)
+            }
+        }
+        btnRow.addView(cancelBtn)
+        btnRow.addView(saveBtn)
+        root.addView(btnRow)
+
+        dialog.setContentView(root)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.85).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog.show()
+        editText.requestFocus()
+    }
+
+    private fun validateAndSaveCameraPkg(pkg: String, prefs: android.content.SharedPreferences, pill: TextView) {
+        val trimmed = pkg.trim()
+        if (trimmed.isEmpty()) {
+            prefs.edit().putString("camera_pkg", "").apply()
+            pill.text = "Default"
+            return
+        }
+        val probe = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { setPackage(trimmed) }
+        val canCapture = packageManager.resolveActivity(probe, PackageManager.MATCH_DEFAULT_ONLY) != null
+        if (!canCapture) {
+            val installed = try { packageManager.getApplicationInfo(trimmed, 0); true }
+                            catch (e: PackageManager.NameNotFoundException) { false }
+            val msg = if (installed) "\"$trimmed\" is not a camera app"
+                      else "App not installed: $trimmed"
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            return
+        }
+        val defaultPkg = packageManager
+            .resolveActivity(Intent(MediaStore.ACTION_IMAGE_CAPTURE), PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName
+        if (trimmed == defaultPkg) {
+            prefs.edit().putString("camera_pkg", "").apply()
+            pill.text = "Default"
+            Toast.makeText(this, "That is already your default camera. Set to Default.", Toast.LENGTH_LONG).show()
+            return
+        }
+        prefs.edit().putString("camera_pkg", trimmed).apply()
+        pill.text = "Custom"
+        Toast.makeText(this, "Camera set to $trimmed", Toast.LENGTH_SHORT).show()
     }
 
     private fun showAccentPill(anchor: View, name: String) {

@@ -1087,12 +1087,21 @@ class MainActivity : AppCompatActivity() {
         }
         cameraPhotoFile = file
         val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val customPkg = getSharedPreferences("app_prefs", MODE_PRIVATE).getString("camera_pkg", "") ?: ""
+        if (customPkg.isNotEmpty()) captureIntent.setPackage(customPkg)
         val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
         captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
         captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         try {
             cameraLauncher.launch(captureIntent)
         } catch (e: Exception) {
+            if (customPkg.isNotEmpty()) {
+                captureIntent.setPackage(null)
+                try {
+                    cameraLauncher.launch(captureIntent)
+                    return
+                } catch (_: Exception) {}
+            }
             discardCameraPhoto()
             toast("No camera app found. Choose from gallery instead.")
             pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
