@@ -966,14 +966,9 @@ class EditorViewBuilder(
 
             cropBtn.setOnClickListener {
                 actions.onCropPage(currentPos[0]) {
-                    val pgs = actions.getPages()
-                    val p = pgs[currentPos[0]]
-                    val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
-                    if (vh is PreviewPagerAdapter.PreviewVH) {
-                        vh.image.setImageBitmapAndReset(p.thumbnail)
-                    }
+                    viewPager.adapter?.notifyItemChanged(currentPos[0])
                     val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                    if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+                    if (listVh is PageViewHolder) listVh.preview.setImageBitmap(actions.getPages()[currentPos[0]].thumbnail)
                 }
             }
 

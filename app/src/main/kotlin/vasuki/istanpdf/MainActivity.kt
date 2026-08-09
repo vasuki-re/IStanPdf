@@ -27,7 +27,10 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
@@ -67,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private var themeToken: String? = null
     private lateinit var docLauncher: ActivityResultLauncher<Intent>
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
     private var cameraPhotoFile: File? = null
     private var cropDialog: android.app.Dialog? = null
     private var cropView: CropOverlayView? = null
@@ -90,6 +94,10 @@ class MainActivity : AppCompatActivity() {
 
         docLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ::onDocResult)
         cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ::onCameraResult)
+        cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) launchCameraForCapture()
+            else toast("Camera permission is required to take photos")
+        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
@@ -1069,6 +1077,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchCameraForCapture() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+            return
+        }
         val file = createCameraCaptureFile() ?: run {
             toast("Could not create a photo file.")
             return
@@ -1301,7 +1313,9 @@ class MainActivity : AppCompatActivity() {
         setBusy(true, "Preparing page for crop...", true)
         worker.execute {
             try {
-                val src = if (title == "Images to PDF") {
+                val src = if (page.replacementFile != null && page.replacementFile!!.exists()) {
+                    BitmapUtils.loadCameraBitmap(page.replacementFile!!, CROP_MAX_DIM)
+                } else if (title == "Images to PDF") {
                     val uri = page.uri
                     if (uri != null) BitmapUtils.loadImageUri(this@MainActivity, uri, CROP_MAX_DIM) else null
                 } else {
@@ -1560,7 +1574,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (exception: Exception) {
-                showError(exception)
+                runOnUiThread { showError(exception) }
             }
         }
     }
@@ -1568,8 +1582,8 @@ class MainActivity : AppCompatActivity() {
     private fun loadThumbnail(uri: Uri, maxDim: Int): Bitmap {
         val opt = android.graphics.BitmapFactory.Options()
         opt.inJustDecodeBounds = true
-        contentResolver.openInputStream(uri).use { stream ->
-            if (stream == null) throw IllegalArgumentException("Cannot open image file")
+        (contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("Cannot open image file")).use { stream ->
             android.graphics.BitmapFactory.decodeStream(stream, null, opt)
         }
         var scale = 1
@@ -1578,11 +1592,10 @@ class MainActivity : AppCompatActivity() {
         }
         val opt2 = android.graphics.BitmapFactory.Options()
         opt2.inSampleSize = scale
-        contentResolver.openInputStream(uri).use { stream ->
-            if (stream == null) throw IllegalArgumentException("Cannot open image file for decoding")
-            val decoded = android.graphics.BitmapFactory.decodeStream(stream, null, opt2)
+        return (contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("Cannot open image file for decoding")).use { stream ->
+            android.graphics.BitmapFactory.decodeStream(stream, null, opt2)
                 ?: throw IllegalArgumentException("Cannot decode image file. Format not supported.")
-            return decoded
         }
     }
 
