@@ -120,15 +120,12 @@ class HomeViewBuilder(
         pdfRow1.addView(dashboardCard("Modify PDF", R.drawable.modify_pdf_24px, actions::onModifyPdf))
         root.addView(pdfRow1)
 
-        val pdfRow2 = LinearLayout(activity)
-        pdfRow2.orientation = LinearLayout.HORIZONTAL
-        pdfRow2.addView(dashboardCard("Compress PDF", R.drawable.compress_pdf_24px, actions::onCompressPdf))
-        val spacer = View(activity)
-        spacer.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f).apply {
-            setMargins(dp(8), dp(8), dp(8), dp(8))
+        val compressCard = dashboardCard("Compress PDF", R.drawable.compress_pdf_24px, actions::onCompressPdf)
+        (compressCard.layoutParams as LinearLayout.LayoutParams).apply {
+            width = ViewGroup.LayoutParams.MATCH_PARENT
+            weight = 0f
         }
-        pdfRow2.addView(spacer)
-        root.addView(pdfRow2)
+        root.addView(compressCard)
 
         root.addView(createSectionHeader("CONVERSIONS"))
         val convRow1 = LinearLayout(activity)
