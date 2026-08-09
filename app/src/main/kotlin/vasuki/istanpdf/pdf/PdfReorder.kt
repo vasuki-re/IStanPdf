@@ -26,33 +26,36 @@ object PdfReorder {
 
             PdfStore.openDst(ctx, dst).use { out ->
                 val srcDoc = PdfDocument(PdfReader(tempIn))
-                val dstDoc = PdfDocument(PdfWriter(out))
                 try {
-                    for (page in pages) {
-                        if (!page.keep) continue
-                        val repl = page.replacementFile
-                        if (repl != null) {
-                            addImagePage(dstDoc, repl)
-                        } else {
-                            srcDoc.copyPagesTo(listOf(page.originalIndex + 1), dstDoc)
+                    val dstDoc = PdfDocument(PdfWriter(out))
+                    try {
+                        for (page in pages) {
+                            if (!page.keep) continue
+                            val repl = page.replacementFile
+                            if (repl != null) {
+                                addImagePage(dstDoc, repl)
+                            } else {
+                                srcDoc.copyPagesTo(listOf(page.originalIndex + 1), dstDoc)
+                            }
+                            rotations.add(page.rotation)
+                            kept++
                         }
-                        rotations.add(page.rotation)
-                        kept++
-                    }
-                    require(kept > 0) { "Keep at least one page" }
+                        require(kept > 0) { "Keep at least one page" }
 
-                    for (i in 1..dstDoc.numberOfPages) {
-                        val rotation = rotations[i - 1]
-                        if (rotation != 0) {
-                            val dstPage = dstDoc.getPage(i)
-                            val existing = dstPage.rotation
-                            var r = (existing + rotation) % 360
-                            if (r < 0) r += 360
-                            dstPage.put(PdfName.Rotate, PdfNumber(r))
+                        for (i in 1..dstDoc.numberOfPages) {
+                            val rotation = rotations[i - 1]
+                            if (rotation != 0) {
+                                val dstPage = dstDoc.getPage(i)
+                                val existing = dstPage.rotation
+                                var r = (existing + rotation) % 360
+                                if (r < 0) r += 360
+                                dstPage.put(PdfName.Rotate, PdfNumber(r))
+                            }
                         }
+                    } finally {
+                        dstDoc.close()
                     }
                 } finally {
-                    dstDoc.close()
                     srcDoc.close()
                 }
             }
@@ -68,18 +71,34 @@ object PdfReorder {
         try {
             PdfStore.openDst(ctx, dst).use { out ->
                 val srcDoc = PdfDocument(PdfReader(tempIn))
-                val dstDoc = PdfDocument(PdfWriter(out))
                 try {
-                    for (page in pages.sortedBy { it.originalIndex }) {
-                        val repl = page.replacementFile
-                        if (repl != null) {
-                            addImagePage(dstDoc, repl)
-                        } else {
-                            srcDoc.copyPagesTo(listOf(page.originalIndex + 1), dstDoc)
+                    val dstDoc = PdfDocument(PdfWriter(out))
+                    try {
+                        val rotations = mutableListOf<Int>()
+                        for (page in pages) {
+                            if (!page.keep) continue
+                            val repl = page.replacementFile
+                            if (repl != null) {
+                                addImagePage(dstDoc, repl)
+                            } else {
+                                srcDoc.copyPagesTo(listOf(page.originalIndex + 1), dstDoc)
+                            }
+                            rotations.add(page.rotation)
                         }
+                        for (i in 1..dstDoc.numberOfPages) {
+                            val rotation = rotations[i - 1]
+                            if (rotation != 0) {
+                                val dstPage = dstDoc.getPage(i)
+                                val existing = dstPage.rotation
+                                var r = (existing + rotation) % 360
+                                if (r < 0) r += 360
+                                dstPage.put(PdfName.Rotate, PdfNumber(r))
+                            }
+                        }
+                    } finally {
+                        dstDoc.close()
                     }
                 } finally {
-                    dstDoc.close()
                     srcDoc.close()
                 }
             }

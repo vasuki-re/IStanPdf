@@ -7,15 +7,26 @@ class CacheManager(context: Context) {
     private val context = context.applicationContext
 
     fun pruneStaleCacheFiles() {
-        val cutoff = System.currentTimeMillis() - STALE_CUTOFF_MS
-        context.cacheDir.listFiles()
-            ?.filter { f ->
-                val n = f.name
-                (n.startsWith("istanpdf_") || n.startsWith("merged_") ||
-                        n.startsWith("img_") || n.startsWith("pdf_to_img_")) &&
-                        f.lastModified() < cutoff
-            }
-            ?.forEach { it.delete() }
+        try {
+            val cutoff = System.currentTimeMillis() - STALE_CUTOFF_MS
+            val stalePrefixes = listOf(
+                "istanpdf_", "merged_", "img_", "pdf_to_img_",
+                "camera_", "crop_", "photo_pdf_", "compressed_",
+                "compress_attempt_", "replaced_", "istan_cam_"
+            )
+            context.cacheDir.listFiles()
+                ?.filter { f ->
+                    !f.isDirectory &&
+                            stalePrefixes.any { f.name.startsWith(it) } &&
+                            f.lastModified() < cutoff
+                }
+                ?.forEach { it.delete() }
+
+            val captureDir = File(context.cacheDir, "camera_capture")
+            captureDir.listFiles()
+                ?.filter { it.lastModified() < cutoff }
+                ?.forEach { it.delete() }
+        } catch (_: Exception) {}
     }
 
     companion object {

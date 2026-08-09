@@ -1,6 +1,7 @@
 package vasuki.istanpdf.model
 
 import android.graphics.Bitmap
+import android.net.Uri
 import java.io.File
 
 class PageItem(
@@ -9,5 +10,6 @@ class PageItem(
     var displayName: String = "",
     var keep: Boolean = true,
     var rotation: Int = 0,
-    var replacementFile: File? = null
+    var replacementFile: File? = null,
+    var uri: Uri? = null
 )

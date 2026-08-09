@@ -12,9 +12,10 @@ object BitmapUtils {
     fun loadImageUri(context: Context, uri: android.net.Uri, maxDim: Int): Bitmap {
         val opts = BitmapFactory.Options()
         opts.inJustDecodeBounds = true
-        context.contentResolver.openInputStream(uri)?.use { stream ->
+        (context.contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("Cannot open image")).use { stream ->
             BitmapFactory.decodeStream(stream, null, opts)
-        } ?: throw IllegalArgumentException("Cannot open image")
+        }
         if (opts.outWidth <= 0 || opts.outHeight <= 0) {
             throw IllegalArgumentException("Cannot decode image")
         }
@@ -24,7 +25,8 @@ object BitmapUtils {
         }
         val decodeOpts = BitmapFactory.Options()
         decodeOpts.inSampleSize = sample
-        val decoded = context.contentResolver.openInputStream(uri)?.use { stream ->
+        val decoded = (context.contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("Cannot open image")).use { stream ->
             BitmapFactory.decodeStream(stream, null, decodeOpts)
         } ?: throw IllegalArgumentException("Cannot decode image")
 

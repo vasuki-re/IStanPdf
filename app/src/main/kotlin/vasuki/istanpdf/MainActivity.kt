@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private var cropView: CropOverlayView? = null
     private var cropBitmap: Bitmap? = null
     private var currentEditorTitle: String? = null
+    private var updateThread: Thread? = null
     private var cameraMergeToPdf = false
 
     private var compressMode = COMPRESS_MODE_RESOLUTION
@@ -210,7 +211,7 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("check_updates", true)) return
 
-        Thread {
+        updateThread = Thread {
             try {
                 val url = java.net.URL("https://cdn.jsdelivr.net/gh/vasuki-re/IStanPdf@Mitsuba/changelog.txt")
                 val conn = url.openConnection() as java.net.HttpURLConnection
@@ -270,7 +271,8 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (_: Exception) {
             }
-        }.start()
+        }
+        updateThread!!.start()
     }
 
     private fun parseMarkdownText(text: String): CharSequence {
@@ -390,10 +392,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        worker.shutdownNow()
-                                editorViewModel.clearPages()
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("activeReq", activeReq)
+        cameraPhotoFile?.let { outState.putString("cameraPhotoFile", it.absolutePath) }
+    }
 
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        activeReq = savedInstanceState.getInt("activeReq", 0)
+        val path = savedInstanceState.getString("cameraPhotoFile")
+        if (path != null) cameraPhotoFile = File(path)
+    }
+
+    override fun onDestroy() {
+        fakeProgressHandler.removeCallbacksAndMessages(null)
+        updateThread?.interrupt()
+        updateThread = null
+        worker.shutdownNow()
+        editorViewModel.clearPages()
         super.onDestroy()
     }
 
@@ -434,7 +451,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         cursor.close()
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) { emptyFiles++; continue }
                 pendingUris.add(u)
             }
             if (pendingUris.isEmpty()) {
@@ -452,13 +469,14 @@ class MainActivity : AppCompatActivity() {
             worker.execute {
                 val rendered = mutableListOf<PageItem>()
                 var startIndex = 0
+                var skipped = 0
                 for (uri in pendingUris) {
                     try {
                         val thumb = renderFirstPdfPage(uri)
                         if (thumb != null) {
                             rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri)))
                         }
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) { skipped++ }
                 }
                 runOnUiThread {
                     editorViewModel.clearPages()
@@ -466,6 +484,7 @@ class MainActivity : AppCompatActivity() {
                     pages.addAll(rendered)
                     for (p in pages) p.keep = true
                     buildPageEditor("Merge PDF", "Merge PDF", false, true)
+                    if (skipped > 0) Toast.makeText(this@MainActivity, "$skipped PDF(s) could not be loaded", Toast.LENGTH_SHORT).show()
                     status?.text = "Ready"
                 }
             }
@@ -532,7 +551,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         cursor.close()
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) { emptyFiles++; continue }
                 validUris.add(u)
             }
             if (emptyFiles > 0) {
@@ -545,13 +564,14 @@ class MainActivity : AppCompatActivity() {
             worker.execute {
                 val rendered = mutableListOf<PageItem>()
                 var startIndex = pages.size
+                var skipped = 0
                 for (uri in validUris) {
                     try {
                         val thumb = renderFirstPdfPage(uri)
                         if (thumb != null) {
                             rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri)))
                         }
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) { skipped++ }
                 }
                 runOnUiThread {
                     for (p in rendered) p.keep = true
@@ -559,6 +579,7 @@ class MainActivity : AppCompatActivity() {
                     pages.addAll(rendered)
                     editorViewModel.pagesAdded = true
                     pageList?.adapter?.notifyDataSetChanged()
+                    if (skipped > 0) Toast.makeText(this@MainActivity, "$skipped PDF(s) could not be loaded", Toast.LENGTH_SHORT).show()
                     status?.text = "Ready"
                 }
             }
@@ -839,7 +860,7 @@ class MainActivity : AppCompatActivity() {
                         val replFile = File(cacheDir, "replaced_${System.currentTimeMillis()}.pdf")
                         try {
                             AppModule.get().pdfEngine.replacePages(source, snapshot, Uri.fromFile(replFile))
-                            AppModule.get().saveDocx.execute(Uri.fromFile(replFile), snapshot, destination)
+                            AppModule.get().saveDocx.execute(source, snapshot, destination)
                         } finally {
                             if (replFile.exists()) replFile.delete()
                         }
@@ -1130,7 +1151,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPageCropDialog(bitmap: Bitmap, onResult: (Bitmap) -> Unit) {
-        if (cropDialog != null) return
+        if (cropDialog != null) {
+            if (!bitmap.isRecycled) bitmap.recycle()
+            return
+        }
         cropBitmap = bitmap
         showCropUi("Crop Page", bitmap, null) { cropped ->
             clearCropState()
@@ -1199,12 +1223,14 @@ class MainActivity : AppCompatActivity() {
             val cropped = try {
                 this.cropView?.cropBitmap()
             } catch (e: Exception) {
+                android.util.Log.e("IStanPdf", "Crop failed", e)
                 null
             }
             dialog.dismiss()
             if (cropped != null) {
                 onAdd(cropped)
             } else {
+                Toast.makeText(this@MainActivity, "Could not crop image", Toast.LENGTH_SHORT).show()
                 if (retakeAction != null) discardCameraPhoto() else clearCropState()
             }
         }
@@ -1245,7 +1271,8 @@ class MainActivity : AppCompatActivity() {
         matrix.postRotate(degrees)
         val rotated = try {
             Bitmap.createBitmap(current, 0, 0, current.width, current.height, matrix, true)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            if (e is OutOfMemoryError) Toast.makeText(this, "Not enough memory to rotate", Toast.LENGTH_SHORT).show()
             null
         } ?: return
         cropView?.setImage(rotated)
@@ -1275,9 +1302,7 @@ class MainActivity : AppCompatActivity() {
         worker.execute {
             try {
                 val src = if (title == "Images to PDF") {
-                    val uri = if (page.originalIndex < editorViewModel.pendingUris.size) {
-                        editorViewModel.pendingUris[page.originalIndex]
-                    } else null
+                    val uri = page.uri
                     if (uri != null) BitmapUtils.loadImageUri(this@MainActivity, uri, CROP_MAX_DIM) else null
                 } else {
                     editorViewModel.reorderSource?.let {
@@ -1288,8 +1313,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     setBusy(false, "Ready")
                     showPageCropDialog(src) { cropped ->
-                        applyPageCrop(page, cropped)
-                        onCropped?.run()
+                        applyPageCrop(page, cropped, onCropped)
                     }
                 }
             } catch (e: Exception) {
@@ -1301,31 +1325,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyPageCrop(page: PageItem, cropped: Bitmap) {
-        try {
-            val file = File(cacheDir, "crop_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { out ->
-                cropped.compress(Bitmap.CompressFormat.JPEG, 92, out)
-            }
-            page.replacementFile = file
-            editorViewModel.tempImageFiles.add(file)
-
-            var thumb = BitmapUtils.scaleToFit(cropped, dp(280))
-            if (page.rotation != 0) {
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(page.rotation.toFloat())
-                val rotated = Bitmap.createBitmap(thumb, 0, 0, thumb.width, thumb.height, matrix, true)
-                if (rotated !== thumb) {
-                    if (!thumb.isRecycled) thumb.recycle()
-                    thumb = rotated
+    private fun applyPageCrop(page: PageItem, cropped: Bitmap, onDone: Runnable? = null) {
+        worker.execute {
+            try {
+                val file = File(cacheDir, "crop_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(file).use { out ->
+                    cropped.compress(Bitmap.CompressFormat.JPEG, 92, out)
                 }
+                page.replacementFile = file
+                editorViewModel.tempImageFiles.add(file)
+
+                var thumb = BitmapUtils.scaleToFit(cropped, dp(280))
+                if (page.rotation != 0) {
+                    val matrix = android.graphics.Matrix()
+                    matrix.postRotate(page.rotation.toFloat())
+                    val rotated = Bitmap.createBitmap(thumb, 0, 0, thumb.width, thumb.height, matrix, true)
+                    if (rotated !== thumb) {
+                        if (!thumb.isRecycled) thumb.recycle()
+                        thumb = rotated
+                    }
+                }
+                if (thumb !== cropped && !cropped.isRecycled) cropped.recycle()
+                val finalThumb = thumb
+                runOnUiThread {
+                    if (!page.thumbnail.isRecycled) page.thumbnail.recycle()
+                    page.thumbnail = finalThumb
+                    pageList?.adapter?.notifyDataSetChanged()
+                    onDone?.run()
+                }
+            } catch (e: Exception) {
+                runOnUiThread { showError(e) }
             }
-            if (!page.thumbnail.isRecycled) page.thumbnail.recycle()
-            page.thumbnail = thumb
-            if (thumb !== cropped && !cropped.isRecycled) cropped.recycle()
-            pageList?.adapter?.notifyDataSetChanged()
-        } catch (e: Exception) {
-            showError(e)
         }
     }
 
@@ -1347,21 +1377,26 @@ class MainActivity : AppCompatActivity() {
                 val baos = java.io.ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 92, baos)
                 val imgData = com.itextpdf.io.image.ImageDataFactory.createJpeg(baos.toByteArray())
-                val imgDoc = com.itextpdf.kernel.pdf.PdfDocument(
-                    com.itextpdf.kernel.pdf.PdfWriter(java.io.FileOutputStream(photoPdf)))
+                val imgFos = java.io.FileOutputStream(photoPdf)
+                val imgDoc = try {
+                    com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfWriter(imgFos))
+                } catch (e: Exception) { imgFos.close(); throw e }
                 val ps = com.itextpdf.kernel.geom.PageSize(iw, ih)
                 val imgPage = imgDoc.addNewPage(ps)
                 val pdfCanvas = com.itextpdf.kernel.pdf.canvas.PdfCanvas(imgPage)
                 pdfCanvas.addImageFittedIntoRectangle(imgData, com.itextpdf.kernel.geom.Rectangle(0f, 0f, iw, ih), false)
                 imgDoc.close()
+                if (!bitmap.isRecycled) bitmap.recycle()
 
                 val mergedFile = File(cacheDir, "merged_${System.currentTimeMillis()}.pdf")
                 val srcFile = vasuki.istanpdf.util.ContentFiles.copyUriToCache(this@MainActivity, reorderSource, ".pdf")
                 try {
                     val srcDoc = com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfReader(srcFile))
                     val addDoc = com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfReader(photoPdf))
-                    val destDoc = com.itextpdf.kernel.pdf.PdfDocument(
-                        com.itextpdf.kernel.pdf.PdfWriter(java.io.FileOutputStream(mergedFile)))
+                    val destFos = java.io.FileOutputStream(mergedFile)
+                    val destDoc = try {
+                        com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfWriter(destFos))
+                    } catch (e: Exception) { destFos.close(); throw e }
                     val pdfMerger = com.itextpdf.kernel.utils.PdfMerger(destDoc)
                     pdfMerger.merge(srcDoc, 1, srcDoc.numberOfPages)
                     pdfMerger.merge(addDoc, 1, addDoc.numberOfPages)
@@ -1385,6 +1420,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 editorViewModel.reorderSource = mergedUri
+                editorViewModel.tempImageFiles.add(mergedFile)
                 runOnUiThread {
                     pages.addAll(newPages)
                     editorViewModel.pagesAdded = true
@@ -1401,32 +1437,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addCameraImage(bitmap: Bitmap) {
-        try {
-            val file = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
-            }
-            editorViewModel.tempImageFiles.add(file)
-            editorViewModel.pendingUris.add(Uri.fromFile(file))
-
-            val thumb = BitmapUtils.scaleToFit(bitmap, dp(280))
-            editorViewModel.pages.add(PageItem(editorViewModel.pages.size, thumb, "Camera Photo"))
-            editorViewModel.pagesAdded = true
-
-            cameraPhotoFile?.let { if (it.exists()) it.delete() }
-            cameraPhotoFile = null
-
-            runOnUiThread {
-                if (isHome) {
-                    buildPageEditor("Images to PDF", "Save PDF", false, true)
-                } else {
-                    pageList?.adapter?.notifyDataSetChanged()
+        worker.execute {
+            try {
+                val file = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(file).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
                 }
-                status?.text = "Ready"
-                setStatusIndicatorColor(color(R.color.istan_olive))
+                editorViewModel.tempImageFiles.add(file)
+                val fileUri = Uri.fromFile(file)
+
+                val thumb = BitmapUtils.scaleToFit(bitmap, dp(280))
+                if (thumb !== bitmap && !bitmap.isRecycled) bitmap.recycle()
+                val newPage = PageItem(editorViewModel.pages.size, thumb, "Camera Photo", uri = fileUri)
+
+                cameraPhotoFile?.let { if (it.exists()) it.delete() }
+                cameraPhotoFile = null
+
+                runOnUiThread {
+                    editorViewModel.pendingUris.add(fileUri)
+                    editorViewModel.pages.add(newPage)
+                    editorViewModel.pagesAdded = true
+                    if (isHome) {
+                        buildPageEditor("Images to PDF", "Save PDF", false, true)
+                    } else {
+                        pageList?.adapter?.notifyDataSetChanged()
+                    }
+                    status?.text = "Ready"
+                    setStatusIndicatorColor(color(R.color.istan_olive))
+                }
+            } catch (e: Exception) {
+                runOnUiThread { showError(e) }
             }
-        } catch (e: Exception) {
-            showError(e)
         }
     }
 
@@ -1492,15 +1533,16 @@ class MainActivity : AppCompatActivity() {
                                 pdfP.thumbnail.compress(Bitmap.CompressFormat.JPEG, 95, out)
                             }
                             tempImageFiles.add(f)
-                            processedUris.add(Uri.fromFile(f))
-                            rendered.add(PageItem(startIndex++, pdfP.thumbnail, "PDF Page $pIdx"))
+                            val fileUri = Uri.fromFile(f)
+                            processedUris.add(fileUri)
+                            rendered.add(PageItem(startIndex++, pdfP.thumbnail, "PDF Page $pIdx", uri = fileUri))
                             pIdx++
                         }
                     } else {
                         processedUris.add(uri)
                         val size = dp(280)
                         val thumb = loadThumbnail(uri, size)
-                        rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri)))
+                        rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri), uri = uri))
                     }
                 }
                 runOnUiThread {
@@ -1733,7 +1775,7 @@ class MainActivity : AppCompatActivity() {
             snackbar.duration = 4500
             val background = android.graphics.drawable.GradientDrawable()
             background.setColor(color(R.color.istan_surface))
-            background.cornerRadius = dp(16).toFloat()
+            background.cornerRadius = dp(8).toFloat()
             background.setStroke(dp(1), color(R.color.istan_outline))
             snackbar.view.background = background
             snackbar.view.backgroundTintList = null
@@ -1750,14 +1792,12 @@ class MainActivity : AppCompatActivity() {
             val actionView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_action)
             actionView?.typeface = boldFont
             snackbar.setAction("Open") { openSavedFile(output) }
+            val bottomInset = androidx.core.view.ViewCompat.getRootWindowInsets(root)
+                ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
+            val lp = snackbar.view.layoutParams as? ViewGroup.MarginLayoutParams
+            lp?.setMargins(dp(16), 0, dp(16), dp(24) + bottomInset)
+            if (lp != null) snackbar.view.layoutParams = lp
             snackbar.show()
-            snackbar.view.post {
-                val lp = snackbar.view.layoutParams as ViewGroup.MarginLayoutParams
-                val bottomInset = androidx.core.view.ViewCompat.getRootWindowInsets(root)
-                    ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
-                lp.setMargins(dp(16), 0, dp(16), dp(24) + bottomInset)
-                snackbar.view.layoutParams = lp
-            }
         }
         if (loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
             fakeProgressHandler.postDelayed(show, 400)
@@ -1790,6 +1830,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread { setBusy(false, "Ready") }
             return
         }
+        android.util.Log.e("IStanPdf", "Operation failed", exception)
         runOnUiThread {
             loadingOverlay?.visibility = View.GONE
             val message = exception.message ?: exception.javaClass.simpleName

@@ -257,7 +257,7 @@ class EditorViewBuilder(
                                     if (p.originalIndex == originalIdx) {
                                         p.keep = true
                                         newPages.add(p)
-                                        if (titleText == "Merge PDF" && i < pendingUris.size) {
+                                        if ((titleText == "Merge PDF" || titleText == "Images to PDF") && i < pendingUris.size) {
                                             newUris.add(pendingUris[i])
                                         }
                                         processedIndices.add(originalIdx)
@@ -271,7 +271,7 @@ class EditorViewBuilder(
                                 if (!processedIndices.contains(p.originalIndex)) {
                                     p.keep = false
                                     newPages.add(p)
-                                    if (titleText == "Merge PDF" && i < pendingUris.size) {
+                                    if ((titleText == "Merge PDF" || titleText == "Images to PDF") && i < pendingUris.size) {
                                         newUris.add(pendingUris[i])
                                     }
                                 }
@@ -280,7 +280,7 @@ class EditorViewBuilder(
                             (currentPages as MutableList<PageItem>).clear()
                             currentPages.addAll(newPages)
 
-                            if (titleText == "Merge PDF") {
+                            if (titleText == "Merge PDF" || titleText == "Images to PDF") {
                                 (pendingUris as MutableList<Uri>).clear()
                                 pendingUris.addAll(newUris)
                             }

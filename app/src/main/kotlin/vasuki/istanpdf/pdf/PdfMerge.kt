@@ -46,7 +46,9 @@ object PdfMerge {
                     for (p in range[0]..range[1]) {
                         val page = merged.getPage(p)
                         val existing = page.rotation
-                        page.put(PdfName.Rotate, PdfNumber(existing + range[2]))
+                        var r = (existing + range[2]) % 360
+                        if (r < 0) r += 360
+                        page.put(PdfName.Rotate, PdfNumber(r))
                     }
                 }
             } finally {
