@@ -58,40 +58,55 @@ object PdfCompress {
         val tempIn = ContentFiles.copyUriToCache(ctx, source, ".pdf")
         var bestFile: File? = null
         try {
-            var lo = 36
-            var hi = 300
-            var bestDiff = Long.MAX_VALUE
+            if (tempIn.length() <= targetBytes) {
+                ContentFiles.copyFileToUri(ctx, tempIn, destination)
+                return tempIn.length()
+            }
 
-            for (iteration in 0 until 8) {
-                val mid = (lo + hi) / 2
-                val attempt = File.createTempFile("compress_attempt_", ".pdf", ctx.cacheDir)
-                try {
-                    compressToFile(tempIn, attempt, mid, 70)
-                    val size = attempt.length()
-                    val diff = size - targetBytes
-
-                    if (diff <= 0 && -diff < bestDiff) {
-                        bestDiff = -diff
-                        bestFile?.delete()
-                        bestFile = attempt
-                    } else if (diff > 0 && (bestFile == null || diff < bestDiff)) {
-                        bestDiff = diff
-                        bestFile?.delete()
-                        bestFile = attempt
-                    } else {
+            fun search(loParam: Int, hiParam: Int, toDpi: (Int) -> Int, toQuality: (Int) -> Int): File? {
+                var lo = loParam
+                var hi = hiParam
+                var best: File? = null
+                var bestDiff = Long.MAX_VALUE
+                for (iteration in 0 until 8) {
+                    if (Thread.currentThread().isInterrupted) throw InterruptedException()
+                    val mid = (lo + hi) / 2
+                    val attempt = File.createTempFile("compress_attempt_", ".pdf", ctx.cacheDir)
+                    try {
+                        compressToFile(tempIn, attempt, toDpi(mid), toQuality(mid))
+                        val size = attempt.length()
+                        val absDiff = Math.abs(size - targetBytes)
+                        val better = absDiff < bestDiff || (absDiff == bestDiff && size <= targetBytes)
+                        if (better) {
+                            bestDiff = absDiff
+                            best?.delete()
+                            best = attempt
+                        } else {
+                            attempt.delete()
+                        }
+                        if (size > targetBytes) hi = mid - 1 else lo = mid + 1
+                        if (lo > hi) break
+                    } catch (e: Exception) {
                         attempt.delete()
+                        throw e
                     }
+                }
+                return best
+            }
 
-                    if (size > targetBytes) {
-                        hi = mid - 1
+            bestFile = search(36, 300, { it }, { 70 })
+
+            if (bestFile != null && bestFile!!.length() > targetBytes) {
+                val pass2 = search(20, 65, { 36 }, { it })
+                if (pass2 != null) {
+                    val p1Diff = Math.abs(bestFile!!.length() - targetBytes)
+                    val p2Diff = Math.abs(pass2.length() - targetBytes)
+                    if (p2Diff < p1Diff || (p2Diff == p1Diff && pass2.length() <= targetBytes)) {
+                        bestFile!!.delete()
+                        bestFile = pass2
                     } else {
-                        lo = mid + 1
+                        pass2.delete()
                     }
-
-                    if (lo > hi) break
-                } catch (e: Exception) {
-                    attempt.delete()
-                    throw e
                 }
             }
 

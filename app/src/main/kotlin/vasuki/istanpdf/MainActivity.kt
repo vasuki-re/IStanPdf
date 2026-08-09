@@ -827,7 +827,9 @@ class MainActivity : AppCompatActivity() {
                 runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                     val actual = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
                     if (actual > compressTargetBytes) {
-                        runOnUiThread { toast("Could not reach target. Saved at ${actual / 1024} KB.") }
+                        fakeProgressHandler.postDelayed(
+                            { toast("Could not reach target. Saved at ${actual / 1024} KB.") }, 600
+                        )
                     }
                 }
             }
@@ -2148,9 +2150,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSizeInputDialog(pdfUri: Uri) {
+        val sourceKb = try {
+            val cursor = contentResolver.query(pdfUri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+            cursor?.use { if (it.moveToFirst()) it.getLong(0) / 1024L else 0L } ?: 0L
+        } catch (_: Exception) { 0L }
+
         val content = LinearLayout(this)
         content.orientation = LinearLayout.VERTICAL
         content.setPadding(0, dp(8), 0, dp(4))
+
+        if (sourceKb > 0) {
+            val sizeLabel = text(
+                "Current size: ${if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"}",
+                13, R.color.istan_text_muted, false
+            )
+            sizeLabel.setPadding(0, 0, 0, dp(8))
+            content.addView(sizeLabel)
+        }
 
         val input = android.widget.EditText(this)
         input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -2173,6 +2189,14 @@ class MainActivity : AppCompatActivity() {
             if (kb == null || kb <= 0) {
                 toast("Please enter a valid size in KB.")
                 return@Runnable
+            }
+            if (sourceKb > 0) {
+                val capKb = sourceKb * 95L / 100L
+                val srcLabel = if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"
+                if (kb > capKb) {
+                    toast("Target must not exceed 95% of the source file ($srcLabel).")
+                    return@Runnable
+                }
             }
             compressTargetBytes = kb * 1024L
             val prefix = getDisplayName(pdfUri)
