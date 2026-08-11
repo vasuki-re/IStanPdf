@@ -1031,51 +1031,75 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private data class BottomSheetItem(val label: String, val iconRes: Int, val action: Runnable, val tintIcon: Boolean = true, val customIcon: View? = null, val iconWidthDp: Int = 24, val iconHeightDp: Int = 24)
+
+    private fun showBottomSheetMenu(titleStr: String, items: List<BottomSheetItem>) {
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        
+        val dialogRoot = LinearLayout(this)
+        dialogRoot.orientation = LinearLayout.VERTICAL
+        dialogRoot.setPadding(0, dp(16), 0, dp(24))
+        
+        val title = text(titleStr, 20, R.color.istan_text, true)
+        title.setPadding(dp(24), dp(8), dp(24), dp(16))
+        dialogRoot.addView(title)
+        
+        for (item in items) {
+            val row = LinearLayout(this)
+            row.orientation = LinearLayout.HORIZONTAL
+            row.gravity = Gravity.CENTER_VERTICAL
+            
+            val typedValue = android.util.TypedValue()
+            theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
+            row.setBackgroundResource(typedValue.resourceId)
+            
+            row.setPadding(dp(24), dp(16), dp(24), dp(16))
+            row.setOnClickListener {
+                bottomSheetDialog.dismiss()
+                item.action.run()
+            }
+            
+            val iconView: View
+            if (item.customIcon != null) {
+                iconView = item.customIcon
+            } else {
+                val icon = ImageView(this)
+                icon.setImageResource(item.iconRes)
+                if (item.tintIcon) {
+                    icon.setColorFilter(color(R.color.istan_olive))
+                }
+                iconView = icon
+            }
+            
+            val lp = LinearLayout.LayoutParams(dp(item.iconWidthDp), dp(item.iconHeightDp))
+            lp.marginEnd = dp(16)
+            row.addView(iconView, lp)
+            
+            val label = text(item.label, 16, R.color.istan_text, false)
+            row.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            
+            dialogRoot.addView(row)
+        }
+        
+        bottomSheetDialog.setContentView(dialogRoot)
+        bottomSheetDialog.show()
+
+        val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.backgroundTintList = android.content.res.ColorStateList.valueOf(color(R.color.istan_surface))
+    }
+
     private fun showImageSourceChooser() {
-        val content = LinearLayout(this)
-        content.orientation = LinearLayout.VERTICAL
-        content.setPadding(0, dp(12), 0, dp(4))
-
-        val dialogRef = arrayOfNulls<android.app.Dialog>(1)
-
-        val card1 = MaterialCardView(this)
-        card1.setCardBackgroundColor(Color.TRANSPARENT)
-        card1.radius = dp(16).toFloat()
-        card1.strokeWidth = dp(1)
-        card1.strokeColor = color(R.color.istan_outline)
-        card1.cardElevation = 0f
-        card1.setOnClickListener {
-            dialogRef[0]?.dismiss()
-            pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
-        }
-
-        val opt1 = text("From Gallery", 15, R.color.istan_text, false)
-        opt1.setPadding(dp(20), dp(16), dp(20), dp(16))
-        card1.addView(opt1)
-
-        val lp1 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        lp1.setMargins(0, 0, 0, dp(12))
-        content.addView(card1, lp1)
-
-        val card2 = MaterialCardView(this)
-        card2.setCardBackgroundColor(Color.TRANSPARENT)
-        card2.radius = dp(16).toFloat()
-        card2.strokeWidth = dp(1)
-        card2.strokeColor = color(R.color.istan_outline)
-        card2.cardElevation = 0f
-        card2.setOnClickListener {
-            dialogRef[0]?.dismiss()
-            launchCameraForCapture()
-        }
-
-        val opt2 = text("Take Photo", 15, R.color.istan_text, false)
-        opt2.setPadding(dp(20), dp(16), dp(20), dp(16))
-        card2.addView(opt2)
-
-        val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        content.addView(card2, lp2)
-
-        dialogRef[0] = showCustomDialog("Add Images", content, "Cancel", null, null, null)
+        showBottomSheetMenu(
+            "Add Images",
+            listOf(
+                BottomSheetItem("From Gallery", R.drawable.image_24px, Runnable {
+                    pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
+                }),
+                BottomSheetItem("Take Photo", R.drawable.photo_camera_24px, Runnable {
+                    launchCameraForCapture()
+                })
+            )
+        )
     }
 
     private fun launchCameraForCapture() {
@@ -2207,60 +2231,37 @@ class MainActivity : AppCompatActivity() {
     private fun getDisplayName(uri: Uri?): String = AppModule.get().documentManager.getDisplayName(uri)
 
     private fun showDonationPicker(onComplete: Runnable?) {
-        val content = LinearLayout(this)
-        content.orientation = LinearLayout.VERTICAL
-        content.setPadding(0, dp(12), 0, dp(4))
-
-        val dialogRef = arrayOfNulls<android.app.Dialog>(1)
-
-        val clickKofi = Runnable {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/ramakanthgacharya")))
-            dialogRef[0]?.dismiss()
-            onComplete?.run()
+        val kofiIcon = FrameLayout(this)
+        val addLayer = { resId: Int, colorId: Int ->
+            val layer = ImageView(this)
+            layer.setImageResource(resId)
+            layer.setColorFilter(color(colorId))
+            layer.scaleType = ImageView.ScaleType.FIT_CENTER
+            kofiIcon.addView(layer, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         }
+        addLayer(R.drawable.ic_kofi_background, R.color.istan_surface)
+        addLayer(R.drawable.ic_kofi_body, R.color.istan_olive_dark)
+        addLayer(R.drawable.ic_kofi_cutout, R.color.istan_surface)
+        addLayer(R.drawable.ic_kofi_handle, R.color.istan_olive_dark)
+        addLayer(R.drawable.ic_kofi_heart, R.color.istan_olive)
 
-        val clickUpi = Runnable {
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay?pa=ramakanthacharya@slc&pn=Ramakanth")))
-            } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "No UPI app found", Toast.LENGTH_SHORT).show()
-            }
-            dialogRef[0]?.dismiss()
-            onComplete?.run()
-        }
-
-        val card1 = MaterialCardView(this)
-        card1.setCardBackgroundColor(Color.TRANSPARENT)
-        card1.radius = dp(16).toFloat()
-        card1.strokeWidth = dp(1)
-        card1.strokeColor = color(R.color.istan_outline)
-        card1.cardElevation = 0f
-        card1.setOnClickListener { clickKofi.run() }
-
-        val opt1 = text("Ko-fi (Global)", 15, R.color.istan_text, false)
-        opt1.setPadding(dp(20), dp(16), dp(20), dp(16))
-        card1.addView(opt1)
-
-        val lp1 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        lp1.setMargins(0, 0, 0, dp(12))
-        content.addView(card1, lp1)
-
-        val card2 = MaterialCardView(this)
-        card2.setCardBackgroundColor(Color.TRANSPARENT)
-        card2.radius = dp(16).toFloat()
-        card2.strokeWidth = dp(1)
-        card2.strokeColor = color(R.color.istan_outline)
-        card2.cardElevation = 0f
-        card2.setOnClickListener { clickUpi.run() }
-
-        val opt2 = text("UPI (India)", 15, R.color.istan_text, false)
-        opt2.setPadding(dp(20), dp(16), dp(20), dp(16))
-        card2.addView(opt2)
-
-        val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        content.addView(card2, lp2)
-
-        dialogRef[0] = showCustomDialog("Support the Developer", content, "Cancel", onComplete, null, null)
+        showBottomSheetMenu(
+            "Support the Developer",
+            listOf(
+                BottomSheetItem("Ko-fi (Global)", 0, Runnable {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/ramakanthgacharya")))
+                    onComplete?.run()
+                }, tintIcon = false, customIcon = kofiIcon, iconWidthDp = 30, iconHeightDp = 24),
+                BottomSheetItem("UPI (India)", R.drawable.upi_pay_24px, Runnable {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay?pa=ramakanthacharya@slc&pn=Ramakanth")))
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, "No UPI app found", Toast.LENGTH_SHORT).show()
+                    }
+                    onComplete?.run()
+                })
+            )
+        )
     }
 
     private fun pruneStaleCacheFiles() {
