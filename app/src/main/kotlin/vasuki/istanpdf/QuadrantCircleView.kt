@@ -50,13 +50,24 @@ class QuadrantCircleView(context: Context) : View(context) {
         for (i in colors.indices) {
             paint.style = Paint.Style.FILL
             paint.color = colors[i]
-            canvas.drawArc(circleBounds, -90f + (i * 90), 90f, true, paint)
+            canvas.drawArc(circleBounds, -90f + (i * 90), if (amoled) 90.5f else 90f, true, paint)
         }
 
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = dp(if (selected) 2 else 1).toFloat()
-        paint.color = if (selected) ThemePrefs.accentForeground(accent, amoled)
+        val strokeColor = if (selected) ThemePrefs.accentForeground(accent, amoled)
         else ThemePrefs.tint(accent.dark, if (amoled) 0xFF000000.toInt() else 0xFFFFFFFF.toInt(), if (amoled) 0.2f else 0.58f)
+
+        paint.style = Paint.Style.STROKE
+        paint.color = strokeColor
+
+        if (!amoled) {
+            paint.strokeWidth = dp(1).toFloat()
+            val cx = circleBounds.centerX()
+            val cy = circleBounds.centerY()
+            canvas.drawLine(cx, circleBounds.top, cx, circleBounds.bottom, paint)
+            canvas.drawLine(circleBounds.left, cy, circleBounds.right, cy, paint)
+        }
+
+        paint.strokeWidth = dp(if (selected) 2 else 1).toFloat()
         canvas.drawOval(circleBounds, paint)
     }
 
