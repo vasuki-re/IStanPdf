@@ -55,6 +55,7 @@ object LibreOfficeDocumentEngine {
     fun initialize(context: Context) {
         if (isInitialized) return
         try {
+            LibreOfficeKit.loadNativeLibraries(LibreOfficeManager.libDir(context).absolutePath)
             LibreOfficeRuntime.prepare(context)
         } catch (e: Exception) {
             throw IllegalStateException("LibreOffice runtime setup failed: ${e.message}", e)

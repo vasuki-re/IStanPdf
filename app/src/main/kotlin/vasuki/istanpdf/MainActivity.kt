@@ -42,6 +42,9 @@ import vasuki.istanpdf.presentation.EditorViewBuilder
 import vasuki.istanpdf.presentation.EditorViewModel
 import vasuki.istanpdf.presentation.HomeViewBuilder
 import vasuki.istanpdf.util.BitmapUtils
+import vasuki.istanpdf.libreoffice.LibreOfficeDownloader
+import vasuki.istanpdf.libreoffice.LibreOfficeManager
+import android.widget.ProgressBar
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
@@ -127,7 +130,7 @@ class MainActivity : AppCompatActivity() {
         checkForUpdates()
         showSponsorDialogOnStartup()
 
-        if (prefs.getBoolean("improve_docx_perf", false)) {
+        if (prefs.getBoolean("improve_docx_perf", false) && LibreOfficeManager.isEngineInstalled(this)) {
             AppModule.get().docxEngine.preLoad()
         }
     }
@@ -895,10 +898,28 @@ class MainActivity : AppCompatActivity() {
             override fun onCompressPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_COMPRESS_PDF) }
             override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); showImageSourceChooser() }
             override fun onPdfToImage() { pickOne(arrayOf(MIME_PDF), REQ_PICK_PDF_TO_JPG) }
-            override fun onDocxToPdf() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
+            override fun onDocxToPdf() {
+                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
+                    pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF)
+                } else {
+                    showEngineRequiredDialog { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
+                }
+            }
             override fun onMdToPdf() { pickOne(arrayOf(MIME_MD, "text/plain"), REQ_PICK_MD_TO_PDF) }
-            override fun onDocxRemovePages() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX) }
-            override fun onDocxReorderPages() { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX_EXPORT) }
+            override fun onDocxRemovePages() {
+                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
+                    pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX)
+                } else {
+                    showEngineRequiredDialog { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX) }
+                }
+            }
+            override fun onDocxReorderPages() {
+                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
+                    pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX_EXPORT)
+                } else {
+                    showEngineRequiredDialog { pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX_EXPORT) }
+                }
+            }
             override fun onSupportDeveloper() { showDonationPicker(null) }
             override fun onOpenSettings() { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) }
         })
@@ -1733,6 +1754,124 @@ class MainActivity : AppCompatActivity() {
             uris.add(data.data!!)
         }
         return uris
+    }
+
+    private fun showEngineRequiredDialog(onReady: Runnable) {
+        val body = text(
+            "The Offline LibreOffice Engine is required for this operation.\n\nWould you like to download it now? (~45 MB)",
+            14,
+            R.color.istan_text_muted,
+            false
+        )
+        body.setPadding(0, 0, 0, 0)
+        showCustomDialog(
+            "Offline LibreOffice Engine",
+            body,
+            "Cancel", null,
+            "Download"
+        ) {
+            showEngineDownloadDialog(onReady)
+        }
+    }
+
+    private fun showEngineDownloadDialog(onComplete: Runnable) {
+        val dialog = android.app.Dialog(this)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dialog.window!!.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+        dialog.setCancelable(false)
+
+        val root = LinearLayout(this)
+        root.orientation = LinearLayout.VERTICAL
+        val bg = android.graphics.drawable.GradientDrawable()
+        bg.setColor(color(R.color.istan_surface))
+        bg.cornerRadius = dp(28).toFloat()
+        bg.setStroke(dp(1), color(R.color.istan_outline))
+        root.background = bg
+        root.setPadding(dp(24), dp(24), dp(24), dp(24))
+
+        val titleView = text("Downloading Engine", 20, R.color.istan_text, true)
+        titleView.setPadding(0, 0, 0, dp(24))
+        root.addView(titleView)
+
+        val textRow = LinearLayout(this)
+        textRow.orientation = LinearLayout.HORIZONTAL
+        textRow.setPadding(0, 0, 0, dp(12))
+
+        val phaseView = text("Preparing download…", 15, R.color.istan_text, false)
+        val percentView = text("", 15, R.color.istan_text_muted, false)
+        percentView.gravity = android.view.Gravity.END
+
+        textRow.addView(phaseView, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        textRow.addView(percentView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        root.addView(textRow)
+
+        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
+        progressBar.max = 100
+        progressBar.progress = 0
+        progressBar.isIndeterminate = false
+        progressBar.progressTintList = android.content.res.ColorStateList.valueOf(color(R.color.istan_olive))
+        progressBar.progressBackgroundTintList = android.content.res.ColorStateList.valueOf(color(R.color.istan_outline))
+        val barParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(6))
+        root.addView(progressBar, barParams)
+
+        dialog.setContentView(root)
+        dialog.window!!.setLayout(
+            (resources.displayMetrics.widthPixels * 0.85).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog.show()
+
+
+        worker.submit {
+            try {
+                LibreOfficeDownloader.downloadAndInstall(this) { phase, downloaded, total ->
+                    runOnUiThread {
+                        if (phase == "Extracting") {
+                            progressBar.isIndeterminate = false
+                            progressBar.progress = 100
+                            phaseView.text = "Extracting libraries…"
+                            percentView.text = "Finishing up"
+                        } else if (total > 0) {
+                            val pct = ((downloaded * 100L) / total).toInt().coerceIn(0, 100)
+                            progressBar.isIndeterminate = false
+                            progressBar.progress = pct
+                            phaseView.text = "Downloading…"
+                            val dlMb = String.format(java.util.Locale.US, "%.1f", downloaded / 1048576f)
+                            val totMb = String.format(java.util.Locale.US, "%.1f", total / 1048576f)
+                            percentView.text = "$pct%  •  $dlMb / $totMb MB"
+                        } else {
+                            progressBar.isIndeterminate = true
+                            phaseView.text = "Preparing download…"
+                            percentView.text = ""
+                        }
+                    }
+                }
+                runOnUiThread {
+                    dialog.dismiss()
+                    onComplete.run()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("IStanPdf", "Engine download failed", e)
+                runOnUiThread {
+                    dialog.dismiss()
+                    val msg = text(
+                        "Download failed: ${e.message ?: e.javaClass.simpleName}\n\nCheck your internet connection and try again.",
+                        14,
+                        R.color.istan_text_muted,
+                        false
+                    )
+                    showCustomDialog(
+                        "Download Failed",
+                        msg,
+                        "Cancel", null,
+                        "Retry"
+                    ) {
+                        showEngineDownloadDialog(onComplete)
+                    }
+                }
+            }
+        }
     }
 
     fun showCustomDialog(titleStr: String, content: View?, negativeStr: String?, negativeAction: Runnable?, positiveStr: String?, positiveAction: Runnable?): android.app.Dialog {

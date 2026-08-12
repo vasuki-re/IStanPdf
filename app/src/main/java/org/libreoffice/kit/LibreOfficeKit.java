@@ -1,5 +1,3 @@
-
-
 package org.libreoffice.kit;
 
 import android.content.Context;
@@ -54,20 +52,34 @@ public final class LibreOfficeKit
         initializeDone = true;
     }
 
-    static {
+    public static void loadNativeLibraries(String libraryDir) {
+        NativeLibLoader.setLibraryDir(libraryDir);
         NativeLibLoader.load();
+    }
+
+    static {
     }
 }
 
 class NativeLibLoader {
-        private static boolean done = false;
+    private static boolean done = false;
+    private static String libraryDir = null;
 
-        protected static synchronized void load() {
-            if (done)
-                return;
+    public static void setLibraryDir(String dir) {
+        libraryDir = dir;
+    }
+
+    protected static synchronized void load() {
+        if (done)
+            return;
+        
+        if (libraryDir != null) {
+            System.load(libraryDir + "/libc++_shared.so");
+            System.load(libraryDir + "/liblo-native-code.so");
+        } else {
             System.loadLibrary("c++_shared");
             System.loadLibrary("lo-native-code");
-            done = true;
         }
+        done = true;
+    }
 }
-

@@ -9,6 +9,8 @@ itext7 = "8.0.5"
 commonmark = "0.24.0"
 viewpager2 = "1.1.0"
 itext7-html2pdf = "5.0.5"
+xz = "1.10"
+commons-compress = "1.27.1"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -30,3 +32,5 @@ commonmark-tasklist = { group = "org.commonmark", name = "commonmark-ext-task-li
 commonmark-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
 commonmark-ins = { group = "org.commonmark", name = "commonmark-ext-ins", version.ref = "commonmark" }
 androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+xz = { group = "org.tukaani", name = "xz", version.ref = "xz" }
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commons-compress" }

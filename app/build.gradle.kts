@@ -13,10 +13,6 @@ android {
         targetSdk = 34
         versionCode = 3
         versionName = "2.5-Mitsuba"
-
-        ndk {
-            abiFilters += listOf("arm64-v8a")
-        }
     }
 
     buildFeatures {
@@ -52,4 +48,6 @@ dependencies {
     implementation(libs.commonmark.autolink)
     implementation(libs.commonmark.ins)
     implementation(libs.androidx.viewpager2)
+    implementation(libs.xz)
+    implementation(libs.commons.compress)
 }

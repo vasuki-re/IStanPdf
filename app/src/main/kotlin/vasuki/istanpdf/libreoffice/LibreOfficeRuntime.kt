@@ -74,7 +74,7 @@ internal object LibreOfficeRuntime {
     }
 
     private fun prepareNativeLibraryDirectory(context: Context, dataDir: File) {
-        val sourceDir = File(context.applicationInfo.nativeLibraryDir)
+        val sourceDir = LibreOfficeManager.libDir(context)
         val targetDir = File(dataDir, "lib")
         if (!targetDir.exists() && !targetDir.mkdirs()) {
             throw IllegalStateException("Could not create $targetDir")

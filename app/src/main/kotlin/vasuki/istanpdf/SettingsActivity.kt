@@ -36,6 +36,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
+import vasuki.istanpdf.libreoffice.LibreOfficeManager
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -266,26 +267,28 @@ class SettingsActivity : AppCompatActivity() {
         updateRow.addView(updateSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         generalGroup.addView(updateRow)
 
-        generalGroup.addView(View(this).apply {
-            setBackgroundColor(color(R.color.istan_outline))
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
-            setMargins(dp(16), 0, dp(16), 0)
-        })
+        if (LibreOfficeManager.isEngineInstalled(this)) {
+            generalGroup.addView(View(this).apply {
+                setBackgroundColor(color(R.color.istan_outline))
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+                setMargins(dp(16), 0, dp(16), 0)
+            })
 
-        val perfRow = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
+            val perfRow = LinearLayout(this).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(16), dp(16), dp(16))
+            }
+            val perfTitle = text("Initialize LibreOffice on startup", 16, R.color.istan_text, true)
+            perfRow.addView(perfTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            val perfSwitch = MaterialSwitch(this).apply {
+                isChecked = prefs.getBoolean("improve_docx_perf", false)
+                thumbTintList = ColorStateList(switchStates, intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
+                trackTintList = ColorStateList(switchStates, intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)))
+                setOnCheckedChangeListener { _, isChecked -> prefs.edit().putBoolean("improve_docx_perf", isChecked).apply() }
+            }
+            perfRow.addView(perfSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            generalGroup.addView(perfRow)
         }
-        val perfTitle = text("Initialize LibreOffice on startup", 16, R.color.istan_text, true)
-        perfRow.addView(perfTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        val perfSwitch = MaterialSwitch(this).apply {
-            isChecked = prefs.getBoolean("improve_docx_perf", false)
-            thumbTintList = ColorStateList(switchStates, intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
-            trackTintList = ColorStateList(switchStates, intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)))
-            setOnCheckedChangeListener { _, isChecked -> prefs.edit().putBoolean("improve_docx_perf", isChecked).apply() }
-        }
-        perfRow.addView(perfSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        generalGroup.addView(perfRow)
 
         generalGroup.addView(View(this).apply {
             setBackgroundColor(color(R.color.istan_outline))
