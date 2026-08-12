@@ -55,12 +55,12 @@
         </activity-alias>
         
         <activity-alias
+            android:enabled="false"
             android:name=".LauncherRose"
             android:targetActivity=".MainActivity"
             android:icon="@drawable/ic_launcher_rose"
             android:roundIcon="@drawable/ic_launcher_rose"
-            android:exported="true"
-            android:enabled="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -68,12 +68,12 @@
         </activity-alias>
 
         <activity-alias
+            android:enabled="false"
             android:name=".LauncherTerracotta"
             android:targetActivity=".MainActivity"
             android:icon="@drawable/ic_launcher_terracotta"
             android:roundIcon="@drawable/ic_launcher_terracotta"
-            android:exported="true"
-            android:enabled="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -81,12 +81,12 @@
         </activity-alias>
 
         <activity-alias
+            android:enabled="false"
             android:name=".LauncherSand"
             android:targetActivity=".MainActivity"
             android:icon="@drawable/ic_launcher_sand"
             android:roundIcon="@drawable/ic_launcher_sand"
-            android:exported="true"
-            android:enabled="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -94,12 +94,12 @@
         </activity-alias>
 
         <activity-alias
+            android:enabled="false"
             android:name=".LauncherAqua"
             android:targetActivity=".MainActivity"
             android:icon="@drawable/ic_launcher_aqua"
             android:roundIcon="@drawable/ic_launcher_aqua"
-            android:exported="true"
-            android:enabled="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -107,17 +107,25 @@
         </activity-alias>
 
         <activity-alias
+            android:enabled="false"
             android:name=".LauncherGold"
             android:targetActivity=".MainActivity"
             android:icon="@drawable/ic_launcher_gold"
             android:roundIcon="@drawable/ic_launcher_gold"
-            android:exported="true"
-            android:enabled="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <receiver
+            android:name=".UpdateReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".libreoffice.DocxPreviewService"
