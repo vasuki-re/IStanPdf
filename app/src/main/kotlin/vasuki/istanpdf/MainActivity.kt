@@ -828,12 +828,7 @@ class MainActivity : AppCompatActivity() {
                 }
             } else {
                 runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
-                    val actual = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
-                    if (actual > compressTargetBytes) {
-                        fakeProgressHandler.postDelayed(
-                            { toast("Could not reach target. Saved at ${actual / 1024} KB.") }, 600
-                        )
-                    }
+                    AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
                 }
             }
         } else if (requestCode == REQ_SAVE_REORDER_PDF || requestCode == REQ_SAVE_REORDER_DOCX_EXPORT) {
