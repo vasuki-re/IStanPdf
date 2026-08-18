@@ -59,8 +59,10 @@ class MainActivity : AppCompatActivity() {
     private var pageList: RecyclerView? = null
     private var loadingOverlay: FrameLayout? = null
     private var loadingMessage: TextView? = null
+    private var loadingTextRow: LinearLayout? = null
     private var loadingSubtitle: TextView? = null
-    private var loadingSpinner: com.google.android.material.progressindicator.CircularProgressIndicator? = null
+    private var loadingPercentage: TextView? = null
+    private var loadingSpinner: com.google.android.material.progressindicator.LinearProgressIndicator? = null
     private val fakeProgressHandler = Handler(Looper.getMainLooper())
     private var fakeProgressRunnable: Runnable? = null
     private var dismissOverlayRunnable: Runnable? = null
@@ -1576,13 +1578,19 @@ class MainActivity : AppCompatActivity() {
                                 fakeProgressHandler.removeCallbacks(fakeProgressRunnable!!)
                                 fakeProgressRunnable = null
                             }
+                            loadingTextRow?.visibility = View.VISIBLE
                             loadingSubtitle!!.text = "Item $current of $total"
+                            loadingPercentage?.let {
+                                val pct = ((current * 100f) / total).toInt()
+                                it.text = "$pct%"
+                                it.visibility = View.VISIBLE
+                            }
                             loadingSpinner?.let { spinner ->
                                 if (spinner.max != total) {
                                     spinner.isIndeterminate = false
                                     spinner.max = total
                                 }
-                                spinner.setProgressCompat(current, true)
+                                spinner.setProgressCompat(current, false)
                             }
                         }
                     }
@@ -1686,13 +1694,19 @@ class MainActivity : AppCompatActivity() {
                         fakeProgressHandler.removeCallbacks(fakeProgressRunnable!!)
                         fakeProgressRunnable = null
                     }
+                    loadingTextRow?.visibility = View.VISIBLE
                     loadingSubtitle!!.text = "Page $current of $total"
+                    loadingPercentage?.let {
+                        val pct = ((current * 100f) / total).toInt()
+                        it.text = "$pct%"
+                        it.visibility = View.VISIBLE
+                    }
                     loadingSpinner?.let { spinner ->
                         if (spinner.max != total) {
                             spinner.isIndeterminate = false
                             spinner.max = total
                         }
-                        spinner.setProgressCompat(current, true)
+                        spinner.setProgressCompat(current, false)
                     }
                 }
             }
@@ -2060,34 +2074,52 @@ class MainActivity : AppCompatActivity() {
 
         val panel = LinearLayout(this)
         panel.orientation = LinearLayout.VERTICAL
-        panel.gravity = Gravity.CENTER
-        panel.setPadding(dp(32), dp(32), dp(32), dp(24))
+        panel.gravity = Gravity.CENTER_HORIZONTAL
+        panel.setPadding(dp(24), dp(24), dp(24), dp(20))
         val panelBg = android.graphics.drawable.GradientDrawable()
         panelBg.setColor(color(R.color.istan_surface))
         panelBg.cornerRadius = dp(28).toFloat()
         panelBg.setStroke(dp(1), color(R.color.istan_outline))
         panel.background = panelBg
 
-        loadingSpinner = com.google.android.material.progressindicator.CircularProgressIndicator(this)
+        loadingMessage = text(WAITING_TEXT, 18, R.color.istan_text, true)
+        loadingMessage!!.gravity = Gravity.CENTER
+        val messageParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        messageParams.gravity = Gravity.CENTER_HORIZONTAL
+        panel.addView(loadingMessage, messageParams)
+
+        loadingSpinner = com.google.android.material.progressindicator.LinearProgressIndicator(this)
         loadingSpinner!!.isIndeterminate = true
         loadingSpinner!!.setIndicatorColor(color(R.color.istan_olive_dark))
         loadingSpinner!!.trackColor = color(R.color.istan_outline)
         loadingSpinner!!.trackThickness = dp(4)
-        loadingSpinner!!.indicatorSize = dp(48)
-        val spinnerParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        loadingSpinner!!.trackStopIndicatorSize = 0
+        loadingSpinner!!.indicatorTrackGapSize = 0
+        loadingSpinner!!.setPadding(0, 0, 0, 0)
+        loadingSpinner!!.trackCornerRadius = dp(4)
+        val spinnerParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        spinnerParams.topMargin = dp(24)
+        spinnerParams.gravity = Gravity.CENTER_HORIZONTAL
         panel.addView(loadingSpinner, spinnerParams)
 
-        loadingMessage = text(WAITING_TEXT, 18, R.color.istan_text, true)
-        loadingMessage!!.gravity = Gravity.CENTER
-        val messageParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        messageParams.topMargin = dp(20)
-        panel.addView(loadingMessage, messageParams)
+        val textRow = LinearLayout(this)
+        loadingTextRow = textRow
+        textRow.orientation = LinearLayout.HORIZONTAL
+        textRow.gravity = Gravity.CENTER_VERTICAL
 
         loadingSubtitle = text("", 15, R.color.istan_text_muted, false)
-        loadingSubtitle!!.gravity = Gravity.CENTER
-        val subParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        subParams.topMargin = dp(8)
-        panel.addView(loadingSubtitle, subParams)
+        loadingSubtitle!!.gravity = Gravity.START
+        textRow.addView(loadingSubtitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        loadingPercentage = text("", 13, R.color.istan_text_muted, true)
+        loadingPercentage!!.gravity = Gravity.END
+        loadingPercentage!!.visibility = View.GONE
+        textRow.addView(loadingPercentage, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        val textRowParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        textRowParams.topMargin = dp(8)
+        textRowParams.gravity = Gravity.CENTER_HORIZONTAL
+        panel.addView(textRow, textRowParams)
 
         val cancelBtn = MaterialCardView(this)
         cancelBtn.setCardBackgroundColor(Color.TRANSPARENT)
@@ -2108,6 +2140,7 @@ class MainActivity : AppCompatActivity() {
 
         val btnParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         btnParams.topMargin = dp(24)
+        btnParams.gravity = Gravity.CENTER_HORIZONTAL
         panel.addView(cancelBtn, btnParams)
 
         val panelParams = FrameLayout.LayoutParams(dp(300), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER)
@@ -2139,24 +2172,26 @@ class MainActivity : AppCompatActivity() {
                 spinner.max = 100
                 spinner.setProgressCompat(0, false)
                 if (!isDeterminate) {
-                    val progress = intArrayOf(0)
+                    val progress = floatArrayOf(0f)
                     fakeProgressRunnable = object : Runnable {
                         override fun run() {
-                            if (progress[0] < 90) {
-                                progress[0] += 2
-                                spinner.setProgressCompat(progress[0], true)
-                                fakeProgressHandler.postDelayed(this, 300)
+                            if (progress[0] < 95f) {
+                                progress[0] += (95f - progress[0]) * 0.02f
+                                spinner.setProgressCompat(progress[0].toInt(), false)
+                                fakeProgressHandler.postDelayed(this, 16)
                             }
                         }
                     }
-                    fakeProgressHandler.postDelayed(fakeProgressRunnable!!, 300)
+                    fakeProgressHandler.postDelayed(fakeProgressRunnable!!, 16)
                 }
             }
             loadingOverlay?.visibility = View.VISIBLE
             loadingMessage?.text = message
+            loadingTextRow?.visibility = View.GONE
+            loadingPercentage?.visibility = if (isDeterminate) View.VISIBLE else View.GONE
             loadingSubtitle?.let {
                 it.text = ""
-                it.visibility = View.VISIBLE
+                it.visibility = View.GONE
             }
             status?.let {
                 it.animate().cancel()
@@ -2173,6 +2208,8 @@ class MainActivity : AppCompatActivity() {
                 dismissOverlayRunnable = Runnable {
                     loadingOverlay?.visibility = View.GONE
                     loadingSubtitle?.visibility = View.GONE
+                    loadingPercentage?.visibility = View.GONE
+                    loadingTextRow?.visibility = View.GONE
                     status?.let {
                         it.animate().cancel()
                         it.alpha = 1f
@@ -2186,10 +2223,12 @@ class MainActivity : AppCompatActivity() {
             } else {
                 loadingOverlay?.visibility = View.GONE
                 loadingMessage?.text = message
+                loadingTextRow?.visibility = View.GONE
                 loadingSubtitle?.let {
                     it.text = ""
                     it.visibility = View.GONE
                 }
+                loadingPercentage?.visibility = View.GONE
                 status?.let {
                     it.animate().cancel()
                     it.alpha = 1f
