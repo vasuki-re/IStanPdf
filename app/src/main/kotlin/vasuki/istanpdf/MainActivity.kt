@@ -1237,12 +1237,11 @@ class MainActivity : AppCompatActivity() {
         dialogRoot.setBackgroundColor(Color.parseColor("#E6252525"))
 
         val topBar = FrameLayout(this)
-        val closeBtn = TextView(this)
-        closeBtn.text = "✕"
-        closeBtn.setTextColor(Color.WHITE)
-        closeBtn.textSize = 26f
-        closeBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
-        val clsLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val closeBtn = ImageView(this)
+        closeBtn.setImageResource(R.drawable.close_24px)
+        closeBtn.setColorFilter(Color.WHITE)
+        closeBtn.setPadding(dp(16), dp(16), dp(16), dp(16))
+        val clsLp = FrameLayout.LayoutParams(dp(60), dp(60))
         clsLp.gravity = Gravity.START or Gravity.CENTER_VERTICAL
         topBar.addView(closeBtn, clsLp)
 

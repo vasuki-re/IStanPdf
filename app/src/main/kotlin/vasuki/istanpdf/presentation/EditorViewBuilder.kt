@@ -67,8 +67,10 @@ class EditorViewBuilder(
         titleRow.setPadding(dp(12), dp(16), dp(22), dp(16))
         outer.addView(titleRow)
 
-        val backArrow = text("←", 28, R.color.istan_text, true)
-        backArrow.setPadding(0, 0, dp(16), dp(4))
+        val backArrow = ImageView(activity)
+        backArrow.setImageResource(R.drawable.arrow_back_24px)
+        backArrow.setColorFilter(color(R.color.istan_text))
+        backArrow.setPadding(0, 0, dp(16), 0)
         backArrow.setOnClickListener { actions.onBack() }
         titleRow.addView(backArrow)
 
@@ -525,7 +527,7 @@ class EditorViewBuilder(
             val cropBtn: ImageView,
             val rotateLeft: ImageView,
             val rotateRight: ImageView,
-            val crossBtn: TextView?
+            val crossBtn: ImageView?
         ) : RecyclerView.ViewHolder(itemView)
 
         override fun getItemCount(): Int = actions.getPages().size
@@ -548,8 +550,10 @@ class EditorViewBuilder(
                 row.setPadding(dp(12), dp(12), dp(20), dp(12))
                 card.addView(row)
 
-                val dragHandle = text("⋮⋮", 24, R.color.istan_olive, false)
-                dragHandle.setPadding(dp(8), dp(4), dp(16), dp(4))
+                val dragHandle = ImageView(activity)
+                dragHandle.setImageResource(R.drawable.drag_indicator_24px)
+                dragHandle.setColorFilter(color(R.color.istan_olive))
+                dragHandle.setPadding(dp(8), dp(8), dp(16), dp(8))
                 if (hideDrag) dragHandle.visibility = View.GONE
                 row.addView(dragHandle)
 
@@ -599,14 +603,13 @@ class EditorViewBuilder(
                 cbParams.setMargins(dp(8), 0, 0, 0)
                 cbParams.gravity = Gravity.CENTER_VERTICAL
 
-                var crossBtn: TextView? = null
+                var crossBtn: ImageView? = null
                 if (isMerge) {
                     keepBox.visibility = View.GONE
-                    crossBtn = TextView(activity)
-                    crossBtn.text = "✕"
-                    crossBtn.textSize = 22f
-                    crossBtn.setTextColor(color(R.color.istan_olive))
-                    crossBtn.setPadding(dp(12), dp(4), dp(8), dp(4))
+                    crossBtn = ImageView(activity)
+                    crossBtn.setImageResource(R.drawable.close_24px)
+                    crossBtn.setColorFilter(color(R.color.istan_olive))
+                    crossBtn.setPadding(dp(12), dp(8), dp(8), dp(8))
                 }
 
                 val infoText = text("", 13, R.color.istan_olive, false)
@@ -805,12 +808,11 @@ class EditorViewBuilder(
             dialogRoot.setBackgroundColor(Color.parseColor("#E6252525"))
 
             val topBar = FrameLayout(activity)
-            val closeBtn = TextView(activity)
-            closeBtn.text = "✕"
-            closeBtn.setTextColor(Color.WHITE)
-            closeBtn.textSize = 26f
-            closeBtn.setPadding(dp(16), dp(12), dp(16), dp(12))
-            val clsLp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            val closeBtn = ImageView(activity)
+            closeBtn.setImageResource(R.drawable.close_24px)
+            closeBtn.setColorFilter(Color.WHITE)
+            closeBtn.setPadding(dp(16), dp(16), dp(16), dp(16))
+            val clsLp = FrameLayout.LayoutParams(dp(60), dp(60))
             clsLp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
             topBar.addView(closeBtn, clsLp)
             dialogRoot.addView(topBar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))

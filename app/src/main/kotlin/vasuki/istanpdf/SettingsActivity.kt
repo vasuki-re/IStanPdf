@@ -13,6 +13,7 @@ import android.os.Handler
 import android.provider.MediaStore
 import android.text.InputType
 import android.widget.EditText
+import android.widget.ImageView
 import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
@@ -107,9 +108,11 @@ class SettingsActivity : AppCompatActivity() {
         }
         page.addView(titleRow)
 
-        val backArrow = text("←", 28, R.color.istan_text, true).apply {
+        val backArrow = ImageView(this).apply {
+            setImageResource(R.drawable.arrow_back_24px)
+            setColorFilter(color(R.color.istan_text))
             contentDescription = "Navigate up"
-            gravity = Gravity.CENTER
+            setPadding(dp(12), dp(12), dp(12), dp(12))
             setOnClickListener { finish() }
         }
         titleRow.addView(backArrow, LinearLayout.LayoutParams(dp(48), dp(48)))

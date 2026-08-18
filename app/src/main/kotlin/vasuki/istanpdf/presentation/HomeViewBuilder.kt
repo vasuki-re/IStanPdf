@@ -216,7 +216,7 @@ class HomeViewBuilder(
         val row = LinearLayout(activity)
         row.gravity = Gravity.CENTER_VERTICAL
         row.isBaselineAligned = false
-        row.setPadding(dp(12), dp(20), dp(8), dp(20))
+        row.setPadding(dp(10), dp(20), dp(4), dp(20))
         row.orientation = LinearLayout.HORIZONTAL
         card.addView(row)
 
@@ -225,22 +225,22 @@ class HomeViewBuilder(
             icon.setImageResource(iconResId)
             icon.setColorFilter(color(R.color.istan_olive_dark))
             val iconParams = LinearLayout.LayoutParams(dp(26), dp(26))
-            iconParams.setMargins(0, 0, dp(10), 0)
+            iconParams.setMargins(0, 0, dp(6), 0)
             row.addView(icon, iconParams)
         }
 
         val label = text(title, 15, R.color.istan_text, false)
-        label.maxLines = 2
+        label.maxLines = 1
+        label.isSingleLine = true
         label.ellipsize = TextUtils.TruncateAt.END
         row.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
-        val chevron = text(">", 20, R.color.istan_text_muted, false)
-        chevron.gravity = Gravity.CENTER
-        chevron.setPadding(dp(4), 0, dp(4), 0)
-        val chevronParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
+        val chevron = ImageView(activity)
+        chevron.setImageResource(R.drawable.chevron_right_24px)
+        chevron.setColorFilter(color(R.color.istan_text_muted))
+        val chevronParams = LinearLayout.LayoutParams(dp(18), dp(18))
+        chevronParams.gravity = Gravity.CENTER_VERTICAL
+        chevronParams.setMargins(dp(2), 0, dp(2), 0)
         row.addView(chevron, chevronParams)
 
         card.setOnClickListener { action() }
