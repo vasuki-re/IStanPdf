@@ -830,7 +830,12 @@ class MainActivity : AppCompatActivity() {
                 }
             } else {
                 runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
-                    AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
+                    val finalSize = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
+                    if (finalSize > compressTargetBytes) {
+                        "Couldn't reach target size (Output: ${formatFileSize(finalSize)})"
+                    } else {
+                        null
+                    }
                 }
             }
         } else if (requestCode == REQ_SAVE_REORDER_PDF || requestCode == REQ_SAVE_REORDER_DOCX_EXPORT) {
@@ -1939,7 +1944,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun interface Job {
         @Throws(Exception::class)
-        fun run()
+        fun run(): Any?
     }
 
     private data class OutputRef(val uri: Uri, val mime: String, val name: String)
@@ -1948,9 +1953,10 @@ class MainActivity : AppCompatActivity() {
         setBusy(true, message)
         worker.submit {
             try {
-                job.run()
+                val result = job.run()
+                val finalMsg = if (result is String) result else "Ready"
                 runOnUiThread {
-                    setBusy(false, "Ready")
+                    setBusy(false, finalMsg)
                     if (output != null) {
                         showOutputSnackbar(output)
                     }
@@ -2255,6 +2261,11 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             setBusy(false, message)
         }
+    }
+
+    private fun formatFileSize(bytes: Long): String {
+        val kb = bytes / 1024.0
+        return if (kb >= 1024) "%.1f MB".format(kb / 1024f) else "%.0f KB".format(kb)
     }
 
     private fun showCompressModeDialog(pdfUri: Uri) {
