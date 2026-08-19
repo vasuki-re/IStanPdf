@@ -6,130 +6,54 @@ import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
-import vasuki.istanpdf.model.PageItem
 import vasuki.istanpdf.pdf.ImagesToPdf
 import vasuki.istanpdf.pdf.PdfCompress
 import vasuki.istanpdf.pdf.PdfMerge
 import vasuki.istanpdf.pdf.PdfReorder
 import vasuki.istanpdf.pdf.PdfToJpegZip
 import vasuki.istanpdf.util.ContentFiles
+import java.io.Closeable
 import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
 
 class PdfEngine(context: Context) {
     private val context = context.applicationContext
 
-    @Throws(Exception::class)
-    fun renderFirstPage(uri: Uri, targetWidth: Int): Bitmap? {
-        var tempPdf: File? = null
-        var fd: ParcelFileDescriptor? = null
-        try {
-            if (uri.scheme == "file") {
-                fd = ParcelFileDescriptor.open(File(uri.path!!), ParcelFileDescriptor.MODE_READ_ONLY)
-            } else {
-                tempPdf = ContentFiles.copyUriToCache(context, uri, ".pdf")
-                fd = ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY)
+    inner class RenderSession internal constructor(uri: Uri) : Closeable {
+        private val tempFile: File? =
+            if (uri.scheme == "file") null else ContentFiles.copyUriToCache(context, uri, ".pdf")
+        private val fd: ParcelFileDescriptor = ParcelFileDescriptor.open(
+            tempFile ?: File(uri.path!!), ParcelFileDescriptor.MODE_READ_ONLY)
+        private val renderer = PdfRenderer(fd)
+
+        @get:Synchronized
+        val pageCount: Int
+            get() = renderer.pageCount
+
+        @Synchronized
+        fun renderPage(index: Int, targetWidth: Int): Bitmap {
+            require(index in 0 until renderer.pageCount) { "Page index out of range" }
+            renderer.openPage(index).use { page ->
+                val width = targetWidth
+                val height = max(1, width * page.height / max(1, page.width))
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                bitmap.eraseColor(Color.WHITE)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                return bitmap
             }
-            requireNotNull(fd) { "Cannot open PDF file" }
-            PdfRenderer(fd).use { renderer ->
-                if (renderer.pageCount > 0) {
-                    renderer.openPage(0).use { page ->
-                        val width = targetWidth
-                        val height = max(1, width * page.height / max(1, page.width))
-                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                        bitmap.eraseColor(Color.WHITE)
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        return bitmap
-                    }
-                }
-            }
-            return null
-        } finally {
-            try { fd?.close() } catch (_: Exception) {}
-            if (tempPdf?.exists() == true) tempPdf.delete()
+        }
+
+        override fun close() {
+            renderer.close()
+            fd.close()
+            tempFile?.let { if (it.exists()) it.delete() }
         }
     }
+
+    fun openSession(uri: Uri): RenderSession = RenderSession(uri)
 
     fun interface RenderProgressListener {
         fun onPageRendered(current: Int, total: Int)
-    }
-
-    @Throws(Exception::class)
-    fun renderPage(uri: Uri, pageIndex: Int, targetWidth: Int): Bitmap {
-        var tempPdf: File? = null
-        var fd: ParcelFileDescriptor? = null
-        try {
-            if (uri.scheme == "file") {
-                fd = ParcelFileDescriptor.open(File(uri.path!!), ParcelFileDescriptor.MODE_READ_ONLY)
-            } else {
-                tempPdf = ContentFiles.copyUriToCache(context, uri, ".pdf")
-                fd = ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY)
-            }
-            requireNotNull(fd) { "Cannot open PDF file" }
-            PdfRenderer(fd).use { renderer ->
-                require(pageIndex in 0 until renderer.pageCount) { "Page index out of range" }
-                renderer.openPage(pageIndex).use { page ->
-                    val width = targetWidth
-                    val height = max(1, width * page.height / max(1, page.width))
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                    bitmap.eraseColor(Color.WHITE)
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    return bitmap
-                }
-            }
-            throw IllegalStateException("Cannot render page")
-        } finally {
-            try { fd?.close() } catch (_: Exception) {}
-            if (tempPdf?.exists() == true) tempPdf.delete()
-        }
-    }
-
-    @Throws(Exception::class)
-    fun renderAllPages(
-        uri: Uri,
-        targetWidth: Int,
-        cancelFlag: AtomicBoolean?,
-        listener: RenderProgressListener?
-    ): List<PageItem> {
-        val rendered = mutableListOf<PageItem>()
-        var tempPdf: File? = null
-        var fd: ParcelFileDescriptor? = null
-        try {
-            if (uri.scheme == "file") {
-                fd = ParcelFileDescriptor.open(File(uri.path!!), ParcelFileDescriptor.MODE_READ_ONLY)
-            } else {
-                tempPdf = ContentFiles.copyUriToCache(context, uri, ".pdf")
-                fd = ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY)
-            }
-            requireNotNull(fd) { "Cannot open PDF file" }
-            PdfRenderer(fd).use { renderer ->
-                for (i in 0 until renderer.pageCount) {
-                    if ((cancelFlag != null && cancelFlag.get()) || Thread.currentThread().isInterrupted) {
-                        throw InterruptedException("Cancelled by user")
-                    }
-                    listener?.onPageRendered(i + 1, renderer.pageCount)
-                    renderer.openPage(i).use { page ->
-                        val width = targetWidth
-                        val height = max(1, width * page.height / max(1, page.width))
-                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                        bitmap.eraseColor(Color.WHITE)
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        rendered.add(PageItem(i, bitmap))
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            for (p in rendered) {
-                if (!p.thumbnail.isRecycled) p.thumbnail.recycle()
-            }
-            rendered.clear()
-            throw e
-        } finally {
-            try { fd?.close() } catch (_: Exception) {}
-            if (tempPdf?.exists() == true) tempPdf.delete()
-        }
-        return rendered
     }
 
     @Throws(Exception::class)
@@ -138,17 +62,17 @@ class PdfEngine(context: Context) {
     }
 
     @Throws(Exception::class)
-    fun reorder(source: Uri, pages: List<PageItem>, destination: Uri): Int {
+    fun reorder(source: Uri, pages: List<vasuki.istanpdf.model.PageItem>, destination: Uri): Int {
         return PdfReorder.run(context, source, pages, destination)
     }
 
     @Throws(Exception::class)
-    fun replacePages(source: Uri, pages: List<PageItem>, destination: Uri) {
+    fun replacePages(source: Uri, pages: List<vasuki.istanpdf.model.PageItem>, destination: Uri) {
         PdfReorder.replacePages(context, source, pages, destination)
     }
 
     @Throws(Exception::class)
-    fun imagesToPdf(sources: List<Uri>, pages: List<PageItem>, destination: Uri) {
+    fun imagesToPdf(sources: List<Uri>, pages: List<vasuki.istanpdf.model.PageItem>, destination: Uri) {
         ImagesToPdf.run(context, sources, pages, destination)
     }
 

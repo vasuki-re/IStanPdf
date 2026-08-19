@@ -72,6 +72,7 @@ class ZoomableImageView(context: Context) : AppCompatImageView(context) {
     }
 
     fun setImageBitmapAndReset(bitmap: Bitmap?) {
+        zoomAnimator?.cancel()
         setImageBitmap(bitmap)
         if (bitmap != null) {
             bitmapWidth = bitmap.width.toFloat()
@@ -79,6 +80,68 @@ class ZoomableImageView(context: Context) : AppCompatImageView(context) {
             if (viewWidth > 0 && viewHeight > 0) {
                 setupBaseMatrix()
             }
+        } else {
+            bitmapWidth = 0f
+            bitmapHeight = 0f
+            currentScale = 1f
+            imgMatrix.reset()
+            isReady = false
+        }
+    }
+
+    fun upgradeBitmap(newBitmap: Bitmap?) {
+        if (newBitmap == null) return
+        zoomAnimator?.cancel()
+
+        val rect = mappedImageRect()
+        var normalizedCenterX = 0.5f
+        var normalizedCenterY = 0.5f
+
+        if (rect != null && rect.width() > 0 && rect.height() > 0) {
+            val viewCenterX = viewWidth / 2f
+            val viewCenterY = viewHeight / 2f
+            normalizedCenterX = (viewCenterX - rect.left) / rect.width()
+            normalizedCenterY = (viewCenterY - rect.top) / rect.height()
+        }
+
+        val oldCurrentScale = currentScale
+
+        setImageBitmap(newBitmap)
+        bitmapWidth = newBitmap.width.toFloat()
+        bitmapHeight = newBitmap.height.toFloat()
+
+        if (viewWidth > 0 && viewHeight > 0) {
+            baseMatrix = Matrix()
+            val scaleX = viewWidth / bitmapWidth
+            val scaleY = viewHeight / bitmapHeight
+            val baseScale = minOf(scaleX, scaleY)
+            val dx = (viewWidth - bitmapWidth * baseScale) / 2f
+            val dy = (viewHeight - bitmapHeight * baseScale) / 2f
+            baseMatrix.setScale(baseScale, baseScale)
+            baseMatrix.postTranslate(dx, dy)
+
+            currentScale = oldCurrentScale
+            imgMatrix.set(baseMatrix)
+
+            if (currentScale > minScale) {
+                imgMatrix.postScale(currentScale, currentScale, viewWidth / 2f, viewHeight / 2f)
+
+                val newRect = mappedImageRect()
+                if (newRect != null) {
+                    val targetLeft = (viewWidth / 2f) - (normalizedCenterX * newRect.width())
+                    val targetTop = (viewHeight / 2f) - (normalizedCenterY * newRect.height())
+
+                    val transX = targetLeft - newRect.left
+                    val transY = targetTop - newRect.top
+                    imgMatrix.postTranslate(transX, transY)
+                }
+
+                clampTranslation()
+            }
+
+            imageMatrix = imgMatrix
+            isReady = true
+            updateTouchIntercept()
         }
     }
 

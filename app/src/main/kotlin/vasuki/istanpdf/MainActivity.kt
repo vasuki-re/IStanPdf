@@ -22,6 +22,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import android.util.LruCache
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -35,6 +36,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
+import vasuki.istanpdf.data.PdfEngine
 import vasuki.istanpdf.di.AppModule
 import vasuki.istanpdf.model.PageItem
 import vasuki.istanpdf.presentation.CropOverlayView
@@ -47,6 +49,7 @@ import vasuki.istanpdf.libreoffice.LibreOfficeManager
 import android.widget.ProgressBar
 import java.io.File
 import java.io.FileOutputStream
+import java.util.HashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -54,6 +57,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 class MainActivity : AppCompatActivity() {
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
+    private val thumbExecutor: ExecutorService = Executors.newFixedThreadPool(4)
+    private val fullResExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val activeSessions: MutableMap<Uri, PdfEngine.RenderSession> = HashMap()
     val cancelJob = AtomicBoolean(false)
 
     private var pageList: RecyclerView? = null
@@ -423,6 +429,9 @@ class MainActivity : AppCompatActivity() {
         updateThread?.interrupt()
         updateThread = null
         worker.shutdownNow()
+        thumbExecutor.shutdownNow()
+        fullResExecutor.shutdownNow()
+        closeActiveSessions()
         editorViewModel.clearPages()
         super.onDestroy()
     }
@@ -485,9 +494,9 @@ class MainActivity : AppCompatActivity() {
                 var skipped = 0
                 for (uri in pendingUris) {
                     try {
-                        val thumb = renderFirstPdfPage(uri)
-                        if (thumb != null) {
-                            rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri)))
+                        val count = AppModule.get().pdfEngine.openSession(uri).use { it.pageCount }
+                        if (count > 0) {
+                            rendered.add(PageItem(startIndex++, sourceUri = uri, renderIndex = 0, displayName = getDisplayName(uri)))
                         }
                     } catch (_: Exception) { skipped++ }
                 }
@@ -523,11 +532,13 @@ class MainActivity : AppCompatActivity() {
             worker.execute {
                 try {
                     val pdfFile = AppModule.get().docxToPdf.execute(docx)
-                    val rendered = renderPdfPages(Uri.fromFile(pdfFile))
+                    val pdfUri = Uri.fromFile(pdfFile)
+                    val count = AppModule.get().pdfEngine.openSession(pdfUri).use { it.pageCount }
+                    val rendered = (0 until count).map { PageItem(it, sourceUri = pdfUri, renderIndex = it) }
                     runOnUiThread {
                         editorViewModel.clearPages()
                         editorViewModel.pages.addAll(rendered)
-                        editorViewModel.reorderSource = Uri.fromFile(pdfFile)
+                        editorViewModel.reorderSource = pdfUri
                         setBusy(false, "Ready")
                         buildPageEditor("Reorder Pages from DOCX", "Save PDF", false, true)
                     }
@@ -580,9 +591,9 @@ class MainActivity : AppCompatActivity() {
                 var skipped = 0
                 for (uri in validUris) {
                     try {
-                        val thumb = renderFirstPdfPage(uri)
-                        if (thumb != null) {
-                            rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri)))
+                        val count = AppModule.get().pdfEngine.openSession(uri).use { it.pageCount }
+                        if (count > 0) {
+                            rendered.add(PageItem(startIndex++, sourceUri = uri, renderIndex = 0, displayName = getDisplayName(uri)))
                         }
                     } catch (_: Exception) { skipped++ }
                 }
@@ -658,11 +669,16 @@ class MainActivity : AppCompatActivity() {
                                 if (srcFile.exists()) srcFile.delete()
                             }
                             val mergedUri = Uri.fromFile(mergedFile)
-                            val allRendered = renderPdfPages(mergedUri)
+                            val mergedCount = AppModule.get().pdfEngine.openSession(mergedUri).use { it.pageCount }
                             val existingCount = pages.size + newPages.size
-                            for (k in existingCount until allRendered.size) {
-                                newPages.add(allRendered[k])
+                            for (k in existingCount until mergedCount) {
+                                newPages.add(PageItem(k, sourceUri = mergedUri, renderIndex = k))
                             }
+                            for (p in pages) {
+                                p.sourceUri = mergedUri
+                                p.renderIndex = p.originalIndex
+                            }
+                            for (p in newPages) p.sourceUri = mergedUri
 
                             if ("file" == reorderSource.scheme) {
                                 val oldFile = File(reorderSource.path!!)
@@ -670,6 +686,7 @@ class MainActivity : AppCompatActivity() {
                                     oldFile.delete()
                                 }
                             }
+                            dropSession(reorderSource)
                             editorViewModel.reorderSource = mergedUri
                         } finally {
                             if (addedPdf != null && addedPdf.exists()
@@ -891,6 +908,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildHome() {
         isHome = true
+        closeActiveSessions()
         editorViewModel.resetForHome()
 
         val builder = HomeViewBuilder(this, regularFont, boldFont)
@@ -952,6 +970,44 @@ class MainActivity : AppCompatActivity() {
             override fun getPages(): MutableList<PageItem> = editorViewModel.pages
             override fun getPendingUris(): MutableList<Uri> = editorViewModel.pendingUris
             override fun isPagesAdded(): Boolean = editorViewModel.pagesAdded
+            override fun getThumbnail(item: PageItem): Bitmap? = editorViewModel.thumbCache.get(item.cacheKey)
+            override fun requestThumbnail(item: PageItem, onReady: (Bitmap) -> Unit) {
+                requestPageBitmap(item, thumbExecutor, editorViewModel.thumbCache, lowResWidth(), onReady)
+            }
+            override fun getFullRes(item: PageItem): Bitmap? = editorViewModel.fullResCache.get(item.cacheKey)
+            override fun requestFullRes(item: PageItem, onReady: (Bitmap) -> Unit) {
+                requestPageBitmap(item, fullResExecutor, editorViewModel.fullResCache, screenWidth(), onReady)
+            }
+            override fun rotatePage(item: PageItem, degrees: Int, onReady: (Bitmap, Bitmap?) -> Unit) {
+                val oldKey = item.cacheKey
+                val cachedThumb = editorViewModel.thumbCache.get(oldKey)
+                val cachedFull = editorViewModel.fullResCache.get(oldKey)
+
+                item.rotation = (item.rotation + degrees % 360 + 360) % 360
+                val newKey = item.cacheKey
+
+                val matrix = android.graphics.Matrix()
+                matrix.postRotate(degrees.toFloat())
+
+                var newThumb: Bitmap? = null
+                var newFull: Bitmap? = null
+
+                if (cachedThumb != null) {
+                    newThumb = Bitmap.createBitmap(cachedThumb, 0, 0, cachedThumb.width, cachedThumb.height, matrix, true)
+                    editorViewModel.thumbCache.put(newKey, newThumb)
+                }
+
+                if (cachedFull != null) {
+                    newFull = Bitmap.createBitmap(cachedFull, 0, 0, cachedFull.width, cachedFull.height, matrix, true)
+                    editorViewModel.fullResCache.put(newKey, newFull)
+                }
+
+                if (newThumb != null) {
+                    onReady(newThumb, newFull)
+                } else {
+                    requestThumbnail(item) { bmp -> onReady(bmp, newFull) }
+                }
+            }
         })
         status = builder.status
         statusIndicator = builder.statusIndicator
@@ -1376,9 +1432,7 @@ class MainActivity : AppCompatActivity() {
                     val uri = page.uri
                     if (uri != null) BitmapUtils.loadImageUri(this@MainActivity, uri, CROP_MAX_DIM) else null
                 } else {
-                    editorViewModel.reorderSource?.let {
-                        AppModule.get().pdfEngine.renderPage(it, page.originalIndex, CROP_MAX_DIM)
-                    }
+                    page.sourceUri?.let { activeSession(it).renderPage(page.renderIndex, CROP_MAX_DIM) }
                 }
                 if (src == null) throw IllegalStateException("Cannot load page image")
                 runOnUiThread {
@@ -1419,8 +1473,8 @@ class MainActivity : AppCompatActivity() {
                 if (thumb !== cropped && !cropped.isRecycled) cropped.recycle()
                 val finalThumb = thumb
                 runOnUiThread {
-                    if (!page.thumbnail.isRecycled) page.thumbnail.recycle()
-                    page.thumbnail = finalThumb
+                    editorViewModel.thumbCache.put(page.cacheKey, finalThumb)
+                    editorViewModel.fullResCache.remove(page.cacheKey)
                     pageList?.adapter?.notifyDataSetChanged()
                     onDone?.run()
                 }
@@ -1479,10 +1533,12 @@ class MainActivity : AppCompatActivity() {
                     if (photoPdf.exists()) photoPdf.delete()
                 }
                 val mergedUri = Uri.fromFile(mergedFile)
-                val allRendered = renderPdfPages(mergedUri)
+                val mergedCount = AppModule.get().pdfEngine.openSession(mergedUri).use { it.pageCount }
                 val pages = editorViewModel.pages
                 val existingCount = pages.size
-                val newPages = allRendered.drop(existingCount).toMutableList()
+                val newPages = (existingCount until mergedCount)
+                    .map { PageItem(it, sourceUri = mergedUri, renderIndex = it) }
+                    .toMutableList()
 
                 if ("file" == reorderSource.scheme) {
                     val oldFile = File(reorderSource.path!!)
@@ -1490,6 +1546,11 @@ class MainActivity : AppCompatActivity() {
                         oldFile.delete()
                     }
                 }
+                for (p in pages) {
+                    p.sourceUri = mergedUri
+                    p.renderIndex = p.originalIndex
+                }
+                dropSession(reorderSource)
                 editorViewModel.reorderSource = mergedUri
                 editorViewModel.tempImageFiles.add(mergedFile)
                 runOnUiThread {
@@ -1519,7 +1580,8 @@ class MainActivity : AppCompatActivity() {
 
                 val thumb = BitmapUtils.scaleToFit(bitmap, dp(280))
                 if (thumb !== bitmap && !bitmap.isRecycled) bitmap.recycle()
-                val newPage = PageItem(editorViewModel.pages.size, thumb, "Camera Photo", uri = fileUri)
+                val newPage = PageItem(editorViewModel.pages.size, displayName = "Camera Photo", uri = fileUri)
+                editorViewModel.thumbCache.put(newPage.cacheKey, thumb)
 
                 cameraPhotoFile?.let { if (it.exists()) it.delete() }
                 cameraPhotoFile = null
@@ -1543,10 +1605,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPdfPreview(uri: Uri, docxExport: Boolean) {
-        setBusy(true, "Rendering page previews...", true)
+        setBusy(true, "Opening document...", true)
         worker.execute {
             try {
-                val rendered = renderPdfPages(uri)
+                val count = AppModule.get().pdfEngine.openSession(uri).use { it.pageCount }
+                val rendered = (0 until count).map { PageItem(it, sourceUri = uri, renderIndex = it) }
                 runOnUiThread {
                     editorViewModel.clearPages()
                     editorViewModel.pages.addAll(rendered)
@@ -1602,24 +1665,40 @@ class MainActivity : AppCompatActivity() {
                     val uri = rawUris[i]
                     val mime = contentResolver.getType(uri)
                     if (mime != null && mime == MIME_PDF) {
-                        val pdfPages = renderPdfPages(uri)
-                        var pIdx = 1
-                        for (pdfP in pdfPages) {
-                            val f = File(cacheDir, "pdf_to_img_${System.currentTimeMillis()}_${pIdx}.jpg")
-                            java.io.FileOutputStream(f).use { out ->
-                                pdfP.thumbnail.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                        val session = AppModule.get().pdfEngine.openSession(uri)
+                        try {
+                            var pIdx = 1
+                            for (pageIdx in 0 until session.pageCount) {
+                                if (cancelJob.get() || Thread.currentThread().isInterrupted) {
+                                    throw InterruptedException("Cancelled by user")
+                                }
+                                val pageBitmap = session.renderPage(pageIdx, maxOf(dp(280), screenWidth() - dp(64)))
+                                val f = File(cacheDir, "pdf_to_img_${System.currentTimeMillis()}_${pIdx}.jpg")
+                                java.io.FileOutputStream(f).use { out ->
+                                    pageBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                                }
+                                val thumb = BitmapUtils.scaleToFit(pageBitmap, dp(280))
+                                if (thumb !== pageBitmap && !pageBitmap.isRecycled) pageBitmap.recycle()
+                                tempImageFiles.add(f)
+                                val fileUri = Uri.fromFile(f)
+                                processedUris.add(fileUri)
+                                val item = PageItem(startIndex, displayName = "PDF Page $pIdx", uri = fileUri)
+                                editorViewModel.thumbCache.put(item.cacheKey, thumb)
+                                rendered.add(item)
+                                startIndex++
+                                pIdx++
                             }
-                            tempImageFiles.add(f)
-                            val fileUri = Uri.fromFile(f)
-                            processedUris.add(fileUri)
-                            rendered.add(PageItem(startIndex++, pdfP.thumbnail, "PDF Page $pIdx", uri = fileUri))
-                            pIdx++
+                        } finally {
+                            session.close()
                         }
                     } else {
                         processedUris.add(uri)
                         val size = dp(280)
                         val thumb = loadThumbnail(uri, size)
-                        rendered.add(PageItem(startIndex++, thumb, getDisplayName(uri), uri = uri))
+                        val item = PageItem(startIndex, displayName = getDisplayName(uri), uri = uri)
+                        editorViewModel.thumbCache.put(item.cacheKey, thumb)
+                        rendered.add(item)
+                        startIndex++
                     }
                 }
                 runOnUiThread {
@@ -1663,11 +1742,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadDocxPreviewViaLibreOffice(docx: Uri) {
-        setBusy(true, "Rendering DOCX previews...")
+        setBusy(true, "Converting DOCX for preview...")
         worker.execute {
             try {
                 val pdfFile = AppModule.get().docxToPdf.execute(docx)
-                val rendered = renderPdfPages(Uri.fromFile(pdfFile))
+                val pdfUri = Uri.fromFile(pdfFile)
+                val count = AppModule.get().pdfEngine.openSession(pdfUri).use { it.pageCount }
+                val rendered = (0 until count).map { PageItem(it, sourceUri = pdfUri, renderIndex = it) }
 
                 runOnUiThread {
                     editorViewModel.clearPages()
@@ -1683,39 +1764,73 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderFirstPdfPage(uri: Uri): Bitmap? {
-        val screenWidth = resources.displayMetrics.widthPixels
-        val targetWidth = maxOf(dp(280), screenWidth - dp(64))
-        return AppModule.get().pdfEngine.renderFirstPage(uri, targetWidth)
+    @Synchronized
+    private fun activeSession(uri: Uri): PdfEngine.RenderSession {
+        return activeSessions.getOrPut(uri) { AppModule.get().pdfEngine.openSession(uri) }
     }
 
-    private fun renderPdfPages(uri: Uri): List<PageItem> {
-        val screenWidth = resources.displayMetrics.widthPixels
-        val targetWidth = maxOf(dp(280), screenWidth - dp(64))
-        return AppModule.get().pdfEngine.renderAllPages(uri, targetWidth, cancelJob) { current, total ->
-            runOnUiThread {
-                if (loadingSubtitle != null && loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
-                    if (fakeProgressRunnable != null) {
-                        fakeProgressHandler.removeCallbacks(fakeProgressRunnable!!)
-                        fakeProgressRunnable = null
+    @Synchronized
+    private fun dropSession(uri: Uri) {
+        activeSessions.remove(uri)?.close()
+    }
+
+    @Synchronized
+    private fun closeActiveSessions() {
+        for (session in activeSessions.values) session.close()
+        activeSessions.clear()
+    }
+
+    private fun lowResWidth(): Int = dp(280)
+
+    private fun screenWidth(): Int = resources.displayMetrics.widthPixels
+
+    private fun requestPageBitmap(item: PageItem, executor: ExecutorService, cache: LruCache<String, Bitmap>, targetWidth: Int, onReady: (Bitmap) -> Unit) {
+        val cacheKey = item.cacheKey
+        val cached = cache.get(cacheKey)
+        if (cached != null) {
+            onReady(cached)
+            return
+        }
+        val inFlightKey = "req_${cacheKey}_$targetWidth"
+        if (!editorViewModel.rendersInFlight.add(inFlightKey)) return
+        executor.submit {
+            try {
+                val bmp = renderBitmap(item, targetWidth)
+                if (bmp != null) {
+                    runOnUiThread {
+                        editorViewModel.rendersInFlight.remove(inFlightKey)
+                        cache.put(cacheKey, bmp)
+                        onReady(bmp)
                     }
-                    loadingTextRow?.visibility = View.VISIBLE
-                    loadingSubtitle!!.text = "Page $current of $total"
-                    loadingPercentage?.let {
-                        val pct = ((current * 100f) / total).toInt()
-                        it.text = "$pct%"
-                        it.visibility = View.VISIBLE
-                    }
-                    loadingSpinner?.let { spinner ->
-                        if (spinner.max != total) {
-                            spinner.isIndeterminate = false
-                            spinner.max = total
-                        }
-                        spinner.setProgressCompat(current, false)
-                    }
+                } else {
+                    editorViewModel.rendersInFlight.remove(inFlightKey)
                 }
+            } catch (_: Exception) {
+                editorViewModel.rendersInFlight.remove(inFlightKey)
             }
         }
+    }
+
+    private fun renderBitmap(item: PageItem, targetWidth: Int): Bitmap? {
+        return try {
+            val base = when {
+                item.replacementFile?.exists() == true -> BitmapUtils.loadCameraBitmap(item.replacementFile!!, targetWidth)
+                item.sourceUri != null -> activeSession(item.sourceUri!!).renderPage(item.renderIndex, targetWidth)
+                item.uri != null -> loadThumbnail(item.uri!!, targetWidth)
+                else -> return null
+            }
+            if (item.rotation % 360 == 0) base else rotateBitmap(base, item.rotation)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun rotateBitmap(src: Bitmap, degrees: Int): Bitmap {
+        val matrix = android.graphics.Matrix()
+        matrix.postRotate(degrees.toFloat())
+        val rotated = Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
+        if (rotated !== src && !src.isRecycled) src.recycle()
+        return rotated
     }
 
     private fun pickMany(mimeTypes: Array<String>, requestCode: Int) {

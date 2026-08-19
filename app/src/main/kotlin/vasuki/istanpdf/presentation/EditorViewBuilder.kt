@@ -43,6 +43,11 @@ class EditorViewBuilder(
         fun getPages(): List<PageItem>
         fun getPendingUris(): List<Uri>
         fun isPagesAdded(): Boolean
+        fun getThumbnail(item: PageItem): Bitmap?
+        fun requestThumbnail(item: PageItem, onReady: (Bitmap) -> Unit)
+        fun getFullRes(item: PageItem): Bitmap?
+        fun requestFullRes(item: PageItem, onReady: (Bitmap) -> Unit)
+        fun rotatePage(item: PageItem, degrees: Int, onReady: (thumb: Bitmap, fullRes: Bitmap?) -> Unit)
     }
 
     companion object {
@@ -708,7 +713,17 @@ class EditorViewBuilder(
         override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
             val pages = actions.getPages()
             val item = pages[position]
-            holder.preview.setImageBitmap(item.thumbnail)
+            val cached = actions.getThumbnail(item)
+            if (cached != null) {
+                holder.preview.setImageBitmap(cached)
+            } else {
+                holder.preview.setImageBitmap(null)
+                actions.requestThumbnail(item) { bmp ->
+                    if (holder.bindingAdapterPosition == position) {
+                        holder.preview.setImageBitmap(bmp)
+                    }
+                }
+            }
 
             if (isMerge && holder.crossBtn != null) {
                 holder.crossBtn.setOnClickListener {
@@ -777,22 +792,18 @@ class EditorViewBuilder(
             }
 
             holder.rotateLeft.setOnClickListener {
-                item.rotation = (item.rotation - 90) % 360
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(-90f)
-                val newThumb = Bitmap.createBitmap(item.thumbnail, 0, 0, item.thumbnail.width, item.thumbnail.height, matrix, true)
-                item.thumbnail.recycle()
-                item.thumbnail = newThumb
-                holder.preview.setImageBitmap(item.thumbnail)
+                actions.rotatePage(item, -90) { bmp, _ ->
+                    if (holder.bindingAdapterPosition == position) {
+                        holder.preview.setImageBitmap(bmp)
+                    }
+                }
             }
             holder.rotateRight.setOnClickListener {
-                item.rotation = (item.rotation + 90) % 360
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(90f)
-                val newThumb = Bitmap.createBitmap(item.thumbnail, 0, 0, item.thumbnail.width, item.thumbnail.height, matrix, true)
-                item.thumbnail.recycle()
-                item.thumbnail = newThumb
-                holder.preview.setImageBitmap(item.thumbnail)
+                actions.rotatePage(item, 90) { bmp, _ ->
+                    if (holder.bindingAdapterPosition == position) {
+                        holder.preview.setImageBitmap(bmp)
+                    }
+                }
             }
         }
 
@@ -936,41 +947,43 @@ class EditorViewBuilder(
             rotLeft.setOnClickListener {
                 val pgs = actions.getPages()
                 val p = pgs[currentPos[0]]
-                p.rotation = (p.rotation - 90) % 360
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(-90f)
-                val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
-                p.thumbnail.recycle()
-                p.thumbnail = newThumb
-                val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
-                if (vh is PreviewPagerAdapter.PreviewVH) {
-                    vh.image.setImageBitmapAndReset(p.thumbnail)
+                actions.rotatePage(p, -90) { thumb, full ->
+                    val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (vh is PreviewPagerAdapter.PreviewVH) {
+                        vh.image.setImageBitmapAndReset(full ?: thumb)
+                    }
+                    val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (listVh is PageViewHolder) listVh.preview.setImageBitmap(thumb)
                 }
-                val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+                actions.requestFullRes(p) { bmp ->
+                    val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (vh is PreviewPagerAdapter.PreviewVH) {
+                        vh.image.upgradeBitmap(bmp)
+                    }
+                }
             }
             rotRight.setOnClickListener {
                 val pgs = actions.getPages()
                 val p = pgs[currentPos[0]]
-                p.rotation = (p.rotation + 90) % 360
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(90f)
-                val newThumb = Bitmap.createBitmap(p.thumbnail, 0, 0, p.thumbnail.width, p.thumbnail.height, matrix, true)
-                p.thumbnail.recycle()
-                p.thumbnail = newThumb
-                val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
-                if (vh is PreviewPagerAdapter.PreviewVH) {
-                    vh.image.setImageBitmapAndReset(p.thumbnail)
+                actions.rotatePage(p, 90) { thumb, full ->
+                    val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (vh is PreviewPagerAdapter.PreviewVH) {
+                        vh.image.setImageBitmapAndReset(full ?: thumb)
+                    }
+                    val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (listVh is PageViewHolder) listVh.preview.setImageBitmap(thumb)
                 }
-                val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                if (listVh is PageViewHolder) listVh.preview.setImageBitmap(p.thumbnail)
+                actions.requestFullRes(p) { bmp ->
+                    val vh = (viewPager.getChildAt(0) as? RecyclerView)?.findViewHolderForAdapterPosition(currentPos[0])
+                    if (vh is PreviewPagerAdapter.PreviewVH) {
+                        vh.image.upgradeBitmap(bmp)
+                    }
+                }
             }
 
             cropBtn.setOnClickListener {
                 actions.onCropPage(currentPos[0]) {
                     viewPager.adapter?.notifyItemChanged(currentPos[0])
-                    val listVh = pageList?.findViewHolderForAdapterPosition(currentPos[0])
-                    if (listVh is PageViewHolder) listVh.preview.setImageBitmap(actions.getPages()[currentPos[0]].thumbnail)
                 }
             }
 
@@ -1011,7 +1024,32 @@ class EditorViewBuilder(
 
             override fun onBindViewHolder(holder: PreviewVH, position: Int) {
                 val p = pages[position]
-                holder.image.setImageBitmapAndReset(p.thumbnail)
+                var fullApplied = false
+
+                val full = actions.getFullRes(p)
+                if (full != null) {
+                    holder.image.setImageBitmapAndReset(full)
+                    return
+                }
+
+                val cachedThumb = actions.getThumbnail(p)
+                if (cachedThumb != null) {
+                    holder.image.setImageBitmapAndReset(cachedThumb)
+                } else {
+                    holder.image.setImageBitmapAndReset(null)
+                    actions.requestThumbnail(p) { bmp ->
+                        if (!fullApplied && holder.bindingAdapterPosition == position) {
+                            holder.image.setImageBitmapAndReset(bmp)
+                        }
+                    }
+                }
+
+                actions.requestFullRes(p) { bmp ->
+                    if (holder.bindingAdapterPosition == position) {
+                        fullApplied = true
+                        holder.image.upgradeBitmap(bmp)
+                    }
+                }
             }
         }
     }

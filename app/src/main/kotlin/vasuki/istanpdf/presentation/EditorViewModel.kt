@@ -1,9 +1,12 @@
 package vasuki.istanpdf.presentation
 
+import android.graphics.Bitmap
 import android.net.Uri
+import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import vasuki.istanpdf.model.PageItem
 import java.io.File
+import java.util.Collections
 
 class EditorViewModel : ViewModel() {
     val pages: MutableList<PageItem> = mutableListOf()
@@ -15,10 +18,20 @@ class EditorViewModel : ViewModel() {
     var originalFileName: String? = null
     var pagesAdded: Boolean = false
 
+    val thumbCache = object : LruCache<String, Bitmap>(maxCacheBytes(8)) {
+        override fun sizeOf(key: String, value: Bitmap) = value.byteCount
+    }
+
+    val fullResCache = object : LruCache<String, Bitmap>(maxCacheBytes(6)) {
+        override fun sizeOf(key: String, value: Bitmap) = value.byteCount
+    }
+
+    val rendersInFlight: MutableSet<String> = Collections.synchronizedSet(mutableSetOf())
+
     fun clearPages() {
-        for (p in pages) {
-            if (!p.thumbnail.isRecycled) p.thumbnail.recycle()
-        }
+        thumbCache.evictAll()
+        fullResCache.evictAll()
+        rendersInFlight.clear()
         pages.clear()
     }
 
@@ -47,4 +60,6 @@ class EditorViewModel : ViewModel() {
         clearPages()
         cleanupTempFiles()
     }
+
+    private fun maxCacheBytes(fraction: Int) = (Runtime.getRuntime().maxMemory() / fraction).toInt()
 }
