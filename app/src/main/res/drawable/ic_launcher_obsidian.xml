@@ -2,6 +2,6 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/background" />
     <item>
-        <inset android:inset="12.5%" android:drawable="@drawable/ic_icon_gold" />
+        <inset android:inset="12.5%" android:drawable="@drawable/ic_icon_obsidian" />
     </item>
 </layer-list>

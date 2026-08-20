@@ -108,10 +108,10 @@
 
         <activity-alias
             android:enabled="false"
-            android:name=".LauncherGold"
+            android:name=".LauncherObsidian"
             android:targetActivity=".MainActivity"
-            android:icon="@drawable/ic_launcher_gold"
-            android:roundIcon="@drawable/ic_launcher_gold"
+            android:icon="@drawable/ic_launcher_obsidian"
+            android:roundIcon="@drawable/ic_launcher_obsidian"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

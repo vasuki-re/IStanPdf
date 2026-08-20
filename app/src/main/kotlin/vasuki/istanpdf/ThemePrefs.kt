@@ -28,7 +28,7 @@ object ThemePrefs {
         Accent("Terracotta", Color.parseColor("#C28B7B"), Color.parseColor("#A66B5A")),
         Accent("Sand", Color.parseColor("#DFCA98"), Color.parseColor("#C2A970")),
         Accent("Aqua", Color.parseColor("#98C9A7"), Color.parseColor("#76A886")),
-        Accent("Gold", Color.parseColor("#E5CD94"), Color.parseColor("#C9AE6D"))
+        Accent("Obsidian", Color.parseColor("#C0AECF"), Color.parseColor("#736093"))
     )
 
     enum class TypeScale(val sp: Float, val isBold: Boolean, val letterSpacing: Float = 0f, val isAllCaps: Boolean = false) {
@@ -45,7 +45,7 @@ object ThemePrefs {
         "vasuki.istanpdf.LauncherTerracotta",
         "vasuki.istanpdf.LauncherSand",
         "vasuki.istanpdf.LauncherAqua",
-        "vasuki.istanpdf.LauncherGold"
+        "vasuki.istanpdf.LauncherObsidian"
     )
 
     fun prefs(context: Context): SharedPreferences =
