@@ -95,10 +95,10 @@
 
         <activity-alias
             android:enabled="false"
-            android:name=".LauncherAqua"
+            android:name=".LauncherMonochrome"
             android:targetActivity=".MainActivity"
-            android:icon="@drawable/ic_launcher_aqua"
-            android:roundIcon="@drawable/ic_launcher_aqua"
+            android:icon="@drawable/ic_launcher_monochrome"
+            android:roundIcon="@drawable/ic_launcher_monochrome"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

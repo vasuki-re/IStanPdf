@@ -27,7 +27,7 @@ object ThemePrefs {
         Accent("Rose", Color.parseColor("#E2B6B3"), Color.parseColor("#D49A96")),
         Accent("Terracotta", Color.parseColor("#C28B7B"), Color.parseColor("#A66B5A")),
         Accent("Sand", Color.parseColor("#DFCA98"), Color.parseColor("#C2A970")),
-        Accent("Aqua", Color.parseColor("#98C9A7"), Color.parseColor("#76A886")),
+        Accent("Monochrome", Color.parseColor("#D4D4D4"), Color.parseColor("#6B6B6B")),
         Accent("Obsidian", Color.parseColor("#C0AECF"), Color.parseColor("#736093"))
     )
 
@@ -44,7 +44,7 @@ object ThemePrefs {
         "vasuki.istanpdf.LauncherRose",
         "vasuki.istanpdf.LauncherTerracotta",
         "vasuki.istanpdf.LauncherSand",
-        "vasuki.istanpdf.LauncherAqua",
+        "vasuki.istanpdf.LauncherMonochrome",
         "vasuki.istanpdf.LauncherObsidian"
     )
 
