@@ -86,8 +86,13 @@ class HomeViewBuilder(
         val title = text("", 40, R.color.istan_text, true).apply { letterSpacing = -0.02f }
         val ss = SpannableString("IStanPdf")
         ss.setSpan(ForegroundColorSpan(color(R.color.istan_text)), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        val isMonochromeDark = ThemePrefs.accent(activity).name == "Monochrome" && ThemePrefs.isAmoled(activity)
-        val pdfColor = if (isMonochromeDark) android.graphics.Color.WHITE else color(R.color.istan_olive)
+        val isMonochrome = ThemePrefs.accent(activity).name == "Monochrome"
+        val isDark = ThemePrefs.isAmoled(activity)
+        val pdfColor = if (isMonochrome) {
+            if (isDark) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+        } else {
+            color(R.color.istan_olive)
+        }
         ss.setSpan(ForegroundColorSpan(pdfColor), 5, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         title.text = ss
         heroRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
