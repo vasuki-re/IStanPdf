@@ -29,7 +29,7 @@ object DocxRemove {
 
             doc.initializeForRendering()
 
-            var total = doc.parts
+            var total = doc.getParts()
             if (total <= 0) total = pages.size
 
             remove(doc, pages, total)
