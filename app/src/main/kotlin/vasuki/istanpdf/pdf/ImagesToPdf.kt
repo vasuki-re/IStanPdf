@@ -26,6 +26,7 @@ object ImagesToPdf {
                 for (pageItem in pages) {
                     if (!pageItem.keep) continue
                     val uri = pageItem.replacementFile?.let { Uri.fromFile(it) }
+                        ?: pageItem.uri
                         ?: src[pageItem.originalIndex]
 
                     val opt = BitmapFactory.Options()
@@ -33,6 +34,10 @@ object ImagesToPdf {
                     (ctx.contentResolver.openInputStream(uri)
                         ?: throw IllegalArgumentException("Cannot open image")).use { boundsIn ->
                         BitmapFactory.decodeStream(boundsIn, null, opt)
+                    }
+
+                    if (opt.outWidth <= 0 || opt.outHeight <= 0) {
+                        throw IllegalArgumentException("Cannot decode image: ${pageItem.displayName}")
                     }
 
                     val mime = opt.outMimeType

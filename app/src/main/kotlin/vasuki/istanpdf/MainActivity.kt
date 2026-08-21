@@ -1435,9 +1435,16 @@ class MainActivity : AppCompatActivity() {
                     page.sourceUri?.let { activeSession(it).renderPage(page.renderIndex, CROP_MAX_DIM) }
                 }
                 if (src == null) throw IllegalStateException("Cannot load page image")
+                val oriented = if (page.rotation != 0) {
+                    val m = android.graphics.Matrix()
+                    m.postRotate(page.rotation.toFloat())
+                    val r = Bitmap.createBitmap(src, 0, 0, src.width, src.height, m, true)
+                    if (r !== src && !src.isRecycled) src.recycle()
+                    r
+                } else src
                 runOnUiThread {
                     setBusy(false, "Ready")
-                    showPageCropDialog(src) { cropped ->
+                    showPageCropDialog(oriented) { cropped ->
                         applyPageCrop(page, cropped, onCropped)
                     }
                 }
@@ -1458,18 +1465,9 @@ class MainActivity : AppCompatActivity() {
                     cropped.compress(Bitmap.CompressFormat.JPEG, 92, out)
                 }
                 page.replacementFile = file
-                editorViewModel.tempImageFiles.add(file)
+                page.rotation = 0
 
-                var thumb = BitmapUtils.scaleToFit(cropped, dp(280))
-                if (page.rotation != 0) {
-                    val matrix = android.graphics.Matrix()
-                    matrix.postRotate(page.rotation.toFloat())
-                    val rotated = Bitmap.createBitmap(thumb, 0, 0, thumb.width, thumb.height, matrix, true)
-                    if (rotated !== thumb) {
-                        if (!thumb.isRecycled) thumb.recycle()
-                        thumb = rotated
-                    }
-                }
+                val thumb = BitmapUtils.scaleToFit(cropped, dp(280))
                 if (thumb !== cropped && !cropped.isRecycled) cropped.recycle()
                 val finalThumb = thumb
                 runOnUiThread {
@@ -1489,9 +1487,10 @@ class MainActivity : AppCompatActivity() {
         worker.execute {
             try {
                 val photoFile = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
-                FileOutputStream(photoFile).use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
-                }
+                val baos = java.io.ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, baos)
+                val jpegBytes = baos.toByteArray()
+                FileOutputStream(photoFile).use { out -> out.write(jpegBytes) }
                 editorViewModel.tempImageFiles.add(photoFile)
 
                 val reorderSource = editorViewModel.reorderSource
@@ -1499,9 +1498,7 @@ class MainActivity : AppCompatActivity() {
                 val photoPdf = File(cacheDir, "photo_pdf_${System.currentTimeMillis()}.pdf")
                 val iw = bitmap.width.toFloat()
                 val ih = bitmap.height.toFloat()
-                val baos = java.io.ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, baos)
-                val imgData = com.itextpdf.io.image.ImageDataFactory.createJpeg(baos.toByteArray())
+                val imgData = com.itextpdf.io.image.ImageDataFactory.createJpeg(jpegBytes)
                 val imgFos = java.io.FileOutputStream(photoPdf)
                 val imgDoc = try {
                     com.itextpdf.kernel.pdf.PdfDocument(com.itextpdf.kernel.pdf.PdfWriter(imgFos))
@@ -1692,10 +1689,19 @@ class MainActivity : AppCompatActivity() {
                             session.close()
                         }
                     } else {
-                        processedUris.add(uri)
+                        val ext = when (mime) {
+                            "image/png" -> ".png"
+                            "image/webp" -> ".webp"
+                            "image/bmp" -> ".bmp"
+                            else -> ".jpg"
+                        }
+                        val localFile = vasuki.istanpdf.util.ContentFiles.copyUriToCache(this@MainActivity, uri, ext)
+                        editorViewModel.tempImageFiles.add(localFile)
+                        val localUri = Uri.fromFile(localFile)
+                        processedUris.add(localUri)
                         val size = dp(280)
-                        val thumb = loadThumbnail(uri, size)
-                        val item = PageItem(startIndex, displayName = getDisplayName(uri), uri = uri)
+                        val thumb = loadThumbnail(localUri, size)
+                        val item = PageItem(startIndex, displayName = getDisplayName(uri), uri = localUri)
                         editorViewModel.thumbCache.put(item.cacheKey, thumb)
                         rendered.add(item)
                         startIndex++
@@ -2604,6 +2610,6 @@ class MainActivity : AppCompatActivity() {
 
         private val IMAGE_MIME_TYPES = arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp")
 
-        private const val CROP_MAX_DIM = 2048
+        private const val CROP_MAX_DIM = 4096
     }
 }
