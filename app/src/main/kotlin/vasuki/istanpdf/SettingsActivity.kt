@@ -46,6 +46,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private val accentCloseHandler = Handler(Looper.getMainLooper())
     private var accentCloseRunnable: Runnable? = null
+    private var activeAccentPill: PopupWindow? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +72,8 @@ class SettingsActivity : AppCompatActivity() {
     override fun onDestroy() {
         accentCloseRunnable?.let { accentCloseHandler.removeCallbacks(it) }
         accentCloseRunnable = null
+        activeAccentPill?.dismiss()
+        activeAccentPill = null
         super.onDestroy()
     }
 
@@ -484,6 +487,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showAccentPill(anchor: View, name: String) {
+        activeAccentPill?.dismiss()
+        activeAccentPill = null
         val label = text(name, 12, R.color.istan_text, true).apply {
             gravity = Gravity.CENTER
             setPadding(dp(12), dp(6), dp(12), dp(6))
@@ -505,8 +510,12 @@ class SettingsActivity : AppCompatActivity() {
         anchor.getLocationOnScreen(location)
         val x = location[0] + (anchor.width - label.measuredWidth) / 2
         val y = location[1] - label.measuredHeight - dp(8)
+        activeAccentPill = pill
         pill.showAtLocation(anchor, Gravity.TOP or Gravity.START, x, y)
-        anchor.postDelayed({ pill.dismiss() }, 1500)
+        anchor.postDelayed({
+            pill.dismiss()
+            if (activeAccentPill == pill) activeAccentPill = null
+        }, 1500)
     }
 
     private fun addThemeDivider(modes: FrameLayout, boundary: Int, selected: Int) {
