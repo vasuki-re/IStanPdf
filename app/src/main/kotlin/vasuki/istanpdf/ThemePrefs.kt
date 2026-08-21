@@ -15,6 +15,7 @@ object ThemePrefs {
     private const val KEY_ACCENT_INDEX = "accent_index"
     private const val KEY_AMOLED = "amoled"
     private const val KEY_THEME_MODE = "theme_mode"
+    private const val KEY_DYNAMIC_ICON = "dynamic_icon"
 
     const val THEME_AUTO = 0
     const val THEME_LIGHT = 1
@@ -90,11 +91,43 @@ object ThemePrefs {
     }
 
     fun ensureLauncherIcon(context: Context) {
+        if (!isDynamicIcon(context)) return
         try {
             val pm = context.packageManager
             val target = ComponentName(context, LAUNCHER_ALIASES[accentIndex(context)])
             if (pm.getComponentEnabledSetting(target) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
                 applyLauncherIcon(context, killApp = false)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun isDynamicIcon(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_DYNAMIC_ICON, false)
+
+    fun setDynamicIcon(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_DYNAMIC_ICON, enabled).apply()
+    }
+
+    fun resetLauncherIconToDefault(context: Context, killApp: Boolean = false) {
+        try {
+            val pm = context.packageManager
+            val pending = ArrayList<Pair<ComponentName, Int>>()
+            val defaultAlias = ComponentName(context, LAUNCHER_ALIASES[0])
+            if (pm.getComponentEnabledSetting(defaultAlias) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                pending.add(defaultAlias to PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
+            }
+            for (i in 1 until LAUNCHER_ALIASES.size) {
+                val component = ComponentName(context, LAUNCHER_ALIASES[i])
+                if (pm.getComponentEnabledSetting(component) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                    pending.add(component to PackageManager.COMPONENT_ENABLED_STATE_DISABLED)
+                }
+            }
+            for (i in pending.indices) {
+                val (component, state) = pending[i]
+                val flags = if (killApp && i == pending.lastIndex) 0 else PackageManager.DONT_KILL_APP
+                pm.setComponentEnabledSetting(component, state, flags)
             }
         } catch (e: Exception) {
             e.printStackTrace()

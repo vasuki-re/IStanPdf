@@ -81,13 +81,15 @@ class SettingsActivity : AppCompatActivity() {
         accentCloseRunnable?.let { accentCloseHandler.removeCallbacks(it) }
         ThemePrefs.setAccentIndex(this, index)
         buildSettings(scrollView.scrollY)
-        val toast = Toast.makeText(this, "Applying new accent. App will close to refresh the icon", Toast.LENGTH_SHORT)
-        toast.show()
-        accentCloseRunnable = Runnable {
-            toast.cancel()
-            ThemePrefs.applyLauncherIconAndKill(applicationContext)
+        if (ThemePrefs.isDynamicIcon(this)) {
+            val toast = Toast.makeText(this, "Applying new accent. App will close to refresh the icon", Toast.LENGTH_SHORT)
+            toast.show()
+            accentCloseRunnable = Runnable {
+                toast.cancel()
+                ThemePrefs.applyLauncherIconAndKill(applicationContext)
+            }
+            accentCloseHandler.postDelayed(accentCloseRunnable!!, 1500)
         }
-        accentCloseHandler.postDelayed(accentCloseRunnable!!, 1500)
     }
 
     private fun buildSettings(scrollY: Int) {
@@ -244,6 +246,51 @@ class SettingsActivity : AppCompatActivity() {
         addThemeDivider(modes, 1, mode)
         addThemeDivider(modes, 2, mode)
         appearanceGroup.addView(themeRow)
+
+        appearanceGroup.addView(View(this).apply {
+            setBackgroundColor(color(R.color.istan_outline))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
+            setMargins(dp(16), dp(8), dp(16), dp(8))
+        })
+
+        val dynamicIconRow = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+        }
+        val dynamicIconTitle = text("Dynamic Icon", 16, R.color.istan_text, true)
+        dynamicIconRow.addView(dynamicIconTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val dynamicIconSwitch = MaterialSwitch(this).apply {
+            isChecked = ThemePrefs.isDynamicIcon(this@SettingsActivity)
+            thumbTintList = ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted))
+            )
+            trackTintList = ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline))
+            )
+            setOnCheckedChangeListener { _, isChecked ->
+                ThemePrefs.setDynamicIcon(this@SettingsActivity, isChecked)
+                if (ThemePrefs.accentIndex(this@SettingsActivity) != 0) {
+                    accentCloseRunnable?.let { accentCloseHandler.removeCallbacks(it) }
+                    val msg = if (isChecked) "Applying accent icon. App will close to refresh the icon"
+                              else "Reverting to default icon. App will close to refresh the icon"
+                    val toast = Toast.makeText(this@SettingsActivity, msg, Toast.LENGTH_SHORT)
+                    toast.show()
+                    accentCloseRunnable = Runnable {
+                        toast.cancel()
+                        if (isChecked) {
+                            ThemePrefs.applyLauncherIconAndKill(applicationContext)
+                        } else {
+                            ThemePrefs.resetLauncherIconToDefault(applicationContext, killApp = true)
+                        }
+                    }
+                    accentCloseHandler.postDelayed(accentCloseRunnable!!, 1500)
+                }
+            }
+        }
+        dynamicIconRow.addView(dynamicIconSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        appearanceGroup.addView(dynamicIconRow)
 
         body.addView(appearanceGroup, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = dp(24)
