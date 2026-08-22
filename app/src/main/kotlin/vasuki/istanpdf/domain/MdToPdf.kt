@@ -111,10 +111,10 @@ class MdToPdf(private val context: Context) {
 
         try {
             val fontProvider = DefaultFontProvider(true, true, false)
-            val emojiFont = File(context.cacheDir, "NotoEmoji-Regular.ttf")
+            val emojiFont = File(context.cacheDir, "noto_emoji_regular.ttf")
             if (!emojiFont.exists()) {
-                context.assets.open("NotoEmoji-Regular.ttf").use { input ->
-                    FileOutputStream(emojiFont).use { output -> input.copyTo(output) }
+                context.resources.openRawResource(vasuki.istanpdf.R.font.noto_emoji_regular).use { input ->
+                    java.io.FileOutputStream(emojiFont).use { output -> input.copyTo(output) }
                 }
             }
             fontProvider.addFont(emojiFont.absolutePath)
