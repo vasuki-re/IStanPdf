@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
 
   <h1>IStanPdf</h1>
 
@@ -38,11 +38,11 @@ Tired of uploading your private documents to sluggish freemium websites  to perf
 <div align="center">
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/ui.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/ui_dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/merge.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/modify_pdf.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/img2pdf.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/rmpage_docx.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/main/assets/reorder_docx.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/merge.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/modify_pdf.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/img2pdf.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/rmpage_docx.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/reorder_docx.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/settings.jpg" width="30%" />
   <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/settings_dark.jpg" width="30%" />
 </div>
