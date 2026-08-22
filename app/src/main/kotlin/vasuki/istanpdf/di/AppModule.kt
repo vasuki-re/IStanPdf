@@ -15,12 +15,12 @@ import vasuki.istanpdf.domain.ReorderPdf
 import vasuki.istanpdf.domain.SaveDocx
 
 class AppModule private constructor(context: Context) {
-    private val ctx = context.applicationContext
+    val context: Context = context.applicationContext
 
-    val documentManager = DocumentManager(ctx)
-    val cacheManager = CacheManager(ctx)
-    val pdfEngine = PdfEngine(ctx)
-    val docxEngine = DocxEngine(ctx)
+    val documentManager = DocumentManager(context)
+    val cacheManager = CacheManager(context)
+    val pdfEngine = PdfEngine(context)
+    val docxEngine = DocxEngine(context)
 
     val mergePdf = MergePdf(pdfEngine)
     val reorderPdf = ReorderPdf(pdfEngine)
@@ -28,7 +28,7 @@ class AppModule private constructor(context: Context) {
     val pdfToJpeg = PdfToJpeg(pdfEngine)
     val compressPdf = CompressPdf(pdfEngine)
     val docxToPdf = DocxToPdf(docxEngine)
-    val mdToPdf = MdToPdf(ctx)
+    val mdToPdf = MdToPdf(context)
     val saveDocx = SaveDocx(docxEngine)
 
     companion object {

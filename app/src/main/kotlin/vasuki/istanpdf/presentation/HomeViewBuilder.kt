@@ -1,7 +1,7 @@
 package vasuki.istanpdf.presentation
 
 import android.app.Activity
-import android.graphics.Typeface
+import vasuki.istanpdf.AppFont
 import android.graphics.drawable.GradientDrawable
 import android.text.SpannableString
 import android.text.Spanned
@@ -23,9 +23,7 @@ import vasuki.istanpdf.R
 import vasuki.istanpdf.ThemePrefs
 
 class HomeViewBuilder(
-    private val activity: Activity,
-    private val regularFont: Typeface,
-    private val boldFont: Typeface
+    private val activity: Activity
 ) {
 
     interface HomeActions {
@@ -326,7 +324,7 @@ class HomeViewBuilder(
         textView.text = value
         textView.textSize = sp.toFloat()
         textView.setTextColor(color(colorRes))
-        textView.typeface = if (bold) boldFont else regularFont
+        textView.typeface = if (bold) AppFont.semiBold else AppFont.regular
         textView.includeFontPadding = false
         return textView
     }

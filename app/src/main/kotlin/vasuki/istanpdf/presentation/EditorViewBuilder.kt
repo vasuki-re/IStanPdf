@@ -3,7 +3,7 @@ package vasuki.istanpdf.presentation
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Typeface
+import vasuki.istanpdf.AppFont
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
@@ -27,9 +27,7 @@ import vasuki.istanpdf.ThemePrefs
 import vasuki.istanpdf.model.PageItem
 
 class EditorViewBuilder(
-    private val activity: Activity,
-    private val regularFont: Typeface,
-    private val boldFont: Typeface
+    private val activity: Activity
 ) {
 
     interface EditorActions {
@@ -433,7 +431,7 @@ class EditorViewBuilder(
         textView.text = value
         textView.textSize = sp.toFloat()
         textView.setTextColor(color(colorRes))
-        textView.typeface = if (bold) boldFont else regularFont
+        textView.typeface = if (bold) AppFont.semiBold else AppFont.regular
         textView.includeFontPadding = true
         return textView
     }
@@ -697,7 +695,7 @@ class EditorViewBuilder(
                 keepBox.text = "Keep"
                 keepBox.textSize = 18f
                 keepBox.setTextColor(color(R.color.istan_text))
-                keepBox.typeface = regularFont
+                keepBox.typeface = AppFont.regular
                 val keepLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 keepLp.gravity = Gravity.CENTER_VERTICAL
                 infoBox.addView(keepBox, keepLp)
@@ -859,7 +857,7 @@ class EditorViewBuilder(
             backBtn.setTextColor(Color.WHITE)
             backBtn.textSize = 28f
             backBtn.gravity = Gravity.CENTER
-            backBtn.typeface = boldFont
+            backBtn.typeface = AppFont.semiBold
             backBtn.setPadding(0, 0, dp(2), dp(2))
             controlsPill.addView(backBtn, LinearLayout.LayoutParams(dp(48), dp(48)))
 

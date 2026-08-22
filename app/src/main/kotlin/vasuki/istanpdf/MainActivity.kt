@@ -6,7 +6,6 @@ import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -74,8 +73,6 @@ class MainActivity : AppCompatActivity() {
     private var dismissOverlayRunnable: Runnable? = null
     private var status: TextView? = null
     private var statusIndicator: ImageView? = null
-    private lateinit var regularFont: Typeface
-    private lateinit var boldFont: Typeface
     private var isHome = true
     private var activeReq = 0
     private var themeToken: String? = null
@@ -127,8 +124,6 @@ class MainActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
         applySystemBarTheme()
 
-        regularFont = Typeface.createFromAsset(assets, "vasuki.ttf")
-        boldFont = Typeface.createFromAsset(assets, "vasuki_bold.ttf")
         pruneStaleCacheFiles()
         themeToken = ThemePrefs.token(this)
         ThemePrefs.ensureLauncherIcon(this)
@@ -305,7 +300,7 @@ class MainActivity : AppCompatActivity() {
                     builder.append(text.substring(currentIndex, startBold))
                     val startSpan = builder.length
                     builder.append(text.substring(startBold + 2, endBold))
-                    builder.setSpan(CustomTypefaceSpan(boldFont), startSpan, builder.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    builder.setSpan(CustomTypefaceSpan(AppFont.semiBold), startSpan, builder.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     builder.setSpan(android.text.style.ForegroundColorSpan(color(R.color.istan_text)), startSpan, builder.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     currentIndex = endBold + 2
                     continue
@@ -911,7 +906,7 @@ class MainActivity : AppCompatActivity() {
         closeActiveSessions()
         editorViewModel.resetForHome()
 
-        val builder = HomeViewBuilder(this, regularFont, boldFont)
+        val builder = HomeViewBuilder(this)
         val homeView = builder.build(object : HomeViewBuilder.HomeActions {
             override fun onMergePdf() { editorViewModel.clearPendingUris(); pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF) }
             override fun onModifyPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_REORDER_PDF) }
@@ -953,7 +948,7 @@ class MainActivity : AppCompatActivity() {
         editorViewModel.pagesAdded = false
         currentEditorTitle = titleText
 
-        val builder = EditorViewBuilder(this, regularFont, boldFont)
+        val builder = EditorViewBuilder(this)
         val editorView = builder.build(titleText, saveLabelText, docxExport, allowReorder, object : EditorViewBuilder.EditorActions {
             override fun onBack() { buildHome() }
             override fun onSave(title: String, isDocx: Boolean) { handleSave(title, isDocx) }
@@ -2106,13 +2101,13 @@ class MainActivity : AppCompatActivity() {
             snackbar.setActionTextColor(ThemePrefs.accentForeground(accent, amoled))
             val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
             textView?.apply {
-                typeface = regularFont
+                typeface = AppFont.regular
                 textSize = 15f
                 maxLines = 3
                 includeFontPadding = false
             }
             val actionView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_action)
-            actionView?.typeface = boldFont
+            actionView?.typeface = AppFont.semiBold
             snackbar.setAction("Open") { openSavedFile(output) }
             val bottomInset = androidx.core.view.ViewCompat.getRootWindowInsets(root)
                 ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
@@ -2169,7 +2164,7 @@ class MainActivity : AppCompatActivity() {
         textView.text = value
         textView.textSize = sp.toFloat()
         textView.setTextColor(color(colorRes))
-        textView.typeface = if (bold) boldFont else regularFont
+        textView.typeface = if (bold) AppFont.semiBold else AppFont.regular
         textView.includeFontPadding = false
         return textView
     }
@@ -2500,7 +2495,7 @@ class MainActivity : AppCompatActivity() {
         input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
         input.hint = "Target size in KB"
         input.textSize = 15f
-        input.typeface = regularFont
+        input.typeface = AppFont.regular
         input.setTextColor(color(R.color.istan_text))
         input.setHintTextColor(color(R.color.istan_text_muted))
         input.setPadding(dp(16), dp(12), dp(16), dp(12))

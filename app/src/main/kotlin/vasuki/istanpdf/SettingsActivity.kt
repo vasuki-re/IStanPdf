@@ -41,8 +41,6 @@ import vasuki.istanpdf.libreoffice.LibreOfficeManager
 
 class SettingsActivity : AppCompatActivity() {
 
-    private lateinit var regularFont: Typeface
-    private lateinit var boldFont: Typeface
 
     private val accentCloseHandler = Handler(Looper.getMainLooper())
     private var accentCloseRunnable: Runnable? = null
@@ -54,8 +52,6 @@ class SettingsActivity : AppCompatActivity() {
         window.navigationBarColor = Color.TRANSPARENT
         window.statusBarColor = Color.TRANSPARENT
 
-        regularFont = Typeface.createFromAsset(assets, "vasuki.ttf")
-        boldFont = Typeface.createFromAsset(assets, "vasuki_bold.ttf")
 
         buildSettings(0)
         applySystemBarTheme()
@@ -434,7 +430,7 @@ class SettingsActivity : AppCompatActivity() {
             hint = "e.g. com.google.android.GoogleCamera"
             setText(current)
             textSize = 14f
-            typeface = regularFont
+            typeface = AppFont.regular
             setTextColor(color(R.color.istan_text))
             setHintTextColor(color(R.color.istan_text_muted))
             inputType = InputType.TYPE_CLASS_TEXT
@@ -590,7 +586,7 @@ class SettingsActivity : AppCompatActivity() {
             tag = option
             text = label
             textSize = 15f
-            typeface = boldFont
+            typeface = AppFont.semiBold
             textAlignment = View.TEXT_ALIGNMENT_CENTER
             gravity = Gravity.CENTER
             isAllCaps = false
@@ -621,7 +617,7 @@ class SettingsActivity : AppCompatActivity() {
             text = "Dev By\nRamakanth"
             textSize = 38f
             setTextColor(if (ThemePrefs.isAmoled(this@SettingsActivity)) 0xFFCAC4D0.toInt() else 0xFF1C1B1F.toInt())
-            typeface = boldFont
+            typeface = AppFont.semiBold
             gravity = Gravity.START
             includeFontPadding = false
             setLineSpacing(0f, 0.88f)
@@ -633,19 +629,19 @@ class SettingsActivity : AppCompatActivity() {
         val location = " in Bengaluru, India"
         val attribution = SpannableString(crafted + heart + location)
         val locationStart = crafted.length + heart.length
-        attribution.setSpan(AssetTypefaceSpan(regularFont), 0, locationStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        attribution.setSpan(AssetTypefaceSpan(AppFont.regular), 0, locationStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         attribution.setSpan(ForegroundColorSpan(ThemePrefs.tint(color(R.color.istan_text_muted),
             color(R.color.istan_background), 0.26f)), 0, locationStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         attribution.setSpan(ForegroundColorSpan(if (ThemePrefs.isAmoled(this)) 0xFFCAC4D0.toInt() else 0xFF1C1B1F.toInt()),
             locationStart, attribution.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        attribution.setSpan(AssetTypefaceSpan(boldFont), locationStart, attribution.length,
+        attribution.setSpan(AssetTypefaceSpan(AppFont.semiBold), locationStart, attribution.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
         val attributionView = TextView(this).apply {
             setText(attribution)
             textSize = 15f
             setTextColor(color(R.color.istan_text_muted))
-            typeface = regularFont
+            typeface = AppFont.regular
             gravity = Gravity.START
             includeFontPadding = false
             isSingleLine = true
@@ -675,7 +671,7 @@ class SettingsActivity : AppCompatActivity() {
             text = value
             textSize = sp.toFloat()
             setTextColor(color(colorRes))
-            typeface = if (bold) boldFont else regularFont
+            typeface = if (bold) AppFont.semiBold else AppFont.regular
             includeFontPadding = true
         }
 
