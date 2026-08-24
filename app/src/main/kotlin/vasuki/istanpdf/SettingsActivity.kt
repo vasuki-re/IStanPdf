@@ -41,7 +41,6 @@ import vasuki.istanpdf.libreoffice.LibreOfficeManager
 
 class SettingsActivity : AppCompatActivity() {
 
-
     private val accentCloseHandler = Handler(Looper.getMainLooper())
     private var accentCloseRunnable: Runnable? = null
     private var activeAccentPill: PopupWindow? = null
@@ -51,8 +50,6 @@ class SettingsActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.navigationBarColor = Color.TRANSPARENT
         window.statusBarColor = Color.TRANSPARENT
-
-
         buildSettings(0)
         applySystemBarTheme()
     }
@@ -105,7 +102,7 @@ class SettingsActivity : AppCompatActivity() {
         val titleRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(12), dp(8), dp(22), dp(8))
+            setPadding(dp(4), dp(24), dp(20), dp(8))
         }
         page.addView(titleRow)
 
@@ -118,47 +115,53 @@ class SettingsActivity : AppCompatActivity() {
         }
         titleRow.addView(backArrow, LinearLayout.LayoutParams(dp(48), dp(48)))
 
-        val title = text("Settings", 22, R.color.istan_text, true)
-        titleRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-
-        val separator = View(this).apply {
-            setBackgroundColor(if (ThemePrefs.isAmoled(this@SettingsActivity)) 0xFF333333.toInt() else 0xFFB4B8AA.toInt())
+        val title = text("Settings", 28, R.color.istan_text, true).apply {
+            includeFontPadding = false
         }
-        page.addView(separator, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)))
+        titleRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(12)
+        })
 
         val scrollView = ScrollView(this).apply {
             isFillViewport = true
             isVerticalScrollBarEnabled = false
             clipToPadding = false
-            setPadding(0, 0, 0, dp(208))
+            setPadding(0, 0, 0, dp(16))
         }
         page.addView(scrollView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(22), dp(24), dp(22), dp(22))
+            setPadding(dp(24), dp(8), dp(24), dp(24))
         }
         scrollView.addView(content, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         content.addView(settingsContent(scrollView))
 
+        content.addView(View(this), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+
         val footer = developerFooter()
-        val footerLp = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM or Gravity.START).apply {
-            setMargins(dp(22), 0, dp(22), dp(40))
-        }
-        outer.addView(footer, footerLp)
+        footer.setPadding(0, dp(24), 0, dp(24))
+        content.addView(footer, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
         setContentView(outer)
         ViewCompat.requestApplyInsets(outer)
         scrollView.post { scrollView.scrollTo(0, scrollY) }
     }
 
-        private fun settingsContent(scrollView: ScrollView): View {
+    private fun settingsContent(scrollView: ScrollView): View {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val selected = ThemePrefs.accentIndex(this)
         val amoled = ThemePrefs.isAmoled(this)
+
+        body.addView(categoryHeader("APPEARANCE"), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(16)
+            bottomMargin = dp(8)
+        })
 
         val appearanceGroup = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -171,16 +174,13 @@ class SettingsActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(16), dp(16), dp(8))
         }
-        val accentTitle = text("Accent", 16, R.color.istan_text, true)
-        accentRow.addView(accentTitle)
+        accentRow.addView(text("Accent color", 16, R.color.istan_text, true))
 
         val circles = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(0, dp(16), 0, 0)
+            setPadding(0, dp(12), 0, 0)
         }
-        accentRow.addView(circles, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
         for (i in ThemePrefs.ACCENTS.indices) {
             val circle = QuadrantCircleView(this).apply {
                 bind(ThemePrefs.ACCENTS[i], selected == i, amoled)
@@ -195,17 +195,15 @@ class SettingsActivity : AppCompatActivity() {
             }
             circles.addView(circle, LinearLayout.LayoutParams(0, dp(56), 1f))
         }
-        appearanceGroup.addView(accentRow)
-
-        appearanceGroup.addView(View(this).apply {
-            setBackgroundColor(color(R.color.istan_outline))
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
-            setMargins(dp(16), dp(16), dp(16), dp(16))
+        accentRow.addView(circles, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        appearanceGroup.addView(accentRow, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(8)
         })
 
         val themeRow = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), 0, dp(16), dp(8))
+            setPadding(dp(16), dp(8), dp(16), dp(8))
         }
         val themeTitle = text("Theme", 16, R.color.istan_text, true)
         themeRow.addView(themeTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
@@ -241,31 +239,15 @@ class SettingsActivity : AppCompatActivity() {
         }
         addThemeDivider(modes, 1, mode)
         addThemeDivider(modes, 2, mode)
-        appearanceGroup.addView(themeRow)
-
-        appearanceGroup.addView(View(this).apply {
-            setBackgroundColor(color(R.color.istan_outline))
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
-            setMargins(dp(16), dp(8), dp(16), dp(8))
+        appearanceGroup.addView(themeRow, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(8)
         })
 
-        val dynamicIconRow = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(8))
-        }
-        val dynamicIconTitle = text("Dynamic Icon", 16, R.color.istan_text, true)
-        dynamicIconRow.addView(dynamicIconTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        val dynamicIconSwitch = MaterialSwitch(this).apply {
-            isChecked = ThemePrefs.isDynamicIcon(this@SettingsActivity)
-            thumbTintList = ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted))
-            )
-            trackTintList = ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline))
-            )
-            setOnCheckedChangeListener { _, isChecked ->
+        val (dynamicIconRow, _) = settingsRow("Dynamic icon", "Match launcher icon to accent")
+        dynamicIconRow.addView(styledSwitch(
+            checked = ThemePrefs.isDynamicIcon(this@SettingsActivity),
+            onToggle = { isChecked ->
                 ThemePrefs.setDynamicIcon(this@SettingsActivity, isChecked)
                 if (ThemePrefs.accentIndex(this@SettingsActivity) != 0) {
                     accentCloseRunnable?.let { accentCloseHandler.removeCallbacks(it) }
@@ -284,12 +266,18 @@ class SettingsActivity : AppCompatActivity() {
                     accentCloseHandler.postDelayed(accentCloseRunnable!!, 1500)
                 }
             }
-        }
-        dynamicIconRow.addView(dynamicIconSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        ))
         appearanceGroup.addView(dynamicIconRow)
 
-        body.addView(appearanceGroup, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            bottomMargin = dp(24)
+        body.addView(appearanceGroup, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(32)
+        })
+
+        body.addView(categoryHeader("GENERAL"), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(16)
+            bottomMargin = dp(8)
         })
 
         val generalGroup = LinearLayout(this).apply {
@@ -298,82 +286,101 @@ class SettingsActivity : AppCompatActivity() {
             clipToOutline = true
         }
 
-        val updateRow = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        }
-        val updateTitle = text("Check for Updates", 16, R.color.istan_text, true)
-        updateRow.addView(updateTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        val switchStates = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-        val updateSwitch = MaterialSwitch(this).apply {
-            isChecked = prefs.getBoolean("check_updates", true)
-            thumbTintList = ColorStateList(switchStates, intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
-            trackTintList = ColorStateList(switchStates, intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)))
-            setOnCheckedChangeListener { _, isChecked -> prefs.edit().putBoolean("check_updates", isChecked).apply() }
-        }
-        updateRow.addView(updateSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        val (updateRow, _) = settingsRow("Check for updates", "Notify when a new version is available")
+        updateRow.addView(styledSwitch(
+            checked = prefs.getBoolean("check_updates", true),
+            onToggle = { isChecked -> prefs.edit().putBoolean("check_updates", isChecked).apply() }
+        ))
         generalGroup.addView(updateRow)
 
         if (LibreOfficeManager.isEngineInstalled(this)) {
-            generalGroup.addView(View(this).apply {
-                setBackgroundColor(color(R.color.istan_outline))
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
-                setMargins(dp(16), 0, dp(16), 0)
-            })
-
-            val perfRow = LinearLayout(this).apply {
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(16), dp(16), dp(16), dp(16))
-            }
-            val perfTitle = text("Initialize LibreOffice on startup", 16, R.color.istan_text, true)
-            perfRow.addView(perfTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            val perfSwitch = MaterialSwitch(this).apply {
-                isChecked = prefs.getBoolean("improve_docx_perf", false)
-                thumbTintList = ColorStateList(switchStates, intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted)))
-                trackTintList = ColorStateList(switchStates, intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline)))
-                setOnCheckedChangeListener { _, isChecked -> prefs.edit().putBoolean("improve_docx_perf", isChecked).apply() }
-            }
-            perfRow.addView(perfSwitch, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            val (perfRow, _) = settingsRow("LibreOffice on startup", "Pre-load engine for faster DOCX conversion")
+            perfRow.addView(styledSwitch(
+                checked = prefs.getBoolean("improve_docx_perf", false),
+                onToggle = { isChecked -> prefs.edit().putBoolean("improve_docx_perf", isChecked).apply() }
+            ))
             generalGroup.addView(perfRow)
         }
 
-        generalGroup.addView(View(this).apply {
-            setBackgroundColor(color(R.color.istan_outline))
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply {
-            setMargins(dp(16), 0, dp(16), 0)
-        })
-
         val currentCameraPkg = prefs.getString("camera_pkg", "") ?: ""
-        val cameraRow = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
+        val (cameraRow, cameraSubtitle) = settingsRow("Camera app",
+            if (currentCameraPkg.isEmpty()) "Default" else "Custom", clickable = true)
+        val chevron = ImageView(this).apply {
+            setImageResource(R.drawable.chevron_right_24px)
+            setColorFilter(color(R.color.istan_text_muted))
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
         }
-        val cameraTitle = text("Camera App", 16, R.color.istan_text, true)
-        cameraRow.addView(cameraTitle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-
-        val cameraPill = text(
-            if (currentCameraPkg.isEmpty()) "Default" else "Custom",
-            14, R.color.istan_text, true
-        ).apply {
-            background = roundedBackground(color(R.color.istan_surface_high), dp(22), 0)
-            setPadding(dp(16), 0, dp(16), 0)
-            gravity = Gravity.CENTER_VERTICAL
-            setOnClickListener { showCameraDropdown(it, this, prefs) }
-        }
-        cameraRow.addView(cameraPill, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(36)))
+        cameraRow.addView(chevron, LinearLayout.LayoutParams(dp(24), dp(24)).apply {
+            marginStart = dp(8)
+        })
+        cameraRow.setOnClickListener { showCameraDropdown(cameraRow, cameraSubtitle, prefs) }
         generalGroup.addView(cameraRow)
 
-        body.addView(generalGroup, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            bottomMargin = dp(24)
+        body.addView(generalGroup, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(32)
         })
 
         body.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         return body
     }
 
-    private fun showCameraDropdown(anchor: View, pill: TextView, prefs: android.content.SharedPreferences) {
+    private fun settingsRow(title: String, subtitle: String, clickable: Boolean = false): Pair<LinearLayout, TextView> {
+        val row = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(56)
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            if (clickable) {
+                val typedValue = android.util.TypedValue()
+                theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
+                setBackgroundResource(typedValue.resourceId)
+            }
+        }
+
+        val leftColumn = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        leftColumn.addView(text(title, 16, R.color.istan_text, true))
+
+        val subtitleView = text(subtitle, 14, R.color.istan_text_muted, false).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(2)
+            }
+        }
+        leftColumn.addView(subtitleView)
+
+        row.addView(leftColumn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        return Pair(row, subtitleView)
+    }
+
+    private fun styledSwitch(checked: Boolean, onToggle: (Boolean) -> Unit): MaterialSwitch =
+        MaterialSwitch(this).apply {
+            isChecked = checked
+            thumbTintList = ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(color(R.color.istan_olive), color(R.color.istan_text_muted))
+            )
+            trackTintList = ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(ThemePrefs.tint(color(R.color.istan_olive), color(R.color.istan_background), 0.5f), color(R.color.istan_outline))
+            )
+            setOnCheckedChangeListener { _, isChecked -> onToggle(isChecked) }
+        }
+
+    private fun categoryHeader(label: String): TextView =
+        TextView(this).apply {
+            text = label
+            textSize = 13f
+            typeface = AppFont.semiBold
+            setTextColor(color(R.color.istan_text_muted))
+            letterSpacing = 0.05f
+            isAllCaps = true
+            includeFontPadding = false
+        }
+
+    private fun showCameraDropdown(anchor: View, subtitle: TextView, prefs: android.content.SharedPreferences) {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
@@ -395,7 +402,7 @@ class SettingsActivity : AppCompatActivity() {
         container.addView(option("Default") {
             popupRef[0]?.dismiss()
             prefs.edit().putString("camera_pkg", "").apply()
-            pill.text = "Default"
+            subtitle.text = "Default"
         })
         container.addView(View(this).apply {
             setBackgroundColor(color(R.color.istan_outline))
@@ -404,7 +411,7 @@ class SettingsActivity : AppCompatActivity() {
         })
         container.addView(option("Custom") {
             popupRef[0]?.dismiss()
-            showCameraPackageDialog(prefs, pill)
+            showCameraPackageDialog(prefs, subtitle)
         })
 
         container.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
@@ -422,7 +429,7 @@ class SettingsActivity : AppCompatActivity() {
             location[1] + anchor.height + dp(4))
     }
 
-    private fun showCameraPackageDialog(prefs: android.content.SharedPreferences, pill: TextView) {
+    private fun showCameraPackageDialog(prefs: android.content.SharedPreferences, subtitle: TextView) {
         val current = prefs.getString("camera_pkg", "")?.takeIf { it.isNotEmpty() }
             ?: (prefs.getString("camera_pkg_last", "") ?: "")
 
@@ -478,7 +485,7 @@ class SettingsActivity : AppCompatActivity() {
             setPadding(dp(12), dp(8), 0, dp(8))
             setOnClickListener {
                 dialog.dismiss()
-                validateAndSaveCameraPkg(editText.text.toString(), prefs, pill)
+                validateAndSaveCameraPkg(editText.text.toString(), prefs, subtitle)
             }
         }
         btnRow.addView(cancelBtn)
@@ -494,11 +501,11 @@ class SettingsActivity : AppCompatActivity() {
         editText.requestFocus()
     }
 
-    private fun validateAndSaveCameraPkg(pkg: String, prefs: android.content.SharedPreferences, pill: TextView) {
+    private fun validateAndSaveCameraPkg(pkg: String, prefs: android.content.SharedPreferences, subtitle: TextView) {
         val trimmed = pkg.trim()
         if (trimmed.isEmpty()) {
             prefs.edit().putString("camera_pkg", "").apply()
-            pill.text = "Default"
+            subtitle.text = "Default"
             return
         }
         val probe = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { setPackage(trimmed) }
@@ -518,14 +525,14 @@ class SettingsActivity : AppCompatActivity() {
             prefs.edit()
                 .putString("camera_pkg", "")
                 .remove("camera_pkg_last").apply()
-            pill.text = "Default"
+            subtitle.text = "Default"
             Toast.makeText(this, "That is already your default camera. Set to Default.", Toast.LENGTH_LONG).show()
             return
         }
         prefs.edit()
             .putString("camera_pkg", trimmed)
             .putString("camera_pkg_last", trimmed).apply()
-        pill.text = "Custom"
+        subtitle.text = "Custom"
         Toast.makeText(this, "Camera set to $trimmed", Toast.LENGTH_SHORT).show()
     }
 
@@ -625,7 +632,7 @@ class SettingsActivity : AppCompatActivity() {
         footer.addView(credit)
 
         val crafted = "Crafted with "
-        val heart = "❤️"
+        val heart = "\u2764\uFE0F"
         val location = " in Bengaluru, India"
         val attribution = SpannableString(crafted + heart + location)
         val locationStart = crafted.length + heart.length
