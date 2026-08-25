@@ -45,7 +45,7 @@ object DocxReorder {
 
             deleteOriginals(doc, keptTotal)
 
-            UnoCommandHelper.postFireAndForget(doc, ".uno:GoToStartOfDoc")
+            UnoCommandHelper.postAndWait(doc, ".uno:GoToStartOfDoc")
             UnoCommandHelper.postAndWait(doc, ".uno:Delete")
 
             UnoCommandHelper.postAndWait(doc, ".uno:Repaginate")
@@ -104,10 +104,10 @@ object DocxReorder {
             } else {
                 UnoCommandHelper.postAndWait(doc, ".uno:GoToStartOfNextPageSel")
             }
-            UnoCommandHelper.postAndWait(doc, ".uno:Copy")
-            UnoCommandHelper.postFireAndForget(doc, ".uno:GoToEndOfDoc")
+            UnoCommandHelper.postAndWait(doc, ".uno:Copy", "", UnoCommandHelper.HEAVY_TIMEOUT_MS)
+            UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfDoc")
             UnoCommandHelper.postAndWait(doc, ".uno:InsertPagebreak")
-            UnoCommandHelper.postAndWait(doc, ".uno:Paste")
+            UnoCommandHelper.postAndWait(doc, ".uno:Paste", "", UnoCommandHelper.HEAVY_TIMEOUT_MS)
         }
     }
 

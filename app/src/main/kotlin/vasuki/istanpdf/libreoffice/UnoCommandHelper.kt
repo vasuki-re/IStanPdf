@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 
 object UnoCommandHelper {
     private const val DEFAULT_TIMEOUT_MS = 1000L
+    const val HEAVY_TIMEOUT_MS = 10_000L
     private val lock = Any()
     @Volatile
     private var commandComplete = false

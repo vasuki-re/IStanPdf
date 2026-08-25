@@ -12,7 +12,8 @@ class CacheManager(context: Context) {
             val stalePrefixes = listOf(
                 "istanpdf_", "merged_", "img_", "pdf_to_img_",
                 "camera_", "crop_", "photo_pdf_", "compressed_",
-                "compress_attempt_", "replaced_", "istan_cam_"
+                "compress_attempt_", "replaced_", "istan_cam_",
+                "removed_uno_", "reordered_uno_"
             )
             context.cacheDir.listFiles()
                 ?.filter { f ->

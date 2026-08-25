@@ -812,26 +812,32 @@ class MainActivity : AppCompatActivity() {
             runJob("Converting DOCX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val docxUri = pendingUris[0]
                 val pdfFile = AppModule.get().docxToPdf.execute(docxUri)
-                contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
-                    contentResolver.openOutputStream(destination)?.use { output ->
-                        input.copyTo(output)
+                try {
+                    contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
+                        contentResolver.openOutputStream(destination)?.use { output ->
+                            input.copyTo(output)
+                        }
                     }
-                }
-                if (pdfFile.exists()) {
-                    pdfFile.delete()
+                } finally {
+                    if (pdfFile.exists()) {
+                        pdfFile.delete()
+                    }
                 }
             }
         } else if (requestCode == REQ_SAVE_MD_TO_PDF) {
             runJob("Converting Markdown to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val mdUri = pendingUris[0]
                 val pdfFile = AppModule.get().mdToPdf.execute(mdUri)
-                contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
-                    contentResolver.openOutputStream(destination)?.use { output ->
-                        input.copyTo(output)
+                try {
+                    contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
+                        contentResolver.openOutputStream(destination)?.use { output ->
+                            input.copyTo(output)
+                        }
                     }
-                }
-                if (pdfFile.exists()) {
-                    pdfFile.delete()
+                } finally {
+                    if (pdfFile.exists()) {
+                        pdfFile.delete()
+                    }
                 }
             }
         } else if (requestCode == REQ_SAVE_COMPRESS_PDF) {

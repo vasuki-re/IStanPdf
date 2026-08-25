@@ -65,14 +65,14 @@ object DocxRemove {
             doc.setPart(page.originalIndex)
             if (page.originalIndex == last) {
                 UnoCommandHelper.postAndWait(doc, ".uno:GoToEndOfPageSel")
-                UnoCommandHelper.postAndWait(doc, ".uno:Delete")
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete", "", UnoCommandHelper.HEAVY_TIMEOUT_MS)
                 if (page.originalIndex > 0) {
                     UnoCommandHelper.postAndWait(doc, ".uno:SwBackspace")
                 }
                 last--
             } else {
                 UnoCommandHelper.postAndWait(doc, ".uno:GoToStartOfNextPageSel")
-                UnoCommandHelper.postAndWait(doc, ".uno:Delete")
+                UnoCommandHelper.postAndWait(doc, ".uno:Delete", "", UnoCommandHelper.HEAVY_TIMEOUT_MS)
             }
         }
     }

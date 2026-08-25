@@ -3,6 +3,8 @@ package vasuki.istanpdf.pdf
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import com.itextpdf.io.image.ImageDataFactory
 import com.itextpdf.kernel.geom.PageSize
@@ -47,16 +49,56 @@ object ImagesToPdf {
                     var imgWidth = opt.outWidth.toFloat()
                     var imgHeight = opt.outHeight.toFloat()
 
+                    val exifRotation = try {
+                        ctx.contentResolver.openInputStream(uri)?.use {
+                            ExifInterface(it).getAttributeInt(
+                                ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_NORMAL
+                            )
+                        } ?: ExifInterface.ORIENTATION_NORMAL
+                    } catch (_: Exception) {
+                        ExifInterface.ORIENTATION_NORMAL
+                    }
+
+                    val swapDims = exifRotation == ExifInterface.ORIENTATION_ROTATE_90
+                        || exifRotation == ExifInterface.ORIENTATION_ROTATE_270
+                        || exifRotation == ExifInterface.ORIENTATION_TRANSPOSE
+                        || exifRotation == ExifInterface.ORIENTATION_TRANSVERSE
+
+                    if (swapDims) {
+                        val tmp = imgWidth
+                        imgWidth = imgHeight
+                        imgHeight = tmp
+                    }
+
+                    val exifDegrees = when (exifRotation) {
+                        ExifInterface.ORIENTATION_ROTATE_90, ExifInterface.ORIENTATION_TRANSPOSE -> 90
+                        ExifInterface.ORIENTATION_ROTATE_180, ExifInterface.ORIENTATION_FLIP_VERTICAL -> 180
+                        ExifInterface.ORIENTATION_ROTATE_270, ExifInterface.ORIENTATION_TRANSVERSE -> 270
+                        else -> 0
+                    }
+
                     if (needsConversion) {
                         opt.inJustDecodeBounds = false
                         opt.inSampleSize = calcSampleSize(opt.outWidth, opt.outHeight)
-                        val bmp = (ctx.contentResolver.openInputStream(uri)
+                        val raw = (ctx.contentResolver.openInputStream(uri)
                             ?: throw IllegalArgumentException("Cannot open image")).use { pixelIn ->
                             BitmapFactory.decodeStream(pixelIn, null, opt)
                         } ?: throw IllegalArgumentException("Cannot decode image")
+
+                        val bmp = if (exifDegrees != 0) {
+                            val matrix = Matrix()
+                            matrix.postRotate(exifDegrees.toFloat())
+                            val rotated = Bitmap.createBitmap(
+                                raw, 0, 0, raw.width, raw.height, matrix, true
+                            )
+                            raw.recycle()
+                            rotated
+                        } else {
+                            raw
+                        }
+
                         try {
-                            imgWidth = (bmp.width * opt.inSampleSize).toFloat()
-                            imgHeight = (bmp.height * opt.inSampleSize).toFloat()
                             val jpegOut = ByteArrayOutputStream()
                             bmp.compress(Bitmap.CompressFormat.JPEG, 90, jpegOut)
                             imageData = ImageDataFactory.createJpeg(jpegOut.toByteArray())
@@ -84,9 +126,13 @@ object ImagesToPdf {
 
                     val pageSize = PageSize(pw, ph)
                     val page = pdfDoc.addNewPage(pageSize)
-                    if (pageItem.rotation != 0) {
-                        var r = pageItem.rotation % 360
-                        if (r < 0) r += 360
+                    val totalRotation = if (needsConversion) {
+                        pageItem.rotation % 360
+                    } else {
+                        (pageItem.rotation + exifDegrees) % 360
+                    }
+                    var r = if (totalRotation < 0) totalRotation + 360 else totalRotation
+                    if (r != 0) {
                         page.put(PdfName.Rotate, PdfNumber(r))
                     }
 

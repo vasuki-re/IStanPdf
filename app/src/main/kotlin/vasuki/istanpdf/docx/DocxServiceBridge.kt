@@ -105,6 +105,7 @@ object DocxServiceBridge {
             checkNotNull(started) { "LibreOffice service could not be started" }
 
             if (!latch.await(LIBREOFFICE_OPERATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                ctx.stopService(Intent(ctx, DocxPreviewService::class.java))
                 throw IllegalStateException("$failureMessage Failed")
             }
 

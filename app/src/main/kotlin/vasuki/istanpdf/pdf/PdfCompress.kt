@@ -174,6 +174,8 @@ object PdfCompress {
 
             val imageBytes = imageXObject.imageBytes ?: return
             val hasSoftMask = stream.getAsStream(PdfName.SMask) != null
+            val origColorSpace = stream.getAsName(PdfName.ColorSpace)
+            if (PdfName.DeviceGray == origColorSpace || PdfName.DeviceCMYK == origColorSpace) return
 
             var decoded: Bitmap? = null
             var scaled: Bitmap? = null

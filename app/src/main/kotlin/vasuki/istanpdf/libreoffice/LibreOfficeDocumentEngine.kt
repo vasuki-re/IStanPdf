@@ -11,6 +11,7 @@ import java.io.IOException
 
 object LibreOfficeDocumentEngine {
     private var isInitialized = false
+    private var nativesLoaded = false
     private var cachedOffice: Office? = null
 
     @Throws(Exception::class)
@@ -54,11 +55,14 @@ object LibreOfficeDocumentEngine {
     @Synchronized
     fun initialize(context: Context) {
         if (isInitialized) return
-        try {
-            LibreOfficeKit.loadNativeLibraries(LibreOfficeManager.libDir(context).absolutePath)
-            LibreOfficeRuntime.prepare(context)
-        } catch (e: Exception) {
-            throw IllegalStateException("LibreOffice runtime setup failed: ${e.message}", e)
+        if (!nativesLoaded) {
+            try {
+                LibreOfficeKit.loadNativeLibraries(LibreOfficeManager.libDir(context).absolutePath)
+                LibreOfficeRuntime.prepare(context)
+                nativesLoaded = true
+            } catch (e: Exception) {
+                throw IllegalStateException("LibreOffice runtime setup failed: ${e.message}", e)
+            }
         }
         LibreOfficeKit.putenv("SAL_LOG=+WARN")
         LibreOfficeKit.putenv("SAL_LOK_OPTIONS=compact_fonts")

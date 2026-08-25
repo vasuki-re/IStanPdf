@@ -127,6 +127,9 @@ class MdToPdf(private val context: Context) {
                     HtmlConverter.convertToPdf(input, output, properties)
                 }
             }
+        } catch (e: Exception) {
+            if (pdfFile.exists()) pdfFile.delete()
+            throw e
         } finally {
             if (htmlFile.exists()) htmlFile.delete()
         }
