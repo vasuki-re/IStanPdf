@@ -126,7 +126,6 @@ class SettingsActivity : AppCompatActivity() {
             isFillViewport = true
             isVerticalScrollBarEnabled = false
             clipToPadding = false
-            setPadding(0, 0, 0, dp(16))
         }
         page.addView(scrollView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
@@ -139,12 +138,9 @@ class SettingsActivity : AppCompatActivity() {
 
         content.addView(settingsContent(scrollView))
 
-        content.addView(View(this), LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-
         val footer = developerFooter()
-        footer.setPadding(0, dp(24), 0, dp(24))
-        content.addView(footer, LinearLayout.LayoutParams(
+        footer.setPadding(dp(24), dp(24), dp(24), dp(24))
+        page.addView(footer, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         setContentView(outer)
