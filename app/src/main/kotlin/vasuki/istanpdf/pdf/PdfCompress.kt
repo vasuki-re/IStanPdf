@@ -20,15 +20,9 @@ import vasuki.istanpdf.util.ContentFiles
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
 
 object PdfCompress {
 
-    private const val MAX_DPI = 300
-    private const val MIN_DPI = 36
-    private const val MIN_QUALITY = 20
-    private const val MAX_QUALITY = 90
     private const val MAX_SAMPLE = 64
 
     fun hasEmbeddedImages(ctx: Context, source: Uri): Boolean {
@@ -60,7 +54,7 @@ object PdfCompress {
         val tempIn = ContentFiles.copyUriToCache(ctx, source, ".pdf")
         val tempOut = File.createTempFile("compressed_", ".pdf", ctx.cacheDir)
         try {
-            compressToFile(tempIn, tempOut, dpi, jpegQuality)
+            compressToFile(tempIn, tempOut, dpi, jpegQuality, forceReencode = false)
             ContentFiles.copyFileToUri(ctx, tempOut, destination)
         } finally {
             if (tempIn.exists()) tempIn.delete()
@@ -71,7 +65,7 @@ object PdfCompress {
     @Throws(Exception::class)
     fun runBySize(ctx: Context, source: Uri, destination: Uri, targetBytes: Long): Long {
         val tempIn = ContentFiles.copyUriToCache(ctx, source, ".pdf")
-        var result: File? = null
+        var bestFile: File? = null
         try {
             if (tempIn.length() <= targetBytes) {
                 ContentFiles.copyFileToUri(ctx, tempIn, destination)
@@ -82,83 +76,81 @@ object PdfCompress {
                 throw IllegalStateException("This PDF has no embedded images and cannot be compressed further.")
             }
 
-            result = compressToTarget(ctx, tempIn, targetBytes, harshest = false)
-            if (result.length() > targetBytes) {
-                val corrective = compressToTarget(ctx, result, targetBytes, harshest = true)
-                if (corrective.length() < result.length()) {
-                    result.delete()
-                    result = corrective
-                } else {
-                    corrective.delete()
+            val margin = (targetBytes / 50).coerceIn(1024, 10240)
+            val searchTarget = targetBytes - margin
+
+            fun search(loParam: Int, hiParam: Int, toDpi: (Int) -> Int, toQuality: (Int) -> Int): File? {
+                var lo = loParam
+                var hi = hiParam
+                var best: File? = null
+                var bestDiff = Long.MAX_VALUE
+                for (iteration in 0 until 8) {
+                    if (Thread.currentThread().isInterrupted) throw InterruptedException()
+                    val mid = (lo + hi) / 2
+                    val attempt = File.createTempFile("compress_attempt_", ".pdf", ctx.cacheDir)
+                    try {
+                        compressToFile(tempIn, attempt, toDpi(mid), toQuality(mid), forceReencode = true)
+                        val size = attempt.length()
+                        val absDiff = Math.abs(size - searchTarget)
+                        val better = absDiff < bestDiff || (absDiff == bestDiff && size <= searchTarget)
+                        if (better) {
+                            bestDiff = absDiff
+                            best?.delete()
+                            best = attempt
+                        } else {
+                            attempt.delete()
+                        }
+                        if (size > searchTarget) hi = mid - 1 else lo = mid + 1
+                        if (lo > hi) break
+                    } catch (e: Exception) {
+                        attempt.delete()
+                        throw e
+                    }
+                }
+                return best
+            }
+
+            bestFile = search(36, 300, { it }, { 70 })
+
+            if (bestFile != null && bestFile!!.length() > searchTarget) {
+                val pass2 = search(20, 65, { 36 }, { it })
+                if (pass2 != null) {
+                    val p1Diff = Math.abs(bestFile!!.length() - searchTarget)
+                    val p2Diff = Math.abs(pass2.length() - searchTarget)
+                    if (p2Diff < p1Diff || (p2Diff == p1Diff && pass2.length() <= searchTarget)) {
+                        bestFile!!.delete()
+                        bestFile = pass2
+                    } else {
+                        pass2.delete()
+                    }
                 }
             }
 
+            val result = bestFile ?: throw IllegalStateException("Compression failed")
             ContentFiles.copyFileToUri(ctx, result, destination)
             return result.length()
         } finally {
             if (tempIn.exists()) tempIn.delete()
-            result?.delete()
+            bestFile?.delete()
         }
     }
 
-    private fun compressToTarget(ctx: Context, input: File, targetBytes: Long, harshest: Boolean): File {
-        val imageBytes = measureImageBytes(input)
-        val nonImageBytes = (input.length() - imageBytes).coerceAtLeast(0)
-        val targetImageBytes = targetBytes - nonImageBytes
-        val ratio = if (targetImageBytes <= 0) 0.0 else (targetImageBytes.toDouble() / imageBytes).coerceIn(0.0, 1.0)
-
-        val quality: Int
-        val dpi: Int
-        if (harshest || ratio <= 0.05) {
-            quality = MIN_QUALITY
-            dpi = MIN_DPI
-        } else {
-            quality = (ratio * 80 + 15).roundToInt().coerceIn(MIN_QUALITY, MAX_QUALITY)
-            dpi = if (ratio >= 0.6) MAX_DPI else (MAX_DPI * sqrt(ratio / 0.6)).roundToInt().coerceIn(MIN_DPI, MAX_DPI)
-        }
-
-        val out = File.createTempFile("compressed_", ".pdf", ctx.cacheDir)
-        try {
-            compressToFile(input, out, dpi, quality)
-        } catch (e: Exception) {
-            out.delete()
-            throw e
-        }
-        return out
-    }
-
-    private fun measureImageBytes(file: File): Long {
-        val doc = PdfDocument(PdfReader(file))
-        try {
-            var total = 0L
-            for (i in 1..doc.numberOfPages) {
-                if (Thread.currentThread().isInterrupted) throw InterruptedException()
-                forEachImageXObject(doc.getPage(i)) { stream ->
-                    val rawLength = stream.length
-                    val length = if (rawLength != null) rawLength.toLong() else 0L
-                    if (length > 0) total += length
-                }
-            }
-            return total
-        } finally {
-            doc.close()
-        }
-    }
-
-    private fun compressToFile(input: File, output: File, dpi: Int, jpegQuality: Int) {
+    private fun compressToFile(input: File, output: File, dpi: Int, jpegQuality: Int, forceReencode: Boolean) {
         val doc = PdfDocument(PdfReader(input), PdfWriter(FileOutputStream(output)))
         try {
             for (i in 1..doc.numberOfPages) {
                 if (Thread.currentThread().isInterrupted) throw InterruptedException()
                 val page = doc.getPage(i)
-                forEachImageXObject(page) { stream -> compressImageStream(page, stream, dpi, jpegQuality) }
+                forEachImageXObject(page) { stream ->
+                    compressImageStream(page, stream, dpi, jpegQuality, forceReencode)
+                }
             }
         } finally {
             doc.close()
         }
     }
 
-    private fun compressImageStream(page: PdfPage, stream: PdfStream, dpi: Int, jpegQuality: Int) {
+    private fun compressImageStream(page: PdfPage, stream: PdfStream, dpi: Int, jpegQuality: Int, forceReencode: Boolean) {
         try {
             val imageXObject = PdfImageXObject(stream)
             val origWidth = imageXObject.width.toInt()
@@ -168,25 +160,28 @@ object PdfCompress {
             val pageWidth = page.pageSize.width
             val targetWidth = ((pageWidth / 72f) * dpi).toInt()
             val downscale = targetWidth < origWidth
+            if (!downscale && !forceReencode) return
+
             val scale = if (downscale) targetWidth.toFloat() / origWidth else 1f
-            val targetHeight = (origHeight * scale).toInt()
-            if (targetWidth <= 0 || targetHeight <= 0) return
+            val finalWidth = if (downscale) targetWidth else origWidth
+            val finalHeight = if (downscale) (origHeight * scale).toInt() else origHeight
+            if (finalWidth <= 0 || finalHeight <= 0) return
 
             val imageBytes = imageXObject.imageBytes ?: return
             val hasSoftMask = stream.getAsStream(PdfName.SMask) != null
             val origColorSpace = stream.getAsName(PdfName.ColorSpace)
-            if (PdfName.DeviceGray == origColorSpace || PdfName.DeviceCMYK == origColorSpace) return
+            if (PdfName.DeviceCMYK == origColorSpace) return
 
             var decoded: Bitmap? = null
             var scaled: Bitmap? = null
             var flattened: Bitmap? = null
             try {
                 val options = BitmapFactory.Options()
-                if (downscale) options.inSampleSize = sampleSizeFor(origWidth, targetWidth)
+                if (downscale) options.inSampleSize = sampleSizeFor(origWidth, finalWidth)
                 decoded = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options) ?: return
 
                 scaled = if (downscale) {
-                    Bitmap.createScaledBitmap(decoded, targetWidth, targetHeight, true)
+                    Bitmap.createScaledBitmap(decoded, finalWidth, finalHeight, true)
                 } else {
                     decoded
                 }
@@ -201,14 +196,13 @@ object PdfCompress {
                 flattened.compress(Bitmap.CompressFormat.JPEG, jpegQuality, baos)
                 val newBytes = baos.toByteArray()
 
-                val rawLength = stream.length
-                val oldLength = if (rawLength != null) rawLength.toLong() else imageBytes.size.toLong()
+                val oldLength = stream.length.toLong()
                 if (newBytes.size.toLong() * 100 >= oldLength * 95) return
 
                 stream.setData(newBytes)
                 stream.put(PdfName.Filter, PdfName.DCTDecode)
-                stream.put(PdfName.Width, PdfNumber(scaled.width))
-                stream.put(PdfName.Height, PdfNumber(scaled.height))
+                stream.put(PdfName.Width, PdfNumber(flattened.width))
+                stream.put(PdfName.Height, PdfNumber(flattened.height))
                 stream.put(PdfName.BitsPerComponent, PdfNumber(8))
                 stream.put(PdfName.ColorSpace, PdfName.DeviceRGB)
                 stream.remove(PdfName.DecodeParms)
