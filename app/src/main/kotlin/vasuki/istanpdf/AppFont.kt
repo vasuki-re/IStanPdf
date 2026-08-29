@@ -5,5 +5,6 @@ import vasuki.istanpdf.di.AppModule
 
 object AppFont {
     val regular: Typeface by lazy { AppModule.get().context.resources.getFont(R.font.vasuki_regular) }
+    val medium: Typeface by lazy { AppModule.get().context.resources.getFont(R.font.vasuki_medium) }
     val semiBold: Typeface by lazy { AppModule.get().context.resources.getFont(R.font.vasuki_semibold) }
 }

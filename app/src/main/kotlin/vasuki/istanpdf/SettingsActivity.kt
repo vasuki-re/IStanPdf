@@ -119,6 +119,7 @@ class SettingsActivity : AppCompatActivity() {
 
         val title = text("Settings", 28, R.color.istan_text, true).apply {
             includeFontPadding = false
+            typeface = AppFont.medium
         }
         titleRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
             marginStart = dp(12)

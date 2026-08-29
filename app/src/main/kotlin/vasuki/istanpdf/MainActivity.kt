@@ -535,7 +535,7 @@ class MainActivity : AppCompatActivity() {
                         editorViewModel.pages.addAll(rendered)
                         editorViewModel.reorderSource = pdfUri
                         setBusy(false, "Ready")
-                        buildPageEditor("Reorder Pages from DOCX", "Save PDF", false, true)
+                        buildPageEditor("Reorder Pages", "Save PDF", false, true)
                     }
                 } catch (exception: Exception) {
                     showError(exception)
@@ -1104,8 +1104,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleAddItems(titleText: String) {
         when {
-            "Reorder Pages from DOCX" == titleText -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_DOCX, MIME_PDF), REQ_PICK_DOCX_ADD)
-            titleText == "Remove/Reorder PDF" -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_PDF), REQ_PICK_PDF_ADD)
+            "Reorder Pages" == titleText -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_DOCX, MIME_PDF), REQ_PICK_DOCX_ADD)
+            titleText == "Modify PDF" -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_PDF), REQ_PICK_PDF_ADD)
             "Merge PDF" == titleText -> pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF_ADD)
             else -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", "application/pdf"), REQ_PICK_IMAGES_TO_PDF_ADD)
         }
@@ -1614,7 +1614,7 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.reorderSource = uri
                     editorViewModel.originalFileName = null
                     setBusy(false, "Ready")
-                    buildPageEditor("Remove/Reorder PDF", "Save PDF", docxExport, true)
+                    buildPageEditor("Modify PDF", "Save PDF", docxExport, true)
                 }
             } catch (exception: Exception) {
                 showError(exception)
@@ -1763,7 +1763,7 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.reorderSource = docx
                     editorViewModel.originalFileName = null
                     setBusy(false, "Ready")
-                    buildPageEditor("Remove Pages from DOCX", "Save DOCX", true, false)
+                    buildPageEditor("Remove Pages", "Save DOCX", true, false)
                 }
             } catch (exception: Exception) {
                 showError(exception)

@@ -67,22 +67,26 @@ class EditorViewBuilder(
         val titleRow = LinearLayout(activity)
         titleRow.orientation = LinearLayout.HORIZONTAL
         titleRow.gravity = Gravity.CENTER_VERTICAL
-        titleRow.setPadding(dp(12), dp(16), dp(22), dp(16))
+        titleRow.setPadding(dp(4), dp(24), dp(20), dp(8))
         outer.addView(titleRow)
 
-        val backArrow = ImageView(activity)
-        backArrow.setImageResource(R.drawable.arrow_back_24px)
-        backArrow.setColorFilter(color(R.color.istan_text))
-        backArrow.setPadding(0, 0, dp(16), 0)
-        backArrow.setOnClickListener { actions.onBack() }
-        titleRow.addView(backArrow)
+        val backArrow = ImageView(activity).apply {
+            setImageResource(R.drawable.arrow_back_24px)
+            setColorFilter(color(R.color.istan_text))
+            contentDescription = "Navigate up"
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setOnClickListener { actions.onBack() }
+        }
+        titleRow.addView(backArrow, LinearLayout.LayoutParams(dp(48), dp(48)))
 
-        val title = text(titleText, 22, R.color.istan_text, true)
-        titleRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val title = text(titleText, 28, R.color.istan_text, true).apply {
+            includeFontPadding = false
+            typeface = AppFont.medium
+        }
+        titleRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(12)
+        })
 
-        val separator = View(activity)
-        separator.setBackgroundColor(if (ThemePrefs.isAmoled(activity)) 0xFF333333.toInt() else 0xFFB4B8AA.toInt())
-        outer.addView(separator, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)))
 
         val header = LinearLayout(activity)
         header.orientation = LinearLayout.VERTICAL
@@ -128,7 +132,7 @@ class EditorViewBuilder(
 
         val updateCountRef = arrayOfNulls<Runnable>(1)
 
-        if (titleText == "Remove/Reorder PDF" || titleText == "Remove Pages from DOCX" || titleText == "Reorder Pages from DOCX") {
+        if (titleText == "Modify PDF" || titleText == "Remove Pages" || titleText == "Reorder Pages") {
             val selectedRow = LinearLayout(activity)
             selectedRow.orientation = LinearLayout.HORIZONTAL
             selectedRow.gravity = Gravity.CENTER_VERTICAL
@@ -301,12 +305,12 @@ class EditorViewBuilder(
             }
         }
 
-        val isRemoveDocx = titleText == "Remove Pages from DOCX"
+        val isRemoveDocx = titleText == "Remove Pages"
         val hideRotate = isRemoveDocx || titleText == "Merge PDF"
         val hideDrag = isRemoveDocx
         val isImg = titleText == "Images to PDF"
-                || titleText == "Remove/Reorder PDF"
-                || titleText == "Reorder Pages from DOCX"
+                || titleText == "Modify PDF"
+                || titleText == "Reorder Pages"
                 || isRemoveDocx
                 || titleText == "Merge PDF"
 
@@ -351,8 +355,8 @@ class EditorViewBuilder(
         footer.orientation = LinearLayout.VERTICAL
         footer.setPadding(dp(22), dp(8), dp(22), dp(18))
 
-        if (titleText == "Images to PDF" || titleText == "Reorder Pages from DOCX" || titleText == "Remove/Reorder PDF" || titleText == "Merge PDF") {
-            if (titleText == "Images to PDF" || titleText == "Reorder Pages from DOCX" || titleText == "Remove/Reorder PDF") {
+        if (titleText == "Images to PDF" || titleText == "Reorder Pages" || titleText == "Modify PDF" || titleText == "Merge PDF") {
+            if (titleText == "Images to PDF" || titleText == "Reorder Pages" || titleText == "Modify PDF") {
                 val row = LinearLayout(activity)
                 row.orientation = LinearLayout.HORIZONTAL
                 val rowLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -360,7 +364,7 @@ class EditorViewBuilder(
                 footer.addView(row, 0, rowLp)
 
                 var addLabel = "Add Images / PDF"
-                if (titleText == "Reorder Pages from DOCX") addLabel = "Add DOCX / PDF"
+                if (titleText == "Reorder Pages") addLabel = "Add DOCX / PDF"
 
                 row.addView(
                     buildSourceCard(R.drawable.add_24px, addLabel, 8) { actions.onAddItems(titleText) },
@@ -402,7 +406,7 @@ class EditorViewBuilder(
                 addRow.addView(plusText, LinearLayout.LayoutParams(dp(28), dp(28)))
 
                 var labelStr = "Tap to Add Images / PDF"
-                if (titleText == "Reorder Pages from DOCX") labelStr = "Tap to Add Images / DOCX / PDF"
+                if (titleText == "Reorder Pages") labelStr = "Tap to Add Images / DOCX / PDF"
                 else if (titleText == "Merge PDF") labelStr = "Tap to Add PDF"
                 val addTitle = text(labelStr, 15, R.color.istan_text, false)
                 addTitle.setPadding(dp(12), 0, 0, 0)
