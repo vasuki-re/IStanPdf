@@ -9,6 +9,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Build
+import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.provider.MediaStore
 import android.text.InputType
@@ -443,6 +445,7 @@ class SettingsActivity : AppCompatActivity() {
             background = roundedBackground(color(R.color.istan_surface_high), dp(12), dp(1))
             setSelection(current.length)
         }
+        tintEditText(editText, color(R.color.istan_olive))
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -688,4 +691,49 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
+
+    private fun tintEditText(editText: EditText, accentColor: Int) {
+        val tint = ColorStateList.valueOf(accentColor)
+        editText.highlightColor = ThemePrefs.tint(accentColor, color(R.color.istan_background), 0.5f)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            editText.textCursorDrawable?.mutate()?.also {
+                it.setTint(accentColor)
+                editText.setTextCursorDrawable(it)
+            }
+            editText.textSelectHandle?.mutate()?.also {
+                it.setTintList(tint)
+                editText.setTextSelectHandle(it)
+            }
+            editText.textSelectHandleLeft?.mutate()?.also {
+                it.setTintList(tint)
+                editText.setTextSelectHandleLeft(it)
+            }
+            editText.textSelectHandleRight?.mutate()?.also {
+                it.setTintList(tint)
+                editText.setTextSelectHandleRight(it)
+            }
+        } else {
+            try {
+                val editorField = android.widget.TextView::class.java.getDeclaredField("mEditor")
+                editorField.isAccessible = true
+                val editor = editorField.get(editText)
+                val editorClass = editor.javaClass
+                for (handleField in arrayOf("mSelectHandleLeft", "mSelectHandleRight", "mSelectHandleCenter")) {
+                    try {
+                        val f = editorClass.getDeclaredField(handleField)
+                        f.isAccessible = true
+                        (f.get(editor) as? Drawable)?.mutate()?.setTintList(tint)
+                    } catch (_: Exception) {}
+                }
+                val cursorField = android.widget.TextView::class.java.getDeclaredField("mCursorDrawableRes")
+                cursorField.isAccessible = true
+                val drawableField = editorClass.getDeclaredField("mCursorDrawable")
+                drawableField.isAccessible = true
+                val drawables = drawableField.get(editor)
+                if (drawables is Array<*>) {
+                    drawables.filterIsInstance<Drawable>().forEach { it.mutate().setTint(accentColor) }
+                }
+            } catch (_: Exception) {}
+        }
+    }
 }
