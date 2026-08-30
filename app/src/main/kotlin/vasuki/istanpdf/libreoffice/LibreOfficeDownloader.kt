@@ -108,6 +108,10 @@ object LibreOfficeDownloader {
                                 File(engineRoot, "lib/armeabi-v7a/${rawName.removePrefix("armeabi-v7a/")}")
                             rawName == "arm64-v8a" || rawName == "armeabi-v7a" ->
                                 File(engineRoot, "lib/$rawName")
+                            rawName.startsWith("program/") || rawName.startsWith("share/") ->
+                                File(context.filesDir, rawName)
+                            rawName.startsWith("unpack/") ->
+                                File(context.filesDir, rawName.removePrefix("unpack/"))
                             else -> null
                         }
 

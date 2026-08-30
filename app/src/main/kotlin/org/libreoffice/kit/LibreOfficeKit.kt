@@ -39,8 +39,7 @@ class LibreOfficeKit private constructor() {
 
             mgr = context.resources.assets
 
-            val applicationInfo = context.applicationInfo
-            val dataDir = applicationInfo.dataDir
+            val dataDir = context.filesDir.absolutePath
             Log.i(LOGTAG, String.format("Initializing LibreOfficeKit, dataDir=%s\n", dataDir))
 
             redirectStdio(true)

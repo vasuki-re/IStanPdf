@@ -11,8 +11,8 @@ object LibreOfficeManager {
     private const val MARKER_NAME = "engine.ready"
 
     private val DOWNLOAD_URLS = mapOf(
-        "arm64-v8a"   to "https://github.com/vasuki-re/LibreOffice-Lite/releases/download/v1.0/LibreOffice-arm64.tar.xz",
-        "armeabi-v7a" to "https://github.com/vasuki-re/LibreOffice-Lite/releases/download/v1.0/LibreOffice-arm.tar.xz"
+        "arm64-v8a"   to "https://github.com/vasuki-re/LibreOffice-Lite/releases/download/v2.0/LibreOffice-arm64.tar.xz",
+        "armeabi-v7a" to "https://github.com/vasuki-re/LibreOffice-Lite/releases/download/v2.0/LibreOffice-arm.tar.xz"
     )
 
     fun engineRoot(context: Context): File =
@@ -42,6 +42,11 @@ object LibreOfficeManager {
             root.deleteRecursively()
             Log.i(TAG, "Engine directory deleted: $root")
         }
+        val filesDir = context.applicationContext.filesDir
+        File(filesDir, "program").deleteRecursively()
+        File(filesDir, "share").deleteRecursively()
+        File(filesDir, "etc").deleteRecursively()
+        File(filesDir, "user").deleteRecursively()
     }
 
     fun deviceAbi(): String {

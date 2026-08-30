@@ -108,7 +108,6 @@ object DocxServiceBridge {
                 ctx.stopService(Intent(ctx, DocxPreviewService::class.java))
                 throw IllegalStateException("$failureMessage Failed")
             }
-
             check(resultCode.get() == DocxPreviewService.RESULT_OK) { "$failureMessage Failed" }
 
             return resultData.get() ?: Bundle()

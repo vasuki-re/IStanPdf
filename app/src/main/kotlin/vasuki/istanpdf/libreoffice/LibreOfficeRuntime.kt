@@ -17,13 +17,12 @@ internal object LibreOfficeRuntime {
     @Throws(Exception::class)
     fun prepare(context: Context) {
         val appContext = context.applicationContext
-        val dataDir = File(appContext.applicationInfo.dataDir)
+        val dataDir = appContext.filesDir
         val markerName = "${MARKER_PREFIX}${versionCode(appContext)}.ready"
         val marker = File(dataDir, markerName)
 
         if (!marker.exists()) {
             clearOldMarkers(dataDir)
-            copyAssetTree(appContext.assets, "unpack", dataDir)
             marker.createNewFile()
         }
 
@@ -40,35 +39,6 @@ internal object LibreOfficeRuntime {
         for (marker in markers) {
             if (!marker.delete()) {
                 Log.w(TAG, "Could not remove old marker $marker")
-            }
-        }
-    }
-
-    private fun copyAssetTree(assetManager: android.content.res.AssetManager, fromAssetPath: String, targetDir: File) {
-        val children = assetManager.list(fromAssetPath)
-        if (children == null || children.isEmpty()) {
-            copyAsset(assetManager, fromAssetPath, targetDir)
-            return
-        }
-
-        if (!targetDir.exists() && !targetDir.mkdirs()) {
-            throw IllegalStateException("Could not create $targetDir")
-        }
-
-        for (child in children) {
-            copyAssetTree(assetManager, "$fromAssetPath/$child", File(targetDir, child))
-        }
-    }
-
-    private fun copyAsset(assetManager: android.content.res.AssetManager, fromAssetPath: String, targetFile: File) {
-        val parent = targetFile.parentFile
-        if (parent != null && !parent.exists() && !parent.mkdirs()) {
-            throw IllegalStateException("Could not create $parent")
-        }
-
-        assetManager.open(fromAssetPath).use { input ->
-            FileOutputStream(targetFile, false).use { output ->
-                input.copyTo(output, BUFFER_SIZE)
             }
         }
     }

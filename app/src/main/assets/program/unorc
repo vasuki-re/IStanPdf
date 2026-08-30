@@ -1,4 +1,0 @@
-[Bootstrap]
-URE_INTERNAL_LIB_DIR=file://$APP_DATA_DIR/lib/
-UNO_TYPES=file://$APP_DATA_DIR/program/types.rdb file://$APP_DATA_DIR/program/types/offapi.rdb file://$APP_DATA_DIR/program/types/oovbaapi.rdb
-UNO_SERVICES=file:///assets/program/services.rdb file:///assets/program/services/services.rdb
