@@ -2559,7 +2559,7 @@ class MainActivity : AppCompatActivity() {
                 }, tintIcon = false, customIcon = kofiIcon, iconWidthDp = 30, iconHeightDp = 24),
                 BottomSheetItem("UPI (India)", R.drawable.upi_pay_24px, Runnable {
                     try {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay?pa=ramakanthacharya@slc&pn=Ramakanth")))
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("upi://pay?pa=ramakanthacharya@axl&pn=Ramakanth")))
                     } catch (e: Exception) {
                         Toast.makeText(this@MainActivity, "No UPI app found", Toast.LENGTH_SHORT).show()
                     }
