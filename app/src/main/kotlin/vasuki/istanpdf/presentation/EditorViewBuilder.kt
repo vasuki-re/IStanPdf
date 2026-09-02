@@ -354,6 +354,11 @@ class EditorViewBuilder(
         val footer = LinearLayout(activity)
         footer.orientation = LinearLayout.VERTICAL
         footer.setPadding(dp(22), dp(8), dp(22), dp(18))
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(footer) { v, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(dp(22), dp(8), dp(22), dp(18) + bars.bottom)
+            insets
+        }
 
         if (titleText == "Images to PDF" || titleText == "Reorder Pages" || titleText == "Modify PDF" || titleText == "Merge PDF") {
             if (titleText == "Images to PDF" || titleText == "Reorder Pages" || titleText == "Modify PDF") {

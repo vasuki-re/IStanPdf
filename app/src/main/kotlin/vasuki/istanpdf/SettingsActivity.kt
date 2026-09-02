@@ -50,8 +50,6 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.navigationBarColor = Color.TRANSPARENT
-        window.statusBarColor = Color.TRANSPARENT
         buildSettings(0)
         applySystemBarTheme()
     }
@@ -93,7 +91,7 @@ class SettingsActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(outer) { v, windowInsets ->
             val insets: Insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            v.setPadding(insets.left, insets.top, insets.right, 0)
             WindowInsetsCompat.CONSUMED
         }
 
@@ -681,6 +679,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun color(colorRes: Int): Int = ThemePrefs.resolveColor(this, colorRes)
 
     private fun applySystemBarTheme() {
+        window.navigationBarColor = Color.TRANSPARENT
+        window.statusBarColor = Color.TRANSPARENT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         val lightBars = !ThemePrefs.isAmoled(this)
         controller.isAppearanceLightStatusBars = lightBars

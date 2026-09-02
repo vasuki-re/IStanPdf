@@ -120,8 +120,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.navigationBarColor = Color.TRANSPARENT
-        window.statusBarColor = Color.TRANSPARENT
         applySystemBarTheme()
 
         pruneStaleCacheFiles()
@@ -2198,7 +2196,7 @@ class MainActivity : AppCompatActivity() {
 
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            v.setPadding(bars.left, bars.top, bars.right, 0)
             insets
         }
         if (view is ViewGroup) {
@@ -2384,6 +2382,11 @@ class MainActivity : AppCompatActivity() {
     private fun color(colorRes: Int): Int = ThemePrefs.resolveColor(this, colorRes)
 
     private fun applySystemBarTheme() {
+        window.navigationBarColor = Color.TRANSPARENT
+        window.statusBarColor = Color.TRANSPARENT
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
         val lightBars = !ThemePrefs.isAmoled(this)
         controller.isAppearanceLightStatusBars = lightBars

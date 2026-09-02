@@ -56,7 +56,7 @@ class HomeViewBuilder(
 
         ViewCompat.setOnApplyWindowInsetsListener(mainContainer) { v, windowInsets ->
             val insets: Insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(0, insets.top, 0, insets.bottom)
+            v.setPadding(0, insets.top, 0, 0)
             WindowInsetsCompat.CONSUMED
         }
 
