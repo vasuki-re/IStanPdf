@@ -140,11 +140,7 @@ class SettingsActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         content.addView(settingsContent(scrollView))
-
-        val footer = developerFooter()
-        footer.setPadding(dp(24), dp(24), dp(24), dp(24))
-        page.addView(footer, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        content.addView(developerFooter())
 
         setContentView(outer)
         ViewCompat.requestApplyInsets(outer)
