@@ -1166,6 +1166,21 @@ class MainActivity : AppCompatActivity() {
 
         val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         bottomSheet?.backgroundTintList = android.content.res.ColorStateList.valueOf(color(R.color.istan_surface))
+        bottomSheet?.let { applyBottomSheetSystemBarTheme(bottomSheetDialog, it) }
+    }
+
+    private fun applyBottomSheetSystemBarTheme(
+        bottomSheetDialog: com.google.android.material.bottomsheet.BottomSheetDialog,
+        bottomSheet: View
+    ) {
+        val dialogWindow = bottomSheetDialog.window ?: return
+        dialogWindow.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        dialogWindow.navigationBarColor = color(R.color.istan_surface)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            dialogWindow.isNavigationBarContrastEnforced = false
+        }
+        val controller = androidx.core.view.WindowCompat.getInsetsController(dialogWindow, bottomSheet)
+        controller.isAppearanceLightNavigationBars = !ThemePrefs.isAmoled(this)
     }
 
     private fun showImageSourceChooser() {
