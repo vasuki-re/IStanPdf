@@ -2115,10 +2115,8 @@ class MainActivity : AppCompatActivity() {
             val actionView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_action)
             actionView?.typeface = AppFont.semiBold
             snackbar.setAction("Open") { openSavedFile(output) }
-            val bottomInset = androidx.core.view.ViewCompat.getRootWindowInsets(root)
-                ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
             val lp = snackbar.view.layoutParams as? ViewGroup.MarginLayoutParams
-            lp?.setMargins(dp(16), 0, dp(16), dp(24) + bottomInset)
+            lp?.setMargins(dp(16), 0, dp(16), dp(24))
             if (lp != null) snackbar.view.layoutParams = lp
             snackbar.show()
         }
