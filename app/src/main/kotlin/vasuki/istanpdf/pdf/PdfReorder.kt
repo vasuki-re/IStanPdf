@@ -20,6 +20,7 @@ object PdfReorder {
     private fun reorderInternal(
         ctx: Context, src: Uri, pages: List<PageItem>, dst: Uri
     ): Int {
+        require(pages.any { it.keep }) { "Keep at least one page" }
         var kept = 0
         val tempIn = ContentFiles.copyUriToCache(ctx, src, ".pdf")
         try {
@@ -65,9 +66,7 @@ object PdfReorder {
 
     @Throws(Exception::class)
     fun run(ctx: Context, src: Uri, pages: List<PageItem>, dst: Uri): Int {
-        val kept = reorderInternal(ctx, src, pages, dst)
-        require(kept > 0) { "Keep at least one page" }
-        return kept
+        return reorderInternal(ctx, src, pages, dst)
     }
 
     @Throws(Exception::class)

@@ -43,6 +43,7 @@ import vasuki.istanpdf.presentation.EditorViewBuilder
 import vasuki.istanpdf.presentation.EditorViewModel
 import vasuki.istanpdf.presentation.HomeViewBuilder
 import vasuki.istanpdf.util.BitmapUtils
+import vasuki.istanpdf.util.ContentFiles
 import vasuki.istanpdf.libreoffice.LibreOfficeDownloader
 import vasuki.istanpdf.libreoffice.LibreOfficeManager
 import android.widget.ProgressBar
@@ -493,8 +494,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     } catch (_: Exception) { skipped++ }
                 }
+                val successUris = rendered.mapNotNull { it.sourceUri }
                 runOnUiThread {
                     editorViewModel.clearPages()
+                    pendingUris.clear()
+                    pendingUris.addAll(successUris)
                     val pages = editorViewModel.pages
                     pages.addAll(rendered)
                     for (p in pages) p.keep = true
@@ -525,6 +529,7 @@ class MainActivity : AppCompatActivity() {
             worker.execute {
                 try {
                     val pdfFile = AppModule.get().docxToPdf.execute(docx)
+                    editorViewModel.tempImageFiles.add(pdfFile)
                     val pdfUri = Uri.fromFile(pdfFile)
                     val count = AppModule.get().pdfEngine.openSession(pdfUri).use { it.pageCount }
                     val rendered = (0 until count).map { PageItem(it, sourceUri = pdfUri, renderIndex = it) }
@@ -590,9 +595,10 @@ class MainActivity : AppCompatActivity() {
                         }
                     } catch (_: Exception) { skipped++ }
                 }
+                val successUris = rendered.mapNotNull { it.sourceUri }
                 runOnUiThread {
                     for (p in rendered) p.keep = true
-                    pendingUris.addAll(validUris)
+                    pendingUris.addAll(successUris)
                     pages.addAll(rendered)
                     editorViewModel.pagesAdded = true
                     pageList?.adapter?.notifyDataSetChanged()
@@ -811,11 +817,7 @@ class MainActivity : AppCompatActivity() {
                 val docxUri = pendingUris[0]
                 val pdfFile = AppModule.get().docxToPdf.execute(docxUri)
                 try {
-                    contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
-                        contentResolver.openOutputStream(destination)?.use { output ->
-                            input.copyTo(output)
-                        }
-                    }
+                    ContentFiles.copyFileToUri(this@MainActivity, pdfFile, destination)
                 } finally {
                     if (pdfFile.exists()) {
                         pdfFile.delete()
@@ -827,11 +829,7 @@ class MainActivity : AppCompatActivity() {
                 val mdUri = pendingUris[0]
                 val pdfFile = AppModule.get().mdToPdf.execute(mdUri)
                 try {
-                    contentResolver.openInputStream(Uri.fromFile(pdfFile))?.use { input ->
-                        contentResolver.openOutputStream(destination)?.use { output ->
-                            input.copyTo(output)
-                        }
-                    }
+                    ContentFiles.copyFileToUri(this@MainActivity, pdfFile, destination)
                 } finally {
                     if (pdfFile.exists()) {
                         pdfFile.delete()
@@ -842,16 +840,16 @@ class MainActivity : AppCompatActivity() {
             val source = pendingUris[0]
             if (compressMode == COMPRESS_MODE_RESOLUTION) {
                 runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
-                    AppModule.get().compressPdf.executeByResolution(source, destination, compressDpi, compressQuality)
+                    val skips = AppModule.get().compressPdf.executeByResolution(source, destination, compressDpi, compressQuality)
+                    if (skips > 0) "$skips image(s) could not be compressed" else null
                 }
             } else {
                 runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
-                    val finalSize = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
-                    if (finalSize > compressTargetBytes) {
-                        "Couldn't reach target size (Output: ${formatFileSize(finalSize)})"
-                    } else {
-                        null
-                    }
+                    val (finalSize, skips) = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
+                    val warnings = mutableListOf<String>()
+                    if (skips > 0) warnings.add("$skips image(s) could not be compressed")
+                    if (finalSize > compressTargetBytes) warnings.add("Couldn't reach target size (Output: ${formatFileSize(finalSize)})")
+                    if (warnings.isNotEmpty()) warnings.joinToString(". ") else null
                 }
             }
         } else if (requestCode == REQ_SAVE_REORDER_PDF || requestCode == REQ_SAVE_REORDER_DOCX_EXPORT) {
@@ -1766,6 +1764,7 @@ class MainActivity : AppCompatActivity() {
         worker.execute {
             try {
                 val pdfFile = AppModule.get().docxToPdf.execute(docx)
+                editorViewModel.tempImageFiles.add(pdfFile)
                 val pdfUri = Uri.fromFile(pdfFile)
                 val count = AppModule.get().pdfEngine.openSession(pdfUri).use { it.pageCount }
                 val rendered = (0 until count).map { PageItem(it, sourceUri = pdfUri, renderIndex = it) }

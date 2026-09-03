@@ -20,6 +20,7 @@ import vasuki.istanpdf.util.ContentFiles
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.atomic.AtomicInteger
 
 object PdfCompress {
 
@@ -50,26 +51,29 @@ object PdfCompress {
     }
 
     @Throws(Exception::class)
-    fun runByResolution(ctx: Context, source: Uri, destination: Uri, dpi: Int, jpegQuality: Int) {
+    fun runByResolution(ctx: Context, source: Uri, destination: Uri, dpi: Int, jpegQuality: Int): Int {
         val tempIn = ContentFiles.copyUriToCache(ctx, source, ".pdf")
         val tempOut = File.createTempFile("compressed_", ".pdf", ctx.cacheDir)
+        val skipCount = AtomicInteger()
         try {
-            compressToFile(tempIn, tempOut, dpi, jpegQuality, forceReencode = false)
+            compressToFile(tempIn, tempOut, dpi, jpegQuality, forceReencode = false, skipCount)
             ContentFiles.copyFileToUri(ctx, tempOut, destination)
         } finally {
             if (tempIn.exists()) tempIn.delete()
             if (tempOut.exists()) tempOut.delete()
         }
+        return skipCount.get()
     }
 
     @Throws(Exception::class)
-    fun runBySize(ctx: Context, source: Uri, destination: Uri, targetBytes: Long): Long {
+    fun runBySize(ctx: Context, source: Uri, destination: Uri, targetBytes: Long): Pair<Long, Int> {
         val tempIn = ContentFiles.copyUriToCache(ctx, source, ".pdf")
         var bestFile: File? = null
+        var finalSkips = 0
         try {
             if (tempIn.length() <= targetBytes) {
                 ContentFiles.copyFileToUri(ctx, tempIn, destination)
-                return tempIn.length()
+                return Pair(tempIn.length(), 0)
             }
 
             if (!hasEmbeddedImages(tempIn)) {
@@ -79,17 +83,19 @@ object PdfCompress {
             val margin = (targetBytes / 50).coerceIn(1024, 10240)
             val searchTarget = targetBytes - margin
 
-            fun search(loParam: Int, hiParam: Int, toDpi: (Int) -> Int, toQuality: (Int) -> Int): File? {
+            fun search(loParam: Int, hiParam: Int, toDpi: (Int) -> Int, toQuality: (Int) -> Int): Pair<File, Int>? {
                 var lo = loParam
                 var hi = hiParam
                 var best: File? = null
                 var bestDiff = Long.MAX_VALUE
+                var bestSkips = 0
                 for (iteration in 0 until 8) {
                     if (Thread.currentThread().isInterrupted) throw InterruptedException()
                     val mid = (lo + hi) / 2
                     val attempt = File.createTempFile("compress_attempt_", ".pdf", ctx.cacheDir)
+                    val iterSkips = AtomicInteger()
                     try {
-                        compressToFile(tempIn, attempt, toDpi(mid), toQuality(mid), forceReencode = true)
+                        compressToFile(tempIn, attempt, toDpi(mid), toQuality(mid), forceReencode = true, iterSkips)
                         val size = attempt.length()
                         val absDiff = Math.abs(size - searchTarget)
                         val better = absDiff < bestDiff || (absDiff == bestDiff && size <= searchTarget)
@@ -97,6 +103,7 @@ object PdfCompress {
                             bestDiff = absDiff
                             best?.delete()
                             best = attempt
+                            bestSkips = iterSkips.get()
                         } else {
                             attempt.delete()
                         }
@@ -107,42 +114,45 @@ object PdfCompress {
                         throw e
                     }
                 }
-                return best
+                return if (best != null) Pair(best, bestSkips) else null
             }
 
-            bestFile = search(36, 300, { it }, { 70 })
+            val result1 = search(36, 300, { it }, { 70 })
+            bestFile = result1?.first
+            finalSkips = result1?.second ?: 0
 
             if (bestFile != null && bestFile!!.length() > searchTarget) {
                 val pass2 = search(20, 65, { 36 }, { it })
                 if (pass2 != null) {
                     val p1Diff = Math.abs(bestFile!!.length() - searchTarget)
-                    val p2Diff = Math.abs(pass2.length() - searchTarget)
-                    if (p2Diff < p1Diff || (p2Diff == p1Diff && pass2.length() <= searchTarget)) {
+                    val p2Diff = Math.abs(pass2.first.length() - searchTarget)
+                    if (p2Diff < p1Diff || (p2Diff == p1Diff && pass2.first.length() <= searchTarget)) {
                         bestFile!!.delete()
-                        bestFile = pass2
+                        bestFile = pass2.first
+                        finalSkips = pass2.second
                     } else {
-                        pass2.delete()
+                        pass2.first.delete()
                     }
                 }
             }
 
             val result = bestFile ?: throw IllegalStateException("Compression failed")
             ContentFiles.copyFileToUri(ctx, result, destination)
-            return result.length()
+            return Pair(result.length(), finalSkips)
         } finally {
             if (tempIn.exists()) tempIn.delete()
             bestFile?.delete()
         }
     }
 
-    private fun compressToFile(input: File, output: File, dpi: Int, jpegQuality: Int, forceReencode: Boolean) {
+    private fun compressToFile(input: File, output: File, dpi: Int, jpegQuality: Int, forceReencode: Boolean, skipCount: AtomicInteger) {
         val doc = PdfDocument(PdfReader(input), PdfWriter(FileOutputStream(output)))
         try {
             for (i in 1..doc.numberOfPages) {
                 if (Thread.currentThread().isInterrupted) throw InterruptedException()
                 val page = doc.getPage(i)
                 forEachImageXObject(page) { stream ->
-                    compressImageStream(page, stream, dpi, jpegQuality, forceReencode)
+                    compressImageStream(page, stream, dpi, jpegQuality, forceReencode, skipCount)
                 }
             }
         } finally {
@@ -150,7 +160,7 @@ object PdfCompress {
         }
     }
 
-    private fun compressImageStream(page: PdfPage, stream: PdfStream, dpi: Int, jpegQuality: Int, forceReencode: Boolean) {
+    private fun compressImageStream(page: PdfPage, stream: PdfStream, dpi: Int, jpegQuality: Int, forceReencode: Boolean, skipCount: AtomicInteger) {
         try {
             val imageXObject = PdfImageXObject(stream)
             val origWidth = imageXObject.width.toInt()
@@ -213,6 +223,7 @@ object PdfCompress {
                 decoded?.recycle()
             }
         } catch (_: Exception) {
+            skipCount.incrementAndGet()
         }
     }
 

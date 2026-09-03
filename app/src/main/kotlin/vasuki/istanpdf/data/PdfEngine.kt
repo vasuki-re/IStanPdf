@@ -86,12 +86,12 @@ class PdfEngine(context: Context) {
     }
 
     @Throws(Exception::class)
-    fun compressByResolution(source: Uri, destination: Uri, dpi: Int, quality: Int) {
-        PdfCompress.runByResolution(context, source, destination, dpi, quality)
+    fun compressByResolution(source: Uri, destination: Uri, dpi: Int, quality: Int): Int {
+        return PdfCompress.runByResolution(context, source, destination, dpi, quality)
     }
 
     @Throws(Exception::class)
-    fun compressBySize(source: Uri, destination: Uri, targetBytes: Long): Long {
+    fun compressBySize(source: Uri, destination: Uri, targetBytes: Long): Pair<Long, Int> {
         return PdfCompress.runBySize(context, source, destination, targetBytes)
     }
 }
