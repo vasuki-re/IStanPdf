@@ -77,8 +77,8 @@ class PdfEngine(context: Context) {
     }
 
     @Throws(Exception::class)
-    fun pdfToJpegZip(source: Uri, destination: Uri) {
-        PdfToJpegZip.run(context, source, destination)
+    fun pdfToJpegZip(source: Uri, destination: Uri, dpi: Int) {
+        PdfToJpegZip.run(context, source, destination, dpi)
     }
 
     fun hasEmbeddedImages(source: Uri): Boolean {

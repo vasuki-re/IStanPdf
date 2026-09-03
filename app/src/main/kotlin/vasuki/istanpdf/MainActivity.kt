@@ -92,6 +92,7 @@ class MainActivity : AppCompatActivity() {
     private var compressDpi = 150
     private var compressQuality = 70
     private var compressTargetBytes = 0L
+    private var pdfToImageDpi = PDF_TO_IMAGE_NORMAL_DPI
 
     private lateinit var editorViewModel: EditorViewModel
 
@@ -725,8 +726,7 @@ class MainActivity : AppCompatActivity() {
             } catch (_: Exception) {}
             editorViewModel.clearPendingUris()
             editorViewModel.pendingUris.add(pdfUri)
-            val prefix = getDisplayName(pdfUri)
-            createDocument(MIME_ZIP, "${prefix}_images.zip", REQ_SAVE_PDF_TO_JPG)
+            showPdfToImageQualityDialog(pdfUri)
             return
         }
 
@@ -811,7 +811,7 @@ class MainActivity : AppCompatActivity() {
             val snapshot = ArrayList(pages)
             runJob("Converting Images...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) { AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination) }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG) {
-            runJob("Converting to JPGs...", OutputRef(destination, MIME_ZIP, getDisplayName(destination))) { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination) }
+            runJob("Converting to JPGs...", OutputRef(destination, MIME_ZIP, getDisplayName(destination))) { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination, pdfToImageDpi) }
         } else if (requestCode == REQ_SAVE_DOCX_TO_PDF) {
             runJob("Converting DOCX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val docxUri = pendingUris[0]
@@ -2493,6 +2493,43 @@ class MainActivity : AppCompatActivity() {
         dialogRef[0] = showCustomDialog("Resolution Preset", content, "Cancel", null, null, null)
     }
 
+    private fun showPdfToImageQualityDialog(pdfUri: Uri) {
+        val content = LinearLayout(this)
+        content.orientation = LinearLayout.VERTICAL
+        content.setPadding(0, dp(12), 0, dp(4))
+
+        val dialogRef = arrayOfNulls<android.app.Dialog>(1)
+        val options = arrayOf(
+            Pair("Normal", PDF_TO_IMAGE_NORMAL_DPI),
+            Pair("High", PDF_TO_IMAGE_HIGH_DPI)
+        )
+
+        for ((index, option) in options.withIndex()) {
+            val card = MaterialCardView(this)
+            card.setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+            card.radius = dp(16).toFloat()
+            card.strokeWidth = dp(1)
+            card.strokeColor = color(R.color.istan_outline)
+            card.cardElevation = 0f
+            card.setOnClickListener {
+                dialogRef[0]?.dismiss()
+                pdfToImageDpi = option.second
+                val prefix = getDisplayName(pdfUri)
+                createDocument(MIME_ZIP, "${prefix}_images.zip", REQ_SAVE_PDF_TO_JPG)
+            }
+
+            val label = text(option.first, 15, R.color.istan_text, false)
+            label.setPadding(dp(20), dp(16), dp(20), dp(16))
+            card.addView(label)
+
+            val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            if (index < options.size - 1) params.setMargins(0, 0, 0, dp(12))
+            content.addView(card, params)
+        }
+
+        dialogRef[0] = showCustomDialog("Image Quality", content, "Cancel", null, null, null)
+    }
+
     private fun showSizeInputDialog(pdfUri: Uri) {
         val sourceKb = try {
             val cursor = contentResolver.query(pdfUri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
@@ -2601,6 +2638,8 @@ class MainActivity : AppCompatActivity() {
         private const val REQ_SAVE_IMAGES_TO_PDF = 33
         private const val REQ_PICK_PDF_TO_JPG = 34
         private const val REQ_SAVE_PDF_TO_JPG = 35
+        private const val PDF_TO_IMAGE_NORMAL_DPI = 150
+        private const val PDF_TO_IMAGE_HIGH_DPI = 300
         private const val REQ_PICK_IMAGES_TO_PDF_ADD = 36
         private const val REQ_PICK_DOCX_ADD = 37
         private const val REQ_PICK_PDF_ADD = 38
