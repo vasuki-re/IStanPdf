@@ -81,6 +81,11 @@ class PdfEngine(context: Context) {
         PdfToJpegZip.run(context, source, destination, dpi)
     }
 
+    @Throws(Exception::class)
+    fun pdfToJpeg(source: Uri, destination: Uri, dpi: Int) {
+        PdfToJpegZip.runSingle(context, source, destination, dpi)
+    }
+
     fun hasEmbeddedImages(source: Uri): Boolean {
         return PdfCompress.hasEmbeddedImages(context, source)
     }

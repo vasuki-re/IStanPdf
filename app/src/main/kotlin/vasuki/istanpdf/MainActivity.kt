@@ -726,7 +726,15 @@ class MainActivity : AppCompatActivity() {
             } catch (_: Exception) {}
             editorViewModel.clearPendingUris()
             editorViewModel.pendingUris.add(pdfUri)
-            showPdfToImageQualityDialog(pdfUri)
+            worker.submit {
+                try {
+                    val pageCount = AppModule.get().pdfEngine.openSession(pdfUri).use { it.pageCount }
+                    require(pageCount > 0) { "PDF has no pages" }
+                    runOnUiThread { showPdfToImageQualityDialog(pdfUri, pageCount) }
+                } catch (exception: Exception) {
+                    showError(exception)
+                }
+            }
             return
         }
 
@@ -811,6 +819,8 @@ class MainActivity : AppCompatActivity() {
             val snapshot = ArrayList(pages)
             runJob("Converting Images...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) { AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination) }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG) {
+            runJob("Converting to JPG...", OutputRef(destination, MIME_JPEG, getDisplayName(destination))) { AppModule.get().pdfToJpeg.executeSingle(pendingUris[0], destination, pdfToImageDpi) }
+        } else if (requestCode == REQ_SAVE_PDF_TO_JPG_ZIP) {
             runJob("Converting to JPGs...", OutputRef(destination, MIME_ZIP, getDisplayName(destination))) { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination, pdfToImageDpi) }
         } else if (requestCode == REQ_SAVE_DOCX_TO_PDF) {
             runJob("Converting DOCX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
@@ -2493,7 +2503,7 @@ class MainActivity : AppCompatActivity() {
         dialogRef[0] = showCustomDialog("Resolution Preset", content, "Cancel", null, null, null)
     }
 
-    private fun showPdfToImageQualityDialog(pdfUri: Uri) {
+    private fun showPdfToImageQualityDialog(pdfUri: Uri, pageCount: Int) {
         val content = LinearLayout(this)
         content.orientation = LinearLayout.VERTICAL
         content.setPadding(0, dp(12), 0, dp(4))
@@ -2515,7 +2525,11 @@ class MainActivity : AppCompatActivity() {
                 dialogRef[0]?.dismiss()
                 pdfToImageDpi = option.second
                 val prefix = getDisplayName(pdfUri)
-                createDocument(MIME_ZIP, "${prefix}_images.zip", REQ_SAVE_PDF_TO_JPG)
+                if (pageCount == 1) {
+                    createDocument(MIME_JPEG, "${prefix}_page-001.jpg", REQ_SAVE_PDF_TO_JPG)
+                } else {
+                    createDocument(MIME_ZIP, "${prefix}_images.zip", REQ_SAVE_PDF_TO_JPG_ZIP)
+                }
             }
 
             val label = text(option.first, 15, R.color.istan_text, false)
@@ -2638,6 +2652,7 @@ class MainActivity : AppCompatActivity() {
         private const val REQ_SAVE_IMAGES_TO_PDF = 33
         private const val REQ_PICK_PDF_TO_JPG = 34
         private const val REQ_SAVE_PDF_TO_JPG = 35
+        private const val REQ_SAVE_PDF_TO_JPG_ZIP = 46
         private const val PDF_TO_IMAGE_NORMAL_DPI = 150
         private const val PDF_TO_IMAGE_HIGH_DPI = 300
         private const val REQ_PICK_IMAGES_TO_PDF_ADD = 36
@@ -2660,6 +2675,7 @@ class MainActivity : AppCompatActivity() {
         private const val MIME_PDF = "application/pdf"
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         private const val MIME_MD = "text/markdown"
+        private const val MIME_JPEG = "image/jpeg"
         private const val MIME_ZIP = "application/zip"
         private const val WAITING_TEXT = "Ready"
 

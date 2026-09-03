@@ -8,4 +8,9 @@ class PdfToJpeg(private val pdfEngine: PdfEngine) {
     fun execute(source: Uri, destination: Uri, dpi: Int) {
         pdfEngine.pdfToJpegZip(source, destination, dpi)
     }
+
+    @Throws(Exception::class)
+    fun executeSingle(source: Uri, destination: Uri, dpi: Int) {
+        pdfEngine.pdfToJpeg(source, destination, dpi)
+    }
 }
