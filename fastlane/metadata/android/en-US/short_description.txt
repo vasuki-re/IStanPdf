@@ -1,0 +1,1 @@
+A foss offline app for PDF & DOCX operations.
