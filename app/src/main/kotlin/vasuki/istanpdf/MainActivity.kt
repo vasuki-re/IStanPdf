@@ -271,15 +271,7 @@ class MainActivity : AppCompatActivity() {
                         val changelogView = createChangelogView(finalChangelog)
 
                         showCustomDialog("Update Available: $finalVersionName", changelogView, "Later", null, "Download") {
-                            var architecture = "arm"
-                            for (abi in android.os.Build.SUPPORTED_ABIS) {
-                                if (abi.contains("arm64")) {
-                                    architecture = "arm64"
-                                    break
-                                }
-                            }
-                            val downloadUrl = finalLink.replace("*", architecture)
-                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)))
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(finalLink)))
                         }
                     }
                 }
