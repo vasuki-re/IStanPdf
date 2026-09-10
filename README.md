@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
 
   <h1>IStanPdf</h1>
 
@@ -37,28 +37,28 @@ IStanPdf is a foss offline Android application designed to replace freemium webs
 
 ### Light Theme
 <div align="center">
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/1.ui_home-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/2.merge_pdf-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/3.modify_pdf-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/4.compress_pdf-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/5.img2pdf-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/6.optional-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/7.rmpg_docx-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/8.reorder_docx-light.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/9.ui_settings-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/1.ui_home-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/2.merge_pdf-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/3.modify_pdf-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/4.compress_pdf-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/5.img2pdf-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/6.optional-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/7.rmpg_docx-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/8.reorder_docx-light.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/9.ui_settings-light.jpg" width="30%" />
 </div>
 
 ### Dark Theme
 <div align="center">
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/1.ui_home-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/2.merge_pdf-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/3.modify_pdf-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/4.compress_pdf-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/5.img2pdf-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/6.optional-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/7.rmpg_docx-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/8.reorder_docx-dark.jpg" width="30%" />
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Mitsuba/assets/9.ui_settings-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/1.ui_home-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/2.merge_pdf-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/3.modify_pdf-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/4.compress_pdf-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/5.img2pdf-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/6.optional-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/7.rmpg_docx-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/8.reorder_docx-dark.jpg" width="30%" />
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/9.ui_settings-dark.jpg" width="30%" />
 </div>
 </details>
 

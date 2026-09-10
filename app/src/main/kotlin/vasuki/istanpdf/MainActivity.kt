@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
 
         updateThread = Thread {
             try {
-                val url = java.net.URL("https://cdn.jsdelivr.net/gh/vasuki-re/IStanPdf@Mitsuba/changelog.txt")
+                val url = java.net.URL("https://cdn.jsdelivr.net/gh/vasuki-re/IStanPdf@Vanilla/changelog.txt")
                 val conn = url.openConnection() as java.net.HttpURLConnection
                 conn.connectTimeout = 5000
                 conn.readTimeout = 5000
