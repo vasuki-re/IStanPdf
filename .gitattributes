@@ -1,4 +1,0 @@
-*.so filter=lfs diff=lfs merge=lfs -text
-
-gradlew text eol=lf
-gradlew.bat text eol=crlf
