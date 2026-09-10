@@ -2,10 +2,9 @@ versionname:3.0-Vanilla LTS
 versioncode:4
 link:https://github.com/vasuki-re/IStanPdf/releases/download/v3.0-Vanilla/IStanPdf-release.apk
 changelog:
-**v3.0-Vanilla LTS Changelog:**
-* **Massive Size Reduction:** App install size reduced by ~80% thanks to on-demand engine loading.
-* **Markdown to PDF:** Brand new converter for Markdown files with support for tables, lists, and emojis.
-* **Enhanced Editor:** Integrated camera capture and high-res page cropping directly inside the PDF editor.
-* **Smart Compression:** New target file-size compression modes and image quality selectors.
-* **UI Refresh:** Brand new Obsidian and Monochrome themes, dynamic launcher icons, and edge-to-edge design.
-* **Performance:** Completely rebuilt core for faster document handling, smoother swipe previews, and better memory management.
+- **Massive Size Reduction:** App install size reduced by ~80% thanks to on-demand engine loading.
+- **Markdown to PDF:** Brand new converter for Markdown files with support for tables, lists, and emojis.
+- **Enhanced Editor:** Integrated camera capture and high-res page cropping directly inside the PDF editor.
+- **Smart Compression:** New target file-size compression modes and image quality selectors.
+- **UI Refresh:** Brand new Obsidian and Monochrome themes, dynamic launcher icons, and edge-to-edge design.
+- **Performance:** Completely rebuilt core for faster document handling, smoother swipe previews, and better memory management.

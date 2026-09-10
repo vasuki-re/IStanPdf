@@ -1,10 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/icon.png" width="120" height="120" alt="IStanPdf Logo" style="border-radius: 20%; margin-bottom: 16px;">
-
-  <h1>IStanPdf</h1>
-
-  <p><b>A foss offline app for PDF & DOCX operations.</b></p>
+  <img src="https://raw.githubusercontent.com/vasuki-re/IStanPdf/Vanilla/assets/banner.png" alt="IStanPdf Banner" style="width: 100%; max-width: 800px; border-radius: 12px; margin-bottom: 16px;">
 
   <a href="https://github.com/vasuki-re/IStanPdf/releases/latest"><img src="https://img.shields.io/badge/Download-Latest_Release-6366f1?style=for-the-badge&logo=android" alt="Download" /></a>&nbsp;&nbsp;<a href="https://github.com/vasuki-re/IStanPdf/releases"><img src="https://img.shields.io/github/downloads/vasuki-re/IStanPdf/total.svg?style=for-the-badge&color=success&logo=github" alt="GitHub Downloads" /></a>
 </div>
