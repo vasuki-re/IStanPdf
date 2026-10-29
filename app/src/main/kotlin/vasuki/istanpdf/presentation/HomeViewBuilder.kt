@@ -66,7 +66,7 @@ class HomeViewBuilder(
 
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-        root.setPadding(dp(20), dp(32), dp(20), dp(16))
+        root.setPadding(dp(12), dp(28), dp(12), dp(16))
 
         scrollView.addView(root, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -76,6 +76,7 @@ class HomeViewBuilder(
         val heroRow = LinearLayout(activity)
         heroRow.orientation = LinearLayout.HORIZONTAL
         heroRow.gravity = Gravity.CENTER_VERTICAL
+        heroRow.setPadding(dp(4), 0, dp(4), 0)
         root.addView(heroRow)
 
         val title = text("IStanPdf", 40, R.color.istan_text, true).apply { letterSpacing = -0.02f }
@@ -96,7 +97,7 @@ class HomeViewBuilder(
         heroRow.addView(settingsButton, settingsLp)
 
         val subtitle = text("Offline app for PDF and DOCX operations", 16, R.color.istan_text_muted, false)
-        subtitle.setPadding(0, dp(4), 0, dp(48))
+        subtitle.setPadding(dp(4), dp(4), dp(4), dp(36))
         root.addView(subtitle)
 
         root.addView(createSectionHeader("PDF TOOLS"))
@@ -168,21 +169,6 @@ class HomeViewBuilder(
         scParams.gravity = Gravity.CENTER_HORIZONTAL
         root.addView(statusCard, scParams)
 
-        val versionName = try {
-            activity.packageManager.getPackageInfo(activity.packageName, 0).versionName ?: ""
-        } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
-            e.printStackTrace()
-            ""
-        }
-        val footerText = text(versionName, 16, R.color.istan_text_muted, false)
-        val ftParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        ftParams.gravity = Gravity.CENTER_HORIZONTAL
-        ftParams.setMargins(0, 0, 0, dp(4))
-        root.addView(footerText, ftParams)
-
         return mainContainer
     }
 
@@ -193,7 +179,7 @@ class HomeViewBuilder(
         val row = LinearLayout(activity)
         row.gravity = Gravity.CENTER_VERTICAL
         row.isBaselineAligned = false
-        row.setPadding(dp(10), dp(20), dp(4), dp(20))
+        row.setPadding(dp(14), dp(18), dp(10), dp(18))
         row.orientation = LinearLayout.HORIZONTAL
         card.addView(row)
 
@@ -223,7 +209,7 @@ class HomeViewBuilder(
         card.setOnClickListener { action() }
 
         val params = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f)
-        params.setMargins(dp(8), dp(8), dp(8), dp(8))
+        params.setMargins(dp(4), dp(5), dp(4), dp(5))
         card.layoutParams = params
         return card
     }
@@ -235,7 +221,7 @@ class HomeViewBuilder(
         val row = LinearLayout(activity)
         row.gravity = Gravity.CENTER_VERTICAL
         row.isBaselineAligned = false
-        row.setPadding(dp(12), dp(20), dp(16), dp(20))
+        row.setPadding(dp(14), dp(18), dp(14), dp(18))
         row.orientation = LinearLayout.HORIZONTAL
         card.addView(row)
 
@@ -262,7 +248,7 @@ class HomeViewBuilder(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        params.setMargins(dp(8), dp(8), dp(8), dp(16))
+        params.setMargins(dp(4), dp(28), dp(4), dp(16))
         card.layoutParams = params
         return card
     }
@@ -282,7 +268,7 @@ class HomeViewBuilder(
         val header = text(title, 12, R.color.istan_text_muted, true)
         header.isAllCaps = true
         header.letterSpacing = 0.1f
-        header.setPadding(dp(8), dp(32), 0, dp(8))
+        header.setPadding(dp(4), dp(28), dp(4), dp(8))
         return header
     }
 
