@@ -17,6 +17,7 @@ class DocxPreviewService : Service() {
     companion object {
         const val EXTRA_OPERATION = "operation"
         const val EXTRA_DOCX_URI = "docx_uri"
+        const val EXTRA_PPTX_URI = "pptx_uri"
         const val EXTRA_DESTINATION_URI = "destination_uri"
         const val EXTRA_PAGE_INDICES = "page_indices"
         const val EXTRA_PAGE_KEEP = "page_keep"
@@ -24,6 +25,7 @@ class DocxPreviewService : Service() {
         const val EXTRA_PDF_PATH = "pdf_path"
         const val EXTRA_ERROR = "error"
         const val OP_EXPORT_DOCX_TO_PDF = "export_docx_to_pdf"
+        const val OP_EXPORT_PPTX_TO_PDF = "export_pptx_to_pdf"
         const val OP_SAVE_EDITED_DOCX = "save_edited_docx"
         const val OP_INIT = "init_engine"
         const val RESULT_OK = 1
@@ -53,6 +55,16 @@ class DocxPreviewService : Service() {
                     OP_EXPORT_DOCX_TO_PDF -> {
                         val pdf = LibreOfficeDocumentEngine.exportDocxToPdf(
                             this, Uri.parse(requireStringExtra(intent, EXTRA_DOCX_URI))
+                        )
+                        if (Thread.currentThread().isInterrupted) {
+                            if (pdf.exists()) pdf.delete()
+                            return@execute
+                        }
+                        result.putString(EXTRA_PDF_PATH, pdf.absolutePath)
+                    }
+                    OP_EXPORT_PPTX_TO_PDF -> {
+                        val pdf = LibreOfficeDocumentEngine.exportPptxToPdf(
+                            this, Uri.parse(requireStringExtra(intent, EXTRA_PPTX_URI))
                         )
                         if (Thread.currentThread().isInterrupted) {
                             if (pdf.exists()) pdf.delete()

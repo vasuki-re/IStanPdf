@@ -744,6 +744,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (requestCode == REQ_PICK_PPTX_TO_PDF) {
+            val pptxUri = data.data ?: return
+            editorViewModel.clearPendingUris()
+            editorViewModel.pendingUris.add(pptxUri)
+            val prefix = getDisplayName(pptxUri)
+            createDocument(MIME_PDF, "${prefix}_converted.pdf", REQ_SAVE_PPTX_TO_PDF)
+            return
+        }
+
         if (requestCode == REQ_PICK_MD_TO_PDF) {
             val mdUri = data.data ?: return
             try {
@@ -847,6 +856,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        } else if (requestCode == REQ_SAVE_PPTX_TO_PDF) {
+            runJob("Converting PPTX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+                val pptxUri = pendingUris[0]
+                val pdfFile = AppModule.get().pptxToPdf.execute(pptxUri)
+                try {
+                    ContentFiles.copyFileToUri(this@MainActivity, pdfFile, destination)
+                } finally {
+                    if (pdfFile.exists()) {
+                        pdfFile.delete()
+                    }
+                }
+            }
         } else if (requestCode == REQ_SAVE_COMPRESS_PDF) {
             val source = pendingUris[0]
             if (compressMode == COMPRESS_MODE_RESOLUTION) {
@@ -936,6 +957,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             override fun onMdToPdf() { pickOne(arrayOf(MIME_MD, "text/plain"), REQ_PICK_MD_TO_PDF) }
+            override fun onPptxToPdf() {
+                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
+                    pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF)
+                } else {
+                    showEngineRequiredDialog { pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF) }
+                }
+            }
             override fun onDocxRemovePages() {
                 if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
                     pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX)
@@ -2762,12 +2790,16 @@ class MainActivity : AppCompatActivity() {
 
         private const val REQ_PICK_COMPRESS_PDF = 44
         private const val REQ_SAVE_COMPRESS_PDF = 45
+        private const val REQ_PICK_PPTX_TO_PDF = 47
+        private const val REQ_SAVE_PPTX_TO_PDF = 48
 
         private const val COMPRESS_MODE_RESOLUTION = 0
         private const val COMPRESS_MODE_SIZE = 1
 
         private const val MIME_PDF = "application/pdf"
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        private const val MIME_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        private const val MIME_PPT = "application/vnd.ms-powerpoint"
         private const val MIME_MD = "text/markdown"
         private const val MIME_JPEG = "image/jpeg"
         private const val MIME_ZIP = "application/zip"

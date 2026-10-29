@@ -5,12 +5,14 @@ import vasuki.istanpdf.data.CacheManager
 import vasuki.istanpdf.data.DocxEngine
 import vasuki.istanpdf.data.DocumentManager
 import vasuki.istanpdf.data.PdfEngine
+import vasuki.istanpdf.data.PptxEngine
 import vasuki.istanpdf.domain.CompressPdf
 import vasuki.istanpdf.domain.DocxToPdf
 import vasuki.istanpdf.domain.ImagesToPdf
 import vasuki.istanpdf.domain.MdToPdf
 import vasuki.istanpdf.domain.MergePdf
 import vasuki.istanpdf.domain.PdfToJpeg
+import vasuki.istanpdf.domain.PptxToPdf
 import vasuki.istanpdf.domain.ReorderPdf
 import vasuki.istanpdf.domain.SaveDocx
 
@@ -21,6 +23,7 @@ class AppModule private constructor(context: Context) {
     val cacheManager = CacheManager(context)
     val pdfEngine = PdfEngine(context)
     val docxEngine = DocxEngine(context)
+    val pptxEngine = PptxEngine(context)
 
     val mergePdf = MergePdf(pdfEngine)
     val reorderPdf = ReorderPdf(pdfEngine)
@@ -28,6 +31,7 @@ class AppModule private constructor(context: Context) {
     val pdfToJpeg = PdfToJpeg(pdfEngine)
     val compressPdf = CompressPdf(pdfEngine)
     val docxToPdf = DocxToPdf(docxEngine)
+    val pptxToPdf = PptxToPdf(pptxEngine)
     val mdToPdf = MdToPdf(context)
     val saveDocx = SaveDocx(docxEngine)
 

@@ -31,6 +31,7 @@ class HomeViewBuilder(
         fun onPdfToImage()
         fun onDocxToPdf()
         fun onMdToPdf()
+        fun onPptxToPdf()
         fun onDocxRemovePages()
         fun onDocxReorderPages()
         fun onSupportDeveloper()
@@ -126,6 +127,13 @@ class HomeViewBuilder(
         convRow2.addView(dashboardCard("DOCX to PDF", R.drawable.docx2pdf_24px, actions::onDocxToPdf))
         convRow2.addView(dashboardCard("MD to PDF", R.drawable.md2pdf_24px, actions::onMdToPdf))
         root.addView(convRow2)
+
+        val pptxCard = dashboardCard("PPTX to PDF", R.drawable.pptx2pdf_24px, actions::onPptxToPdf)
+        (pptxCard.layoutParams as LinearLayout.LayoutParams).apply {
+            width = ViewGroup.LayoutParams.MATCH_PARENT
+            weight = 0f
+        }
+        root.addView(pptxCard)
 
         root.addView(createSectionHeader("DOCX TOOLS"))
         val docxRow1 = LinearLayout(activity)

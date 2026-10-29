@@ -40,6 +40,31 @@ object LibreOfficeDocumentEngine {
     }
 
     @Throws(Exception::class)
+    fun exportPptxToPdf(context: Context, pptxUri: Uri): File {
+        var input: File? = null
+        val output: File
+        try {
+            input = ContentFiles.copyUriToCache(context, pptxUri, ".pptx")
+            requireNonEmptyPresentation(input)
+            output = File.createTempFile("istanpdf_pptx_preview_", ".pdf", context.cacheDir)
+            saveAs(context, input, output, "pdf")
+
+            check(output.exists() && output.length() > 0) {
+                "LibreOffice failed to generate output PDF"
+            }
+            return output
+        } finally {
+            if (input?.exists() == true) input.delete()
+        }
+    }
+
+    private fun requireNonEmptyPresentation(input: File?) {
+        if (input == null || !input.exists() || input.length() == 0L) {
+            throw IOException("Corrupt presentation file")
+        }
+    }
+
+    @Throws(Exception::class)
     private fun saveAs(context: Context, input: File, output: File, format: String) {
         val office = getOffice(context)
         var document: Document? = null

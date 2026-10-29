@@ -42,6 +42,21 @@ object DocxServiceBridge {
     }
 
     @Throws(Exception::class)
+    fun exportPptxToPdfViaLibreOffice(ctx: Context, pptx: Uri): File {
+        val intent = Intent(ctx, DocxPreviewService::class.java)
+        intent.putExtra(DocxPreviewService.EXTRA_OPERATION, DocxPreviewService.OP_EXPORT_PPTX_TO_PDF)
+        intent.putExtra(DocxPreviewService.EXTRA_PPTX_URI, pptx.toString())
+
+        val result = runLibreOfficeDocxOperation(ctx, intent, "Converting PPTX to PDF")
+        val pdfPath = result.getString(DocxPreviewService.EXTRA_PDF_PATH)
+        check(!pdfPath.isNullOrEmpty()) { "LibreOffice did not return a PDF" }
+
+        val pdfFile = File(pdfPath)
+        check(pdfFile.exists()) { "LibreOffice returned a missing PDF file" }
+        return pdfFile
+    }
+
+    @Throws(Exception::class)
     fun saveDocxViaLibreOffice(ctx: Context, source: Uri, snapshot: List<PageItem>, destination: Uri) {
         val originalIndices = IntArray(snapshot.size) { snapshot[it].originalIndex }
         val keepFlags = BooleanArray(snapshot.size) { snapshot[it].keep }
