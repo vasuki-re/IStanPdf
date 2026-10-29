@@ -153,6 +153,19 @@ class SettingsActivity : AppCompatActivity() {
         }
         appearanceGroup.addView(themeRow)
 
+        if (ThemePrefs.isDark(this)) {
+            val (hcmRow, _) = settingsRow("HCM", "High Contrast Mode")
+            hcmRow.addView(styledSwitch(
+                checked = ThemePrefs.isHighContrast(this),
+                onToggle = { isChecked ->
+                    ThemePrefs.setHighContrast(this, isChecked)
+                    applySystemBarTheme()
+                    buildSettings(scrollView.scrollY)
+                }
+            ))
+            appearanceGroup.addView(hcmRow)
+        }
+
         body.addView(appearanceGroup, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = dp(32)

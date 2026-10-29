@@ -21,6 +21,7 @@ object BottomSheetStyle {
 
     fun apply(activity: Activity, dialog: BottomSheetDialog, sheet: View) {
         val sheetColor = ThemePrefs.resolveColor(activity, R.color.istan_sheet)
+        sheet.backgroundTintList = android.content.res.ColorStateList.valueOf(sheetColor)
         val window = dialog.window ?: return
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         window.navigationBarColor = sheetColor
