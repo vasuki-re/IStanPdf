@@ -16,6 +16,15 @@
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
         <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE_SECURE" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE" />
+        </intent>
+        <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="upi" android:host="pay" />
         </intent>
