@@ -67,7 +67,7 @@ class HomeViewBuilder(
 
         val root = LinearLayout(activity)
         root.orientation = LinearLayout.VERTICAL
-        root.setPadding(dp(12), dp(28), dp(12), dp(16))
+        root.setPadding(dp(12), dp(24), dp(12), dp(16))
 
         scrollView.addView(root, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -111,6 +111,7 @@ class HomeViewBuilder(
         val compressCard = dashboardCard("Compress PDF", R.drawable.compress_pdf_24px, actions::onCompressPdf)
         (compressCard.layoutParams as LinearLayout.LayoutParams).apply {
             width = ViewGroup.LayoutParams.MATCH_PARENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
             weight = 0f
         }
         root.addView(compressCard)
@@ -131,6 +132,7 @@ class HomeViewBuilder(
         val pptxCard = dashboardCard("PPTX to PDF", R.drawable.pptx2pdf_24px, actions::onPptxToPdf)
         (pptxCard.layoutParams as LinearLayout.LayoutParams).apply {
             width = ViewGroup.LayoutParams.MATCH_PARENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
             weight = 0f
         }
         root.addView(pptxCard)
@@ -173,7 +175,7 @@ class HomeViewBuilder(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        scParams.setMargins(0, dp(16), 0, dp(24))
+        scParams.setMargins(0, dp(12), 0, dp(20))
         scParams.gravity = Gravity.CENTER_HORIZONTAL
         root.addView(statusCard, scParams)
 
@@ -183,13 +185,20 @@ class HomeViewBuilder(
     private fun dashboardCard(title: String, iconResId: Int, action: () -> Unit): View {
         val card = MaterialCardView(activity)
         ShadcnDrawables.applyCard(card, ShadcnDrawables.CARD_RADIUS)
+        card.minimumHeight = dp(64)
 
         val row = LinearLayout(activity)
         row.gravity = Gravity.CENTER_VERTICAL
         row.isBaselineAligned = false
-        row.setPadding(dp(14), dp(18), dp(10), dp(18))
+        row.setPadding(dp(14), dp(10), dp(10), dp(10))
         row.orientation = LinearLayout.HORIZONTAL
-        card.addView(row)
+
+        val rowLp = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER_VERTICAL
+        )
+        card.addView(row, rowLp)
 
         if (iconResId != 0) {
             val icon = ImageView(activity)
@@ -201,23 +210,23 @@ class HomeViewBuilder(
         }
 
         val label = text(title, 15, R.color.istan_text, false)
-        label.maxLines = 1
-        label.isSingleLine = true
+        label.maxLines = 2
         label.ellipsize = TextUtils.TruncateAt.END
-        row.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val labelParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        labelParams.gravity = Gravity.CENTER_VERTICAL
+        row.addView(label, labelParams)
 
         val chevron = ImageView(activity)
         chevron.setImageResource(R.drawable.chevron_right_24px)
         chevron.setColorFilter(color(R.color.istan_text_muted))
         val chevronParams = LinearLayout.LayoutParams(dp(18), dp(18))
         chevronParams.gravity = Gravity.CENTER_VERTICAL
-        chevronParams.setMargins(dp(2), 0, dp(2), 0)
         row.addView(chevron, chevronParams)
 
         card.setOnClickListener { action() }
 
-        val params = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f)
-        params.setMargins(dp(4), dp(5), dp(4), dp(5))
+        val params = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f)
+        params.setMargins(dp(4), dp(3), dp(4), dp(3))
         card.layoutParams = params
         return card
     }
@@ -256,7 +265,7 @@ class HomeViewBuilder(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        params.setMargins(dp(4), dp(28), dp(4), dp(16))
+        params.setMargins(dp(4), dp(20), dp(4), dp(12))
         card.layoutParams = params
         return card
     }
@@ -276,7 +285,7 @@ class HomeViewBuilder(
         val header = text(title, 12, R.color.istan_text_muted, true)
         header.isAllCaps = true
         header.letterSpacing = 0.1f
-        header.setPadding(dp(4), dp(28), dp(4), dp(8))
+        header.setPadding(dp(4), dp(20), dp(4), dp(6))
         return header
     }
 
