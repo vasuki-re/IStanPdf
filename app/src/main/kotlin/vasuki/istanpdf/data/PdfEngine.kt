@@ -22,33 +22,51 @@ class PdfEngine(context: Context) {
     private val context = context.applicationContext
 
     inner class RenderSession internal constructor(uri: Uri) : Closeable {
+        private val lock = Any()
+        private var isClosed = false
+
         private val tempFile: File? =
             if (uri.scheme == "file") null else ContentFiles.copyUriToCache(context, uri, ".pdf")
         private val fd: ParcelFileDescriptor = ParcelFileDescriptor.open(
             tempFile ?: File(uri.path!!), ParcelFileDescriptor.MODE_READ_ONLY)
         private val renderer = PdfRenderer(fd)
 
-        @get:Synchronized
         val pageCount: Int
-            get() = renderer.pageCount
+            get() = synchronized(lock) {
+                if (isClosed) 0 else renderer.pageCount
+            }
 
-        @Synchronized
-        fun renderPage(index: Int, targetWidth: Int): Bitmap {
-            require(index in 0 until renderer.pageCount) { "Page index out of range" }
-            renderer.openPage(index).use { page ->
-                val width = targetWidth
-                val height = max(1, width * page.height / max(1, page.width))
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                bitmap.eraseColor(Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                return bitmap
+        fun renderPage(index: Int, targetWidth: Int): Bitmap? {
+            synchronized(lock) {
+                if (isClosed) return null
+                if (index !in 0 until renderer.pageCount) return null
+                return try {
+                    renderer.openPage(index).use { page ->
+                        val width = targetWidth
+                        val height = max(1, width * page.height / max(1, page.width))
+                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                        bitmap.eraseColor(Color.WHITE)
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        bitmap
+                    }
+                } catch (_: Exception) {
+                    null
+                }
             }
         }
 
         override fun close() {
-            renderer.close()
-            fd.close()
-            tempFile?.let { if (it.exists()) it.delete() }
+            synchronized(lock) {
+                if (isClosed) return
+                isClosed = true
+                try {
+                    renderer.close()
+                } catch (_: Exception) {}
+                try {
+                    fd.close()
+                } catch (_: Exception) {}
+                tempFile?.let { if (it.exists()) it.delete() }
+            }
         }
     }
 

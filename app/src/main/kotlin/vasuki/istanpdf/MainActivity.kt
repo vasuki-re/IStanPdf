@@ -677,13 +677,13 @@ class MainActivity : AppCompatActivity() {
                             }
                             for (p in newPages) p.sourceUri = mergedUri
 
+                            dropSession(reorderSource)
                             if ("file" == reorderSource.scheme) {
                                 val oldFile = File(reorderSource.path!!)
                                 if (oldFile.exists() && oldFile.absolutePath.startsWith(cacheDir.absolutePath)) {
                                     oldFile.delete()
                                 }
                             }
-                            dropSession(reorderSource)
                             editorViewModel.reorderSource = mergedUri
                         } finally {
                             if (addedPdf != null && addedPdf.exists()
@@ -1623,6 +1623,7 @@ class MainActivity : AppCompatActivity() {
                     .map { PageItem(it, sourceUri = mergedUri, renderIndex = it) }
                     .toMutableList()
 
+                dropSession(reorderSource)
                 if ("file" == reorderSource.scheme) {
                     val oldFile = File(reorderSource.path!!)
                     if (oldFile.exists() && oldFile.absolutePath.startsWith(cacheDir.absolutePath)) {
@@ -1633,7 +1634,6 @@ class MainActivity : AppCompatActivity() {
                     p.sourceUri = mergedUri
                     p.renderIndex = p.originalIndex
                 }
-                dropSession(reorderSource)
                 editorViewModel.reorderSource = mergedUri
                 editorViewModel.tempImageFiles.add(mergedFile)
                 runOnUiThread {
@@ -1754,7 +1754,7 @@ class MainActivity : AppCompatActivity() {
                                 if (cancelJob.get() || Thread.currentThread().isInterrupted) {
                                     throw InterruptedException("Cancelled by user")
                                 }
-                                val pageBitmap = session.renderPage(pageIdx, maxOf(dp(280), screenWidth() - dp(64)))
+                                val pageBitmap = session.renderPage(pageIdx, maxOf(dp(280), screenWidth() - dp(64))) ?: continue
                                 val f = File(cacheDir, "pdf_to_img_${System.currentTimeMillis()}_${pIdx}.jpg")
                                 java.io.FileOutputStream(f).use { out ->
                                     pageBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
@@ -1917,10 +1917,14 @@ class MainActivity : AppCompatActivity() {
         return try {
             val base = when {
                 item.replacementFile?.exists() == true -> BitmapUtils.loadCameraBitmap(item.replacementFile!!, targetWidth)
-                item.sourceUri != null -> activeSession(item.sourceUri!!).renderPage(item.renderIndex, targetWidth)
+                item.sourceUri != null -> {
+                    val session = synchronized(this) { activeSessions[item.sourceUri!!] }
+                        ?: activeSession(item.sourceUri!!)
+                    session.renderPage(item.renderIndex, targetWidth)
+                }
                 item.uri != null -> loadThumbnail(item.uri!!, targetWidth)
                 else -> return null
-            }
+            } ?: return null
             if (item.rotation % 360 == 0) base else rotateBitmap(base, item.rotation)
         } catch (_: Exception) {
             null
