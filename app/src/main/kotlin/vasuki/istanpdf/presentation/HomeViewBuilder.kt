@@ -190,7 +190,7 @@ class HomeViewBuilder(
         val row = LinearLayout(activity)
         row.gravity = Gravity.CENTER_VERTICAL
         row.isBaselineAligned = false
-        row.setPadding(dp(14), dp(10), dp(10), dp(10))
+        row.setPadding(dp(14), dp(10), dp(14), dp(10))
         row.orientation = LinearLayout.HORIZONTAL
 
         val rowLp = FrameLayout.LayoutParams(
@@ -215,14 +215,6 @@ class HomeViewBuilder(
         val labelParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         labelParams.gravity = Gravity.CENTER_VERTICAL
         row.addView(label, labelParams)
-
-        val chevron = ImageView(activity)
-        chevron.setImageResource(R.drawable.chevron_right_24px)
-        chevron.setColorFilter(color(R.color.istan_text_muted))
-        val chevronParams = LinearLayout.LayoutParams(dp(18), dp(18))
-        chevronParams.gravity = Gravity.CENTER_VERTICAL
-        row.addView(chevron, chevronParams)
-
         card.setOnClickListener { action() }
 
         val params = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f)
