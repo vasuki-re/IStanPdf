@@ -75,8 +75,8 @@ class MainActivity : AppCompatActivity() {
     private var loadingPercentage: TextView? = null
     private var loadingSpinner: com.google.android.material.progressindicator.LinearProgressIndicator? = null
     private val fakeProgressHandler = Handler(Looper.getMainLooper())
-    private var fakeProgressRunnable: Runnable? = null
     private var dismissOverlayRunnable: Runnable? = null
+    private var fakeProgressRunnable: Runnable? = null
     private var status: TextView? = null
     private var statusIndicator: ImageView? = null
     private var statusCard: View? = null
@@ -1724,10 +1724,6 @@ class MainActivity : AppCompatActivity() {
                     val total = rawUris.size
                     runOnUiThread {
                         if (loadingSubtitle != null && loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
-                            if (fakeProgressRunnable != null) {
-                                fakeProgressHandler.removeCallbacks(fakeProgressRunnable!!)
-                                fakeProgressRunnable = null
-                            }
                             loadingTextRow?.visibility = View.VISIBLE
                             loadingSubtitle!!.text = "Item $current of $total"
                             loadingPercentage?.let {
@@ -2409,21 +2405,31 @@ class MainActivity : AppCompatActivity() {
         if (busy) {
             cancelJob.set(false)
             loadingSpinner?.let { spinner ->
-                spinner.isIndeterminate = false
-                spinner.max = 100
-                spinner.setProgressCompat(0, false)
-                if (!isDeterminate) {
+                if (isDeterminate) {
+                    spinner.isIndeterminate = false
+                    spinner.max = 100
+                    spinner.setProgressCompat(0, false)
+                } else if (android.animation.ValueAnimator.getDurationScale() == 0f) {
+                    spinner.isIndeterminate = false
+                    spinner.max = 100
+                    spinner.setProgressCompat(0, false)
                     val progress = floatArrayOf(0f)
                     fakeProgressRunnable = object : Runnable {
                         override fun run() {
+                            if (progress[0] >= 95f) return
+                            val p = progress[0]
+                            val ratio = (95f - (kotlin.math.floor(p.toDouble()) + 1).toFloat()) / (95f - p)
+                            val n = if (ratio <= 0f) 1L else maxOf(1L, kotlin.math.ceil(kotlin.math.ln(ratio.toDouble()) / kotlin.math.ln(0.98)).toLong())
+                            progress[0] = (95f - (95f - p) * Math.pow(0.98, n.toDouble())).toFloat()
                             if (progress[0] < 95f) {
-                                progress[0] += (95f - progress[0]) * 0.02f
                                 spinner.setProgressCompat(progress[0].toInt(), false)
-                                fakeProgressHandler.postDelayed(this, 16)
+                                fakeProgressHandler.postDelayed(this, n * 16L)
                             }
                         }
                     }
                     fakeProgressHandler.postDelayed(fakeProgressRunnable!!, 16)
+                } else {
+                    spinner.isIndeterminate = true
                 }
             }
             loadingOverlay?.visibility = View.VISIBLE
@@ -2443,7 +2449,9 @@ class MainActivity : AppCompatActivity() {
             pageList?.suppressLayout(true)
         } else {
             if (loadingSpinner != null && loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
-                loadingSpinner!!.setProgressCompat(loadingSpinner!!.max, true)
+                loadingSpinner!!.isIndeterminate = false
+                loadingSpinner!!.max = 100
+                loadingSpinner!!.setProgressCompat(100, false)
                 loadingMessage?.text = message
                 loadingSubtitle?.text = ""
                 dismissOverlayRunnable = Runnable {
