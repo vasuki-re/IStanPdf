@@ -16,9 +16,9 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.snackbar.Snackbar
 import vasuki.istanpdf.R
 import vasuki.istanpdf.ThemePrefs
-
 class HomeViewBuilder(
     private val activity: Activity
 ) {
@@ -101,6 +101,11 @@ class HomeViewBuilder(
         subtitle.setPadding(dp(4), dp(4), dp(4), dp(36))
         root.addView(subtitle)
 
+        val campaign = buildCampaignCard(actions::onSupportDeveloper)
+        if (campaign != null) {
+            subtitle.setPadding(dp(4), dp(4), dp(4), dp(16))
+            root.addView(campaign)
+        }
         root.addView(createSectionHeader("PDF TOOLS"))
         val pdfRow1 = LinearLayout(activity)
         pdfRow1.orientation = LinearLayout.HORIZONTAL
@@ -144,7 +149,7 @@ class HomeViewBuilder(
         docxRow1.addView(dashboardCard("Reorder Pages", R.drawable.reorder_docx_24px, actions::onDocxReorderPages))
         root.addView(docxRow1)
 
-        root.addView(kofiCard("Support the Developer", R.drawable.ic_kofi, actions::onSupportDeveloper))
+        root.addView(kofiCard("Buy me a Coffee", R.drawable.ic_kofi, actions::onSupportDeveloper))
 
         val topSpacer = View(activity)
         root.addView(topSpacer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f))
@@ -271,6 +276,100 @@ class HomeViewBuilder(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         ))
+    }
+    private fun buildCampaignCard(onAction: () -> Unit): View? {
+        val prefs = activity.getSharedPreferences("app_prefs", Activity.MODE_PRIVATE)
+        if (prefs.getBoolean("playstore_campaign_dismissed", false)) return null
+
+        val dismissCount = prefs.getInt("campaign_dismiss_count", 0)
+        if (dismissCount >= 2) return null
+
+        val snoozeUntil = prefs.getLong("campaign_snooze_until", 0L)
+        if (System.currentTimeMillis() < snoozeUntil) return null
+
+        val card = MaterialCardView(activity)
+        ShadcnDrawables.applyCard(card, ShadcnDrawables.CARD_RADIUS)
+
+        val container = LinearLayout(activity)
+        container.orientation = LinearLayout.VERTICAL
+        container.setPadding(dp(14), dp(12), dp(12), dp(12))
+        card.addView(container)
+
+        val headerRow = LinearLayout(activity)
+        headerRow.orientation = LinearLayout.HORIZONTAL
+        headerRow.gravity = Gravity.CENTER_VERTICAL
+        headerRow.isBaselineAligned = false
+
+        val icon = FrameLayout(activity)
+        addKofiIconLayer(icon, R.drawable.ic_kofi_background, R.color.istan_surface)
+        addKofiIconLayer(icon, R.drawable.ic_kofi_body, R.color.istan_olive_dark)
+        addKofiIconLayer(icon, R.drawable.ic_kofi_cutout, R.color.istan_surface)
+        addKofiIconLayer(icon, R.drawable.ic_kofi_handle, R.color.istan_olive_dark)
+        addKofiIconLayer(icon, R.drawable.ic_kofi_heart, R.color.istan_olive)
+        val iconParams = LinearLayout.LayoutParams(dp(26), dp(20))
+        iconParams.setMargins(0, 0, dp(10), 0)
+        headerRow.addView(icon, iconParams)
+
+        val title = text("Help bring IStanPdf to Google Play", 14, R.color.istan_text, true)
+        headerRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        val closeBtn = ImageView(activity)
+        closeBtn.setImageResource(R.drawable.close_24px)
+        closeBtn.setColorFilter(color(R.color.istan_text_muted))
+        closeBtn.setPadding(dp(6), dp(6), dp(6), dp(6))
+        closeBtn.setOnClickListener {
+            val count = dismissCount + 1
+            val editor = prefs.edit().putInt("campaign_dismiss_count", count)
+            if (count >= 2) {
+                editor.putBoolean("playstore_campaign_dismissed", true)
+            } else {
+                editor.putLong("campaign_snooze_until", System.currentTimeMillis() + (14L * 24 * 60 * 60 * 1000))
+            }
+            editor.apply()
+            card.visibility = View.GONE
+
+            val root = activity.findViewById<View>(android.R.id.content) ?: card.rootView
+            val snackbar = Snackbar.make(root, "You can always support anytime from 'Buy me a Coffee' below", Snackbar.LENGTH_LONG)
+            snackbar.duration = 4000
+            snackbar.view.background = ShadcnDrawables.card(activity, ShadcnDrawables.BUTTON_RADIUS)
+            snackbar.view.backgroundTintList = null
+            snackbar.view.elevation = 0f
+            val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+            textView?.apply {
+                setTextColor(color(R.color.istan_text))
+                typeface = AppFont.regular
+                textSize = 14f
+                includeFontPadding = false
+            }
+            val lp = snackbar.view.layoutParams as? ViewGroup.MarginLayoutParams
+            lp?.setMargins(dp(16), 0, dp(16), dp(24))
+            if (lp != null) snackbar.view.layoutParams = lp
+            snackbar.show()
+        }
+        headerRow.addView(closeBtn, LinearLayout.LayoutParams(dp(32), dp(32)))
+
+        container.addView(headerRow)
+
+        val actionBtn = text("☕  Chip in", 13, R.color.istan_text, true)
+        actionBtn.gravity = Gravity.CENTER
+        actionBtn.setTextColor(ShadcnDrawables.primaryForeground(activity))
+        val btnGd = GradientDrawable()
+        btnGd.setColor(color(R.color.istan_olive))
+        btnGd.cornerRadius = dp(ShadcnDrawables.BUTTON_RADIUS).toFloat()
+        actionBtn.background = btnGd
+        actionBtn.minimumHeight = dp(36)
+        actionBtn.setPadding(dp(14), dp(6), dp(14), dp(6))
+        val actionLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        actionLp.topMargin = dp(10)
+        actionBtn.layoutParams = actionLp
+        actionBtn.setOnClickListener { onAction() }
+        container.addView(actionBtn)
+
+        val cardParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        cardParams.setMargins(dp(4), dp(4), dp(4), dp(12))
+        card.layoutParams = cardParams
+
+        return card
     }
 
     private fun createSectionHeader(title: String): TextView {

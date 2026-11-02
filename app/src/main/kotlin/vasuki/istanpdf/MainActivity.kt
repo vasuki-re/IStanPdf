@@ -137,93 +137,12 @@ class MainActivity : AppCompatActivity() {
         
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         checkForUpdates()
-        showSponsorDialogOnStartup()
-
         if (prefs.getBoolean("improve_docx_perf", false) && LibreOfficeManager.isEngineInstalled(this)) {
             AppModule.get().docxEngine.preLoad()
         }
     }
 
-    private fun showSponsorDialogOnStartup() {
-        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        if (prefs.getBoolean("never_show_sponsor", false)) {
-            return
-        }
 
-        val dialog = android.app.Dialog(this)
-        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
-        dialog.window!!.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
-        dialog.setCancelable(false)
-
-        val dialogRoot = LinearLayout(this)
-        dialogRoot.orientation = LinearLayout.VERTICAL
-        dialogRoot.background = ShadcnDrawables.card(this, ShadcnDrawables.DIALOG_RADIUS)
-        dialogRoot.setPadding(dp(24), dp(24), dp(24), dp(24))
-
-        val title = text("Sponsor this project", 22, R.color.istan_text, true)
-        title.gravity = Gravity.CENTER
-        title.setPadding(0, 0, 0, dp(16))
-        dialogRoot.addView(title)
-
-        val body = text("This project is completely community-driven and relies on donations to keep development alive. If you find this app useful, please consider sponsoring!", 14, R.color.istan_text_muted, false)
-        body.gravity = Gravity.CENTER
-        body.setLineSpacing(0f, 1.2f)
-        body.setPadding(0, 0, 0, dp(24))
-        dialogRoot.addView(body)
-
-        val checkRow = LinearLayout(this)
-        checkRow.orientation = LinearLayout.HORIZONTAL
-        checkRow.gravity = Gravity.CENTER_VERTICAL
-        checkRow.setPadding(dp(8), 0, 0, dp(24))
-
-        val checkBox = android.widget.CheckBox(this)
-        checkBox.buttonTintList = android.content.res.ColorStateList.valueOf(color(R.color.istan_text))
-        checkRow.addView(checkBox)
-
-        val checkText = text("Never show again", 14, R.color.istan_text, false)
-        checkText.setPadding(dp(8), 0, 0, 0)
-        checkText.setOnClickListener { checkBox.isChecked = !checkBox.isChecked }
-        checkRow.addView(checkText)
-
-        dialogRoot.addView(checkRow)
-
-        val btnSponsor = text("💖 Sponsor on GitHub", 16, R.color.istan_text, true)
-        btnSponsor.gravity = Gravity.CENTER
-        btnSponsor.setTextColor(ShadcnDrawables.primaryForeground(this))
-        val btnGd = android.graphics.drawable.GradientDrawable()
-        btnGd.setColor(color(R.color.istan_olive))
-        btnGd.cornerRadius = dp(ShadcnDrawables.BUTTON_RADIUS).toFloat()
-        btnSponsor.background = btnGd
-        btnSponsor.minimumHeight = dp(48)
-        btnSponsor.setPadding(0, dp(14), 0, dp(14))
-        val btnParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        btnParams.bottomMargin = dp(12)
-        btnSponsor.layoutParams = btnParams
-        btnSponsor.setOnClickListener {
-            if (checkBox.isChecked) {
-                prefs.edit().putBoolean("never_show_sponsor", true).apply()
-            }
-            dialog.dismiss()
-            showDonationPicker(null)
-        }
-        dialogRoot.addView(btnSponsor)
-
-        val btnNotNow = text("Not now", 14, R.color.istan_text, true)
-        btnNotNow.gravity = Gravity.CENTER
-        btnNotNow.setPadding(0, dp(12), 0, dp(12))
-        btnNotNow.setOnClickListener {
-            if (checkBox.isChecked) {
-                prefs.edit().putBoolean("never_show_sponsor", true).apply()
-            }
-            dialog.dismiss()
-        }
-        dialogRoot.addView(btnNotNow)
-
-        dialog.setContentView(dialogRoot)
-        dialog.show()
-
-        dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.9).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
-    }
 
     private fun checkForUpdates() {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
@@ -2690,6 +2609,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getDisplayName(uri: Uri?): String = AppModule.get().documentManager.getDisplayName(uri)
+
 
     private fun showDonationPicker(onComplete: Runnable?) {
         val kofiIcon = FrameLayout(this)
