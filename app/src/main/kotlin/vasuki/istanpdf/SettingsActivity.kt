@@ -1,5 +1,7 @@
 package vasuki.istanpdf
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -8,6 +10,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
@@ -31,6 +34,7 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.content.pm.PackageInfoCompat
 import com.google.android.material.materialswitch.MaterialSwitch
 import vasuki.istanpdf.libreoffice.LibreOfficeManager
 import vasuki.istanpdf.presentation.RoundedDropdown
@@ -235,6 +239,38 @@ class SettingsActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = dp(32)
         })
+        val (versionName, versionCode) = resolveAppVersion()
+
+        body.addView(categoryHeader("ABOUT"), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(16)
+            bottomMargin = dp(8)
+        })
+
+        val aboutGroup = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ShadcnDrawables.card(this@SettingsActivity, ShadcnDrawables.CARD_RADIUS)
+            clipToOutline = true
+        }
+
+        val (aboutRow, _) = settingsRow("About", versionName, clickable = true)
+        val aboutChevron = ImageView(this).apply {
+            setImageResource(R.drawable.chevron_right_24px)
+            setColorFilter(color(R.color.istan_text_muted))
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+        }
+        aboutRow.addView(aboutChevron, LinearLayout.LayoutParams(dp(24), dp(24)).apply {
+            marginStart = dp(8)
+        })
+        aboutRow.setOnClickListener {
+            showAboutDialog(versionName, versionCode)
+        }
+        aboutGroup.addView(aboutRow)
+
+        body.addView(aboutGroup, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(32)
+        })
 
         body.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         return body
@@ -293,6 +329,219 @@ class SettingsActivity : AppCompatActivity() {
             includeFontPadding = false
         }
 
+    private fun resolveAppVersion(): Pair<String, String> {
+        val pInfo = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0)
+            }
+        }.getOrNull()
+        val versionName = pInfo?.versionName ?: "Unknown"
+        val versionCode = pInfo?.let { PackageInfoCompat.getLongVersionCode(it).toString() } ?: "0"
+        return Pair(versionName, versionCode)
+    }
+
+    private fun showAboutDialog(versionName: String, versionCode: String) {
+        val dialog = android.app.Dialog(this)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.setCancelable(true)
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ShadcnDrawables.card(this@SettingsActivity, ShadcnDrawables.DIALOG_RADIUS)
+            setPadding(dp(24), dp(16), dp(24), dp(24))
+        }
+
+        val handleBar = View(this).apply {
+            val bg = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(2).toFloat()
+                setColor(color(R.color.istan_outline))
+            }
+            background = bg
+            layoutParams = LinearLayout.LayoutParams(dp(36), dp(4)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                bottomMargin = dp(16)
+            }
+        }
+        root.addView(handleBar)
+
+        val titleView = text("About", 20, R.color.istan_text, true).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(16)
+            }
+        }
+        root.addView(titleView)
+
+        val brandSection = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(16)
+            }
+        }
+
+        val iconView = ImageView(this).apply {
+            setImageResource(R.drawable.ic_launcher_monochrome)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            clipToOutline = true
+        }
+        brandSection.addView(iconView, LinearLayout.LayoutParams(dp(48), dp(48)))
+
+        val appName = text("IStanPdf", 20, R.color.istan_text, true).apply {
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(8)
+            }
+        }
+        brandSection.addView(appName)
+
+        val tagline = text("Your offline document toolkit.", 13, R.color.istan_text_muted, false).apply {
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(3)
+            }
+        }
+        brandSection.addView(tagline)
+        root.addView(brandSection)
+
+        val metadataCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ShadcnDrawables.card(this@SettingsActivity, radiusDp = 14, muted = true)
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(16)
+            }
+        }
+
+        fun addMetaRow(iconRes: Int, label: String, value: String) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(4), 0, dp(4))
+            }
+            val icon = ImageView(this).apply {
+                setImageResource(iconRes)
+                setColorFilter(color(R.color.istan_text_muted))
+                scaleType = ImageView.ScaleType.FIT_CENTER
+            }
+            row.addView(icon, LinearLayout.LayoutParams(dp(18), dp(18)).apply {
+                marginEnd = dp(10)
+            })
+
+            val labelView = text(label, 14, R.color.istan_text, false)
+            row.addView(labelView, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+            val valView = text(value, 14, R.color.istan_text, true)
+            row.addView(valView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+            metadataCard.addView(row)
+        }
+
+        addMetaRow(R.drawable.info_24px, "Version Name", versionName)
+
+        val divider = View(this).apply {
+            setBackgroundColor(color(R.color.istan_outline))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(1)
+            ).apply {
+                topMargin = dp(8)
+                bottomMargin = dp(8)
+            }
+        }
+        metadataCard.addView(divider)
+
+        addMetaRow(R.drawable.code_24px, "Version Code", versionCode)
+        root.addView(metadataCard)
+
+        val btnRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val copyBtn = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            minimumHeight = dp(44)
+            background = ShadcnDrawables.button(this@SettingsActivity, ShadcnDrawables.ButtonVariant.OUTLINE, radiusDp = 12)
+            setPadding(dp(16), 0, dp(16), 0)
+            isClickable = true
+            isFocusable = true
+            val icon = ImageView(this@SettingsActivity).apply {
+                setImageResource(R.drawable.content_copy_24px)
+                setColorFilter(color(R.color.istan_text))
+            }
+            addView(icon, LinearLayout.LayoutParams(dp(18), dp(18)).apply {
+                marginEnd = dp(8)
+            })
+            val label = text("Copy Info", 14, R.color.istan_text, true)
+            addView(label)
+            setOnClickListener {
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("IStanPdf Version", "IStanPdf $versionName ($versionCode)"))
+                Toast.makeText(this@SettingsActivity, "Version copied to clipboard", Toast.LENGTH_SHORT).show()
+            }
+        }
+        btnRow.addView(copyBtn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginEnd = dp(8)
+        })
+
+        val closeBtn = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            minimumHeight = dp(44)
+            background = ShadcnDrawables.button(this@SettingsActivity, ShadcnDrawables.ButtonVariant.DEFAULT, radiusDp = 12)
+            setPadding(dp(16), 0, dp(16), 0)
+            isClickable = true
+            isFocusable = true
+            val icon = ImageView(this@SettingsActivity).apply {
+                setImageResource(R.drawable.check_24px)
+                setColorFilter(ShadcnDrawables.primaryForeground(this@SettingsActivity))
+            }
+            addView(icon, LinearLayout.LayoutParams(dp(18), dp(18)).apply {
+                marginEnd = dp(8)
+            })
+            val label = text("Close", 14, R.color.istan_text, true).apply {
+                setTextColor(ShadcnDrawables.primaryForeground(this@SettingsActivity))
+            }
+            addView(label)
+            setOnClickListener { dialog.dismiss() }
+        }
+        btnRow.addView(closeBtn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(8)
+        })
+
+        root.addView(btnRow)
+
+        dialog.setContentView(root)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.88).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog.show()
+    }
     private fun queryActivities(intent: Intent): List<ResolveInfo> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManager.queryIntentActivities(
