@@ -45,6 +45,7 @@ import vasuki.istanpdf.presentation.BottomSheetStyle
 import vasuki.istanpdf.presentation.CropOverlayView
 import vasuki.istanpdf.presentation.EditorViewBuilder
 import vasuki.istanpdf.presentation.EditorViewModel
+import vasuki.istanpdf.presentation.ExportCompressMode
 import vasuki.istanpdf.presentation.HomeViewBuilder
 import vasuki.istanpdf.presentation.ShadcnDrawables
 import vasuki.istanpdf.util.BitmapUtils
@@ -744,8 +745,20 @@ class MainActivity : AppCompatActivity() {
             val snapshot = ArrayList(pages)
             val normalize = editorViewModel.normalizeTarget
             val orientation = editorViewModel.pageOrientation
+            val compMode = editorViewModel.exportCompressMode
+            val targetBytes = editorViewModel.exportTargetBytes
             runJob("Converting Images...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
-                AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination, normalize, orientation)
+                if (compMode == ExportCompressMode.OFF) {
+                    AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination, normalize, orientation)
+                } else {
+                    val tempFile = File(cacheDir, "temp_img_${System.currentTimeMillis()}.pdf")
+                    try {
+                        AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, Uri.fromFile(tempFile), normalize, orientation)
+                        compressAndDeliver(Uri.fromFile(tempFile), destination, compMode, targetBytes)
+                    } finally {
+                        if (tempFile.exists()) tempFile.delete()
+                    }
+                }
             }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG) {
             runJob("Converting to JPG...", OutputRef(destination, MIME_JPEG, getDisplayName(destination))) { AppModule.get().pdfToJpeg.executeSingle(pendingUris[0], destination, pdfToImageDpi) }
@@ -850,7 +863,19 @@ class MainActivity : AppCompatActivity() {
                         AppModule.get().saveDocx.execute(source, snapshot, destination)
                     }
                 } else {
-                    AppModule.get().reorderPdf.execute(source, snapshot, destination, normalize, orientation)
+                    val compMode = editorViewModel.exportCompressMode
+                    val targetBytes = editorViewModel.exportTargetBytes
+                    if (compMode == ExportCompressMode.OFF) {
+                        AppModule.get().reorderPdf.execute(source, snapshot, destination, normalize, orientation)
+                    } else {
+                        val tempFile = File(cacheDir, "temp_mod_${System.currentTimeMillis()}.pdf")
+                        try {
+                            AppModule.get().reorderPdf.execute(source, snapshot, Uri.fromFile(tempFile), normalize, orientation)
+                            compressAndDeliver(Uri.fromFile(tempFile), destination, compMode, targetBytes)
+                        } finally {
+                            if (tempFile.exists()) tempFile.delete()
+                        }
+                    }
                 }
             }
         }
@@ -971,6 +996,30 @@ class MainActivity : AppCompatActivity() {
             override fun setOrientation(orientation: PageOrientation) {
                 editorViewModel.pageOrientation = orientation
             }
+            override fun getExportCompressMode(): ExportCompressMode = editorViewModel.exportCompressMode
+            override fun getExportTargetBytes(): Long = editorViewModel.exportTargetBytes
+            override fun getSourceBytes(): Long {
+                val sourceUri = editorViewModel.reorderSource
+                if (sourceUri != null) {
+                    try {
+                        val cursor = contentResolver.query(sourceUri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+                        val size = cursor?.use { if (it.moveToFirst()) it.getLong(0) else 0L } ?: 0L
+                        if (size > 0L) return size
+                    } catch (_: Exception) {}
+                }
+                var total = 0L
+                for (uri in editorViewModel.pendingUris) {
+                    try {
+                        val cursor = contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+                        total += cursor?.use { if (it.moveToFirst()) it.getLong(0) else 0L } ?: 0L
+                    } catch (_: Exception) {}
+                }
+                return total
+            }
+            override fun setExportCompressMode(mode: ExportCompressMode, targetBytes: Long) {
+                editorViewModel.exportCompressMode = mode
+                editorViewModel.exportTargetBytes = targetBytes
+            }
         })
         cancelStatusHide()
         status = builder.status
@@ -1069,6 +1118,27 @@ class MainActivity : AppCompatActivity() {
                 createDocument(MIME_PDF, "${imgPrefix}_converted.pdf", REQ_SAVE_IMAGES_TO_PDF)
             }
             else -> createDocument(MIME_PDF, "$prefix$suffix.pdf", REQ_SAVE_REORDER_PDF)
+        }
+    }
+
+    private fun compressAndDeliver(source: Uri, destination: Uri, mode: ExportCompressMode, targetBytes: Long): String? {
+        return when (mode) {
+            ExportCompressMode.HIGH_COMPRESSION -> {
+                val skips = AppModule.get().compressPdf.executeByResolution(source, destination, 72, 40)
+                if (skips > 0) "$skips image(s) could not be compressed" else null
+            }
+            ExportCompressMode.BALANCED -> {
+                val skips = AppModule.get().compressPdf.executeByResolution(source, destination, 150, 70)
+                if (skips > 0) "$skips image(s) could not be compressed" else null
+            }
+            ExportCompressMode.CUSTOM_SIZE -> {
+                val (finalSize, skips) = AppModule.get().compressPdf.executeBySize(source, destination, targetBytes)
+                val warnings = mutableListOf<String>()
+                if (skips > 0) warnings.add("$skips image(s) could not be compressed")
+                if (finalSize > targetBytes) warnings.add("Couldn't reach target size (Output: ${formatFileSize(finalSize)})")
+                if (warnings.isNotEmpty()) warnings.joinToString(". ") else null
+            }
+            ExportCompressMode.OFF -> null
         }
     }
 

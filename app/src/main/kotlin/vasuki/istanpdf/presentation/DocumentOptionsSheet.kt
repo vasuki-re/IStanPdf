@@ -1,6 +1,7 @@
 package vasuki.istanpdf.presentation
 
 import android.app.Activity
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -22,16 +23,22 @@ class DocumentOptionsSheet(
     private val showPageSize: Boolean,
     private val showOrientation: Boolean,
     private val showEditRange: Boolean,
+    private val showCompression: Boolean = false,
     normalization: NormalizeTarget,
     orientation: PageOrientation,
+    compressMode: ExportCompressMode = ExportCompressMode.OFF,
+    targetBytes: Long = 0L,
+    private val sourceBytes: Long = 0L,
     private val onNormalization: (NormalizeTarget) -> Unit,
     private val onOrientation: (PageOrientation) -> Unit,
+    private val onCompressMode: (ExportCompressMode, Long) -> Unit = { _, _ -> },
     private val onEditRange: () -> Unit
 ) {
     private var selectedNormalization = normalization
     private var selectedOrientation = orientation
+    private var selectedCompressMode = compressMode
+    private var currentTargetBytes = targetBytes
     private var activeDropdown: RoundedDropdown? = null
-
     fun show() {
         val dialog = BottomSheetStyle.dialog(activity)
         val scroll = ScrollView(activity)
@@ -101,6 +108,66 @@ class DocumentOptionsSheet(
                         setting.value.text = "${orientation.label} \u25BE"
                         setting.pill.contentDescription = "Orientation: ${orientation.label}"
                         onOrientation(orientation)
+                    }
+                ).also { it.show() }
+            }
+            setting.row.setOnClickListener { open() }
+            setting.pill.setOnClickListener { open() }
+        }
+
+        if (showCompression) {
+            val options = ExportCompressMode.values().toList()
+            val formatModeLabel = { mode: ExportCompressMode ->
+                if (mode == ExportCompressMode.CUSTOM_SIZE && currentTargetBytes > 0) {
+                    val kb = currentTargetBytes / 1024L
+                    val sizeStr = if (kb >= 1024) "%.1f MB".format(kb / 1024f) else "$kb KB"
+                    "Custom size ($sizeStr)"
+                } else {
+                    mode.label
+                }
+            }
+
+            val formatPillText = {
+                if (selectedCompressMode == ExportCompressMode.CUSTOM_SIZE && currentTargetBytes > 0) {
+                    val kb = currentTargetBytes / 1024L
+                    val sizeStr = if (kb >= 1024) "%.1f MB".format(kb / 1024f) else "$kb KB"
+                    "$sizeStr \u25BE"
+                } else {
+                    "${selectedCompressMode.label} \u25BE"
+                }
+            }
+
+            val setting = addSettingRow(
+                root,
+                R.drawable.compress_pdf_24px,
+                "Compress Output",
+                formatPillText().removeSuffix(" \u25BE")
+            )
+            setting.value.text = formatPillText()
+
+            val open = {
+                activeDropdown?.dismiss()
+                activeDropdown = RoundedDropdown(
+                    activity = activity,
+                    anchor = setting.pill,
+                    options = options.map { formatModeLabel(it) },
+                    selectedIndex = options.indexOf(selectedCompressMode),
+                    onSelect = { index ->
+                        val mode = options[index]
+                        if (mode == ExportCompressMode.CUSTOM_SIZE) {
+                            showCustomSizeInput(currentTargetBytes) { newTargetBytes ->
+                                selectedCompressMode = mode
+                                currentTargetBytes = newTargetBytes
+                                setting.value.text = formatPillText()
+                                setting.pill.contentDescription = "Compress Output: ${formatModeLabel(mode)}"
+                                onCompressMode(mode, newTargetBytes)
+                            }
+                        } else {
+                            selectedCompressMode = mode
+                            setting.value.text = formatPillText()
+                            setting.pill.contentDescription = "Compress Output: ${mode.label}"
+                            onCompressMode(mode, 0L)
+                        }
                     }
                 ).also { it.show() }
             }
@@ -252,4 +319,95 @@ class DocumentOptionsSheet(
         val pill: MaterialCardView,
         val value: TextView
     )
+    private fun showCustomSizeInput(initialBytes: Long, onConfirm: (Long) -> Unit) {
+        val dialog = android.app.Dialog(activity)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+        val dialogRoot = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ShadcnDrawables.card(activity, ShadcnDrawables.DIALOG_RADIUS)
+            setPadding(dp(24), dp(24), dp(24), dp(20))
+        }
+        val titleView = text("Target Size", 20, R.color.istan_text, true)
+        dialogRoot.addView(titleView)
+
+        val sourceKb = if (sourceBytes > 0) sourceBytes / 1024L else 0L
+        if (sourceKb > 0) {
+            val srcLabel = if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"
+            val currentSizeView = text("Current size: $srcLabel", 14, R.color.istan_text_muted, false)
+            currentSizeView.setPadding(0, dp(6), 0, dp(14))
+            dialogRoot.addView(currentSizeView)
+        } else {
+            val emptySpacer = View(activity)
+            dialogRoot.addView(emptySpacer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(12)))
+        }
+
+        val input = android.widget.EditText(activity).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            hint = "Target size in KB"
+            textSize = 15f
+            typeface = AppFont.regular
+            setTextColor(color(R.color.istan_text))
+            setHintTextColor(color(R.color.istan_text_muted))
+            background = ShadcnDrawables.input(activity, ShadcnDrawables.BUTTON_RADIUS)
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            if (initialBytes > 0) {
+                val initialKb = initialBytes / 1024L
+                setText(initialKb.toString())
+                setSelection(text.length)
+            }
+        }
+        dialogRoot.addView(input, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        val actionsRow = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            setPadding(0, dp(16), 0, 0)
+        }
+
+        val cancel = text("Cancel", 14, R.color.istan_text_muted, true).apply {
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            setOnClickListener { dialog.dismiss() }
+        }
+
+        val apply = text("Apply", 14, R.color.istan_olive, true).apply {
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            setOnClickListener {
+                val kb = input.text.toString().toLongOrNull()
+                if (kb == null || kb <= 0) {
+                    android.widget.Toast.makeText(activity, "Please enter a valid size in KB.", android.widget.Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                if (sourceKb > 0) {
+                    val capKb = sourceKb * 95L / 100L
+                    val srcLabel = if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"
+                    if (kb > capKb) {
+                        android.widget.Toast.makeText(activity, "Target must not exceed 95% of the source file ($srcLabel).", android.widget.Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                }
+                dialog.dismiss()
+                onConfirm(kb * 1024L)
+            }
+        }
+
+        actionsRow.addView(cancel)
+        actionsRow.addView(apply)
+        dialogRoot.addView(actionsRow)
+        dialog.setContentView(dialogRoot)
+        dialog.window?.setLayout(
+            (activity.resources.displayMetrics.widthPixels * 0.85f).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        dialog.setOnShowListener {
+            input.requestFocus()
+            val imm = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }
+
+        dialog.show()
+    }
 }

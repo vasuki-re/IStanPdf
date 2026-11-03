@@ -21,6 +21,9 @@ class EditorViewModel : ViewModel() {
     var pagesAdded: Boolean = false
     var normalizeTarget: NormalizeTarget = NormalizeTarget.NONE
     var pageOrientation: PageOrientation = PageOrientation.AUTO
+    var exportCompressMode: ExportCompressMode = ExportCompressMode.OFF
+    var exportTargetBytes: Long = 0L
+
 
     val thumbCache = object : LruCache<String, Bitmap>(maxCacheBytes(8)) {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
@@ -61,6 +64,8 @@ class EditorViewModel : ViewModel() {
         pagesAdded = false
         normalizeTarget = NormalizeTarget.NONE
         pageOrientation = PageOrientation.AUTO
+        exportCompressMode = ExportCompressMode.OFF
+        exportTargetBytes = 0L
         cleanupTempFiles()
     }
 
@@ -71,4 +76,11 @@ class EditorViewModel : ViewModel() {
     }
 
     private fun maxCacheBytes(fraction: Int) = (Runtime.getRuntime().maxMemory() / fraction).toInt()
+}
+
+enum class ExportCompressMode(val label: String) {
+    OFF("Off"),
+    BALANCED("Balanced"),
+    HIGH_COMPRESSION("High"),
+    CUSTOM_SIZE("Custom size")
 }

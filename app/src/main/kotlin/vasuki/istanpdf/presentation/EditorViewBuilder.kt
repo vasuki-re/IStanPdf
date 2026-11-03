@@ -51,6 +51,10 @@ class EditorViewBuilder(
         fun setNormalization(target: NormalizeTarget)
         fun getOrientation(): PageOrientation
         fun setOrientation(orientation: PageOrientation)
+        fun getExportCompressMode(): ExportCompressMode
+        fun getExportTargetBytes(): Long
+        fun getSourceBytes(): Long
+        fun setExportCompressMode(mode: ExportCompressMode, targetBytes: Long)
     }
 
     companion object {
@@ -319,15 +323,21 @@ class EditorViewBuilder(
             activity.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
             tuneButton.setBackgroundResource(ripple.resourceId)
             tuneButton.setOnClickListener {
+                val showComp = !docxExport && (titleText == "Images to PDF" || titleText == "Modify PDF" || titleText == "Reorder Pages")
                 DocumentOptionsSheet(
                     activity = activity,
                     showPageSize = showNormalization,
                     showOrientation = showNormalization,
                     showEditRange = showSelectionControls,
+                    showCompression = showComp,
                     normalization = actions.getNormalization(),
                     orientation = actions.getOrientation(),
+                    compressMode = actions.getExportCompressMode(),
+                    targetBytes = actions.getExportTargetBytes(),
+                    sourceBytes = actions.getSourceBytes(),
                     onNormalization = { actions.setNormalization(it) },
                     onOrientation = { actions.setOrientation(it) },
+                    onCompressMode = { mode, bytes -> actions.setExportCompressMode(mode, bytes) },
                     onEditRange = { showRangeDialog() }
                 ).show()
             }
