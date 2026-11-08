@@ -11,8 +11,8 @@ android {
         applicationId = "vasuki.istanpdf"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "3.0-Vanilla LTS"
+        versionCode = 5
+        versionName = "4.0-Valhalla LTS"
     }
 
     buildFeatures {

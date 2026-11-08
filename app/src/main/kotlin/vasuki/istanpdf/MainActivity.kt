@@ -2,6 +2,7 @@ package vasuki.istanpdf
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.res.ColorStateList
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -35,6 +36,7 @@ import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.snackbar.Snackbar
 import vasuki.istanpdf.data.PdfEngine
 import vasuki.istanpdf.di.AppModule
@@ -94,6 +96,8 @@ class MainActivity : AppCompatActivity() {
     private var cropBitmap: Bitmap? = null
     private var currentEditorTitle: String? = null
     private var updateThread: Thread? = null
+    private var canaryDialog: android.app.Dialog? = null
+    private var hasCheckedCanaryPrompt = false
     private var cameraMergeToPdf = false
 
     private var compressMode = COMPRESS_MODE_RESOLUTION
@@ -138,6 +142,9 @@ class MainActivity : AppCompatActivity() {
         
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         checkForUpdates()
+        window.decorView.postDelayed({
+            checkCanaryTelegramPrompt()
+        }, 800)
         if (prefs.getBoolean("improve_docx_perf", false) && LibreOfficeManager.isEngineInstalled(this)) {
             AppModule.get().docxEngine.preLoad()
         }
@@ -147,8 +154,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkForUpdates() {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        if (!prefs.getBoolean("check_updates", true)) return
-
+        if (!prefs.getBoolean("check_updates", true)) {
+            checkCanaryTelegramPrompt()
+            return
+        }
         updateThread = Thread {
             try {
                 val url = java.net.URL("https://cdn.jsdelivr.net/gh/vasuki-re/IStanPdf@Vanilla/changelog.txt")
@@ -192,17 +201,159 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         if (isFinishing || isDestroyed) return@runOnUiThread
 
+                        canaryDialog?.dismiss()
                         val changelogView = createChangelogView(finalChangelog)
 
                         showCustomDialog("Update Available: $finalVersionName", changelogView, "Later", null, "Download") {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(finalLink)))
                         }
                     }
+                } else {
+                    runOnUiThread {
+                        checkCanaryTelegramPrompt()
+                    }
                 }
             } catch (_: Exception) {
+                runOnUiThread {
+                    checkCanaryTelegramPrompt()
+                }
             }
         }
         updateThread!!.start()
+    }
+    private fun checkCanaryTelegramPrompt() {
+        if (isFinishing || isDestroyed || hasCheckedCanaryPrompt) return
+        hasCheckedCanaryPrompt = true
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("canary_dialog_never_show", false)) return
+        showCanaryTelegramDialog()
+    }
+
+    private fun showCanaryTelegramDialog() {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("canary_dialog_never_show", false)) return
+
+        val dialog = android.app.Dialog(this)
+        canaryDialog = dialog
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+        dialog.setCancelable(true)
+
+        val dialogRoot = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ShadcnDrawables.card(this@MainActivity, ShadcnDrawables.DIALOG_RADIUS)
+            setPadding(dp(24), dp(24), dp(24), dp(20))
+        }
+
+        val title = text("Join Telegram", 20, R.color.istan_text, true).apply {
+            setPadding(0, 0, 0, dp(10))
+        }
+        dialogRoot.addView(title)
+
+        val message = text(
+            "Get early access to canary builds and test experimental features before public release.",
+            14,
+            R.color.istan_text_muted,
+            false
+        ).apply {
+            setLineSpacing(0f, 1.25f)
+            setPadding(0, 0, 0, dp(16))
+        }
+        dialogRoot.addView(message)
+
+        val toggleRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(48)
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(4), 0, dp(4))
+        }
+
+        val checkbox = MaterialCheckBox(this).apply {
+            isChecked = false
+            isClickable = false
+            isFocusable = false
+            minWidth = 0
+            minHeight = 0
+            setPadding(0, 0, 0, 0)
+            buttonTintList = ColorStateList(
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(-android.R.attr.state_checked)
+                ),
+                intArrayOf(
+                    color(R.color.istan_olive),
+                    color(R.color.istan_outline_emphasis)
+                )
+            )
+        }
+        val cbLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            marginEnd = dp(8)
+        }
+        toggleRow.addView(checkbox, cbLp)
+
+        val toggleLabel = text("Don't show again", 14, R.color.istan_text, false)
+        toggleRow.addView(toggleLabel, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        toggleRow.setOnClickListener {
+            checkbox.isChecked = !checkbox.isChecked
+        }
+
+        dialogRoot.addView(toggleRow)
+
+        val btnRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+            setPadding(0, dp(12), 0, 0)
+        }
+
+        val laterBtn = text("Later", 14, R.color.istan_text_muted, true).apply {
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            minimumHeight = dp(44)
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                if (checkbox.isChecked) {
+                    prefs.edit().putBoolean("canary_dialog_never_show", true).apply()
+                }
+                dialog.dismiss()
+            }
+        }
+        btnRow.addView(laterBtn)
+
+        val joinBtn = text("Join", 14, R.color.istan_olive, true).apply {
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            minimumHeight = dp(44)
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                prefs.edit().putBoolean("canary_dialog_never_show", true).apply()
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/istanpdf_builds")))
+                } catch (_: Exception) {
+                    Toast.makeText(this@MainActivity, "Unable to open link", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+        }
+        btnRow.addView(joinBtn)
+
+        dialog.setOnDismissListener {
+            if (checkbox.isChecked) {
+                prefs.edit().putBoolean("canary_dialog_never_show", true).apply()
+            }
+            if (canaryDialog == dialog) {
+                canaryDialog = null
+            }
+        }
+
+        dialogRoot.addView(btnRow)
+        dialog.setContentView(dialogRoot)
+        dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.85).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
+        dialog.show()
     }
 
     private fun parseMarkdownText(text: String): CharSequence {
@@ -336,6 +487,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        canaryDialog?.dismiss()
+        canaryDialog = null
         fakeProgressHandler.removeCallbacksAndMessages(null)
         updateThread?.interrupt()
         updateThread = null

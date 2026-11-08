@@ -8,6 +8,7 @@ import android.content.pm.ResolveInfo
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.net.Uri
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -266,6 +267,23 @@ class SettingsActivity : AppCompatActivity() {
             showAboutDialog(versionName, versionCode)
         }
         aboutGroup.addView(aboutRow)
+        val (telegramRow, _) = settingsRow("Canary builds", "Join Telegram for Canary builds", clickable = true)
+        val telegramChevron = ImageView(this).apply {
+            setImageResource(R.drawable.chevron_right_24px)
+            setColorFilter(color(R.color.istan_text_muted))
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+        }
+        telegramRow.addView(telegramChevron, LinearLayout.LayoutParams(dp(24), dp(24)).apply {
+            marginStart = dp(8)
+        })
+        telegramRow.setOnClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/istanpdf_builds")))
+            } catch (_: Exception) {
+                Toast.makeText(this, "Unable to open link", Toast.LENGTH_SHORT).show()
+            }
+        }
+        aboutGroup.addView(telegramRow)
 
         body.addView(aboutGroup, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
