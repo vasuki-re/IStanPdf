@@ -55,7 +55,7 @@ class DocumentOptionsSheet(
             )
         )
 
-        val title = text("Document Options", 20, R.color.istan_text, true)
+        val title = text(activity.getString(R.string.options_title), 20, R.color.istan_text, true)
         title.setPadding(dp(24), dp(8), dp(24), dp(16))
         root.addView(title)
 
@@ -64,21 +64,26 @@ class DocumentOptionsSheet(
             val setting = addSettingRow(
                 root,
                 R.drawable.crop_free_24px,
-                "Page Size",
-                selectedNormalization.label
+                activity.getString(R.string.options_page_size),
+                activity.getString(selectedNormalization.labelRes)
             )
             val open = {
                 activeDropdown?.dismiss()
                 activeDropdown = RoundedDropdown(
                     activity = activity,
                     anchor = setting.pill,
-                    options = targets.map { it.label },
+                    options = targets.map { activity.getString(it.labelRes) },
                     selectedIndex = targets.indexOf(selectedNormalization),
                     onSelect = { index ->
                         val target = targets[index]
+                        val label = activity.getString(target.labelRes)
                         selectedNormalization = target
-                        setting.value.text = "${target.label} \u25BE"
-                        setting.pill.contentDescription = "Page Size: ${target.label}"
+                        setting.value.text = activity.getString(R.string.options_value, label)
+                        setting.pill.contentDescription = activity.getString(
+                            R.string.options_content_description,
+                            activity.getString(R.string.options_page_size),
+                            label
+                        )
                         onNormalization(target)
                     }
                 ).also { it.show() }
@@ -92,21 +97,26 @@ class DocumentOptionsSheet(
             val setting = addSettingRow(
                 root,
                 R.drawable.crop_rotate_24px,
-                "Orientation",
-                selectedOrientation.label
+                activity.getString(R.string.options_orientation),
+                activity.getString(selectedOrientation.labelRes)
             )
             val open = {
                 activeDropdown?.dismiss()
                 activeDropdown = RoundedDropdown(
                     activity = activity,
                     anchor = setting.pill,
-                    options = options.map { it.label },
+                    options = options.map { activity.getString(it.labelRes) },
                     selectedIndex = options.indexOf(selectedOrientation),
                     onSelect = { index ->
                         val orientation = options[index]
+                        val label = activity.getString(orientation.labelRes)
                         selectedOrientation = orientation
-                        setting.value.text = "${orientation.label} \u25BE"
-                        setting.pill.contentDescription = "Orientation: ${orientation.label}"
+                        setting.value.text = activity.getString(R.string.options_value, label)
+                        setting.pill.contentDescription = activity.getString(
+                            R.string.options_content_description,
+                            activity.getString(R.string.options_orientation),
+                            label
+                        )
                         onOrientation(orientation)
                     }
                 ).also { it.show() }
@@ -119,29 +129,29 @@ class DocumentOptionsSheet(
             val options = ExportCompressMode.values().toList()
             val formatModeLabel = { mode: ExportCompressMode ->
                 if (mode == ExportCompressMode.CUSTOM_SIZE && currentTargetBytes > 0) {
-                    val kb = currentTargetBytes / 1024L
-                    val sizeStr = if (kb >= 1024) "%.1f MB".format(kb / 1024f) else "$kb KB"
-                    "Custom size ($sizeStr)"
+                    activity.getString(R.string.compress_custom_size_value, formatFileSize(currentTargetBytes))
                 } else {
-                    mode.label
+                    activity.getString(mode.labelRes)
                 }
             }
 
             val formatPillText = {
                 if (selectedCompressMode == ExportCompressMode.CUSTOM_SIZE && currentTargetBytes > 0) {
-                    val kb = currentTargetBytes / 1024L
-                    val sizeStr = if (kb >= 1024) "%.1f MB".format(kb / 1024f) else "$kb KB"
-                    "$sizeStr \u25BE"
+                    activity.getString(R.string.options_value, formatFileSize(currentTargetBytes))
                 } else {
-                    "${selectedCompressMode.label} \u25BE"
+                    activity.getString(R.string.options_value, activity.getString(selectedCompressMode.labelRes))
                 }
             }
 
             val setting = addSettingRow(
                 root,
                 R.drawable.compress_pdf_24px,
-                "Compress Output",
-                formatPillText().removeSuffix(" \u25BE")
+                activity.getString(R.string.options_compress_output),
+                if (selectedCompressMode == ExportCompressMode.CUSTOM_SIZE && currentTargetBytes > 0) {
+                    formatFileSize(currentTargetBytes)
+                } else {
+                    activity.getString(selectedCompressMode.labelRes)
+                }
             )
             setting.value.text = formatPillText()
 
@@ -159,13 +169,21 @@ class DocumentOptionsSheet(
                                 selectedCompressMode = mode
                                 currentTargetBytes = newTargetBytes
                                 setting.value.text = formatPillText()
-                                setting.pill.contentDescription = "Compress Output: ${formatModeLabel(mode)}"
+                                setting.pill.contentDescription = activity.getString(
+                                    R.string.options_content_description,
+                                    activity.getString(R.string.options_compress_output),
+                                    formatModeLabel(mode)
+                                )
                                 onCompressMode(mode, newTargetBytes)
                             }
                         } else {
                             selectedCompressMode = mode
                             setting.value.text = formatPillText()
-                            setting.pill.contentDescription = "Compress Output: ${mode.label}"
+                            setting.pill.contentDescription = activity.getString(
+                                R.string.options_content_description,
+                                activity.getString(R.string.options_compress_output),
+                                activity.getString(mode.labelRes)
+                            )
                             onCompressMode(mode, 0L)
                         }
                     }
@@ -197,7 +215,7 @@ class DocumentOptionsSheet(
             icon.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             row.addView(icon, LinearLayout.LayoutParams(dp(24), dp(24)))
 
-            val label = text("Edit Range", 16, R.color.istan_text, false)
+            val label = text(activity.getString(R.string.editor_edit_range), 16, R.color.istan_text, false)
             label.setPadding(dp(16), 0, 0, 0)
             row.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
@@ -257,11 +275,11 @@ class DocumentOptionsSheet(
             minimumWidth = dp(96)
             isClickable = true
             isFocusable = true
-            contentDescription = "$label: $value"
+            contentDescription = activity.getString(R.string.options_content_description, label, value)
         }
 
         val valueView = TextView(activity).apply {
-            text = "$value \u25BE"
+            text = activity.getString(R.string.options_value, value)
             textSize = 14f
             typeface = AppFont.medium
             setTextColor(ShadcnDrawables.text(activity))
@@ -314,6 +332,12 @@ class DocumentOptionsSheet(
 
     private fun dp(value: Int): Int = Math.round(value * activity.resources.displayMetrics.density)
 
+    private fun formatFileSize(bytes: Long): String {
+        val kb = bytes / 1024.0
+        return if (kb >= 1024) activity.getString(R.string.file_size_mb, kb / 1024f)
+        else activity.getString(R.string.file_size_kb, kb.toFloat())
+    }
+
     private data class SettingRow(
         val row: LinearLayout,
         val pill: MaterialCardView,
@@ -329,13 +353,13 @@ class DocumentOptionsSheet(
             background = ShadcnDrawables.card(activity, ShadcnDrawables.DIALOG_RADIUS)
             setPadding(dp(24), dp(24), dp(24), dp(20))
         }
-        val titleView = text("Target Size", 20, R.color.istan_text, true)
+        val titleView = text(activity.getString(R.string.dialog_target_size), 20, R.color.istan_text, true)
         dialogRoot.addView(titleView)
 
         val sourceKb = if (sourceBytes > 0) sourceBytes / 1024L else 0L
         if (sourceKb > 0) {
-            val srcLabel = if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"
-            val currentSizeView = text("Current size: $srcLabel", 14, R.color.istan_text_muted, false)
+            val srcLabel = formatFileSize(sourceKb * 1024L)
+            val currentSizeView = text(activity.getString(R.string.compress_source_size, srcLabel), 14, R.color.istan_text_muted, false)
             currentSizeView.setPadding(0, dp(6), 0, dp(14))
             dialogRoot.addView(currentSizeView)
         } else {
@@ -345,7 +369,7 @@ class DocumentOptionsSheet(
 
         val input = android.widget.EditText(activity).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            hint = "Target size in KB"
+            hint = activity.getString(R.string.compress_target_hint)
             textSize = 15f
             typeface = AppFont.regular
             setTextColor(color(R.color.istan_text))
@@ -367,24 +391,24 @@ class DocumentOptionsSheet(
             setPadding(0, dp(16), 0, 0)
         }
 
-        val cancel = text("Cancel", 14, R.color.istan_text_muted, true).apply {
+        val cancel = text(activity.getString(R.string.action_cancel), 14, R.color.istan_text_muted, true).apply {
             setPadding(dp(16), dp(8), dp(16), dp(8))
             setOnClickListener { dialog.dismiss() }
         }
 
-        val apply = text("Apply", 14, R.color.istan_olive, true).apply {
+        val apply = text(activity.getString(R.string.action_apply), 14, R.color.istan_olive, true).apply {
             setPadding(dp(16), dp(8), dp(16), dp(8))
             setOnClickListener {
                 val kb = input.text.toString().toLongOrNull()
                 if (kb == null || kb <= 0) {
-                    android.widget.Toast.makeText(activity, "Please enter a valid size in KB.", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(activity, activity.getString(R.string.error_invalid_size), android.widget.Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
                 if (sourceKb > 0) {
                     val capKb = sourceKb * 95L / 100L
-                    val srcLabel = if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"
+                    val srcLabel = formatFileSize(sourceKb * 1024L)
                     if (kb > capKb) {
-                        android.widget.Toast.makeText(activity, "Target must not exceed 95% of the source file ($srcLabel).", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(activity, activity.getString(R.string.error_target_exceeds, srcLabel), android.widget.Toast.LENGTH_SHORT).show()
                         return@setOnClickListener
                     }
                 }

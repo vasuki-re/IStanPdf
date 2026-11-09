@@ -38,10 +38,6 @@ class HomeViewBuilder(
         fun onOpenSettings()
     }
 
-    companion object {
-        private const val WAITING_TEXT = "Ready"
-    }
-
     var status: TextView? = null
         private set
     var statusIndicator: ImageView? = null
@@ -80,7 +76,7 @@ class HomeViewBuilder(
         heroRow.setPadding(dp(4), 0, dp(4), 0)
         root.addView(heroRow)
 
-        val title = text("IStanPdf", 40, R.color.istan_text, true).apply { letterSpacing = -0.02f }
+        val title = text(activity.getString(R.string.app_name), 40, R.color.istan_text, true).apply { letterSpacing = -0.02f }
         heroRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
         val settingsButton = MaterialCardView(activity)
@@ -90,6 +86,7 @@ class HomeViewBuilder(
         val menuIcon = ImageView(activity)
         menuIcon.setImageResource(R.drawable.menu)
         menuIcon.setColorFilter(color(R.color.istan_text))
+        menuIcon.contentDescription = activity.getString(R.string.settings_title)
         menuIcon.setPadding(dp(12), dp(12), dp(12), dp(12))
         settingsButton.addView(menuIcon, FrameLayout.LayoutParams(dp(48), dp(48), Gravity.CENTER))
 
@@ -97,7 +94,7 @@ class HomeViewBuilder(
         settingsLp.setMargins(dp(16), 0, 0, 0)
         heroRow.addView(settingsButton, settingsLp)
 
-        val subtitle = text("Offline app for PDF and DOCX operations", 16, R.color.istan_text_muted, false)
+        val subtitle = text(activity.getString(R.string.home_subtitle), 16, R.color.istan_text_muted, false)
         subtitle.setPadding(dp(4), dp(4), dp(4), dp(36))
         root.addView(subtitle)
 
@@ -106,14 +103,14 @@ class HomeViewBuilder(
             subtitle.setPadding(dp(4), dp(4), dp(4), dp(16))
             root.addView(campaign)
         }
-        root.addView(createSectionHeader("PDF TOOLS"))
+        root.addView(createSectionHeader(activity.getString(R.string.home_section_pdf_tools)))
         val pdfRow1 = LinearLayout(activity)
         pdfRow1.orientation = LinearLayout.HORIZONTAL
-        pdfRow1.addView(dashboardCard("Merge PDF", R.drawable.merge_24px, actions::onMergePdf))
-        pdfRow1.addView(dashboardCard("Modify PDF", R.drawable.modify_pdf_24px, actions::onModifyPdf))
+        pdfRow1.addView(dashboardCard(activity.getString(R.string.home_tool_merge_pdf), R.drawable.merge_24px, actions::onMergePdf))
+        pdfRow1.addView(dashboardCard(activity.getString(R.string.home_tool_modify_pdf), R.drawable.modify_pdf_24px, actions::onModifyPdf))
         root.addView(pdfRow1)
 
-        val compressCard = dashboardCard("Compress PDF", R.drawable.compress_pdf_24px, actions::onCompressPdf)
+        val compressCard = dashboardCard(activity.getString(R.string.home_tool_compress_pdf), R.drawable.compress_pdf_24px, actions::onCompressPdf)
         (compressCard.layoutParams as LinearLayout.LayoutParams).apply {
             width = ViewGroup.LayoutParams.MATCH_PARENT
             height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -121,20 +118,20 @@ class HomeViewBuilder(
         }
         root.addView(compressCard)
 
-        root.addView(createSectionHeader("CONVERSIONS"))
+        root.addView(createSectionHeader(activity.getString(R.string.home_section_conversions)))
         val convRow1 = LinearLayout(activity)
         convRow1.orientation = LinearLayout.HORIZONTAL
-        convRow1.addView(dashboardCard("Image to PDF", R.drawable.img2pdf_24px, actions::onImageToPdf))
-        convRow1.addView(dashboardCard("PDF to Image", R.drawable.pdf2img_24px, actions::onPdfToImage))
+        convRow1.addView(dashboardCard(activity.getString(R.string.home_tool_image_to_pdf), R.drawable.img2pdf_24px, actions::onImageToPdf))
+        convRow1.addView(dashboardCard(activity.getString(R.string.home_tool_pdf_to_image), R.drawable.pdf2img_24px, actions::onPdfToImage))
         root.addView(convRow1)
 
         val convRow2 = LinearLayout(activity)
         convRow2.orientation = LinearLayout.HORIZONTAL
-        convRow2.addView(dashboardCard("DOCX to PDF", R.drawable.docx2pdf_24px, actions::onDocxToPdf))
-        convRow2.addView(dashboardCard("MD to PDF", R.drawable.md2pdf_24px, actions::onMdToPdf))
+        convRow2.addView(dashboardCard(activity.getString(R.string.home_tool_docx_to_pdf), R.drawable.docx2pdf_24px, actions::onDocxToPdf))
+        convRow2.addView(dashboardCard(activity.getString(R.string.home_tool_md_to_pdf), R.drawable.md2pdf_24px, actions::onMdToPdf))
         root.addView(convRow2)
 
-        val pptxCard = dashboardCard("PPTX to PDF", R.drawable.pptx2pdf_24px, actions::onPptxToPdf)
+        val pptxCard = dashboardCard(activity.getString(R.string.home_tool_pptx_to_pdf), R.drawable.pptx2pdf_24px, actions::onPptxToPdf)
         (pptxCard.layoutParams as LinearLayout.LayoutParams).apply {
             width = ViewGroup.LayoutParams.MATCH_PARENT
             height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -142,14 +139,14 @@ class HomeViewBuilder(
         }
         root.addView(pptxCard)
 
-        root.addView(createSectionHeader("DOCX TOOLS"))
+        root.addView(createSectionHeader(activity.getString(R.string.home_section_docx_tools)))
         val docxRow1 = LinearLayout(activity)
         docxRow1.orientation = LinearLayout.HORIZONTAL
-        docxRow1.addView(dashboardCard("Remove Pages", R.drawable.remove_page_docx_24px, actions::onDocxRemovePages))
-        docxRow1.addView(dashboardCard("Reorder Pages", R.drawable.reorder_docx_24px, actions::onDocxReorderPages))
+        docxRow1.addView(dashboardCard(activity.getString(R.string.home_tool_remove_pages), R.drawable.remove_page_docx_24px, actions::onDocxRemovePages))
+        docxRow1.addView(dashboardCard(activity.getString(R.string.home_tool_reorder_pages), R.drawable.reorder_docx_24px, actions::onDocxReorderPages))
         root.addView(docxRow1)
 
-        root.addView(kofiCard("Buy me a Coffee", R.drawable.ic_kofi, actions::onSupportDeveloper))
+        root.addView(kofiCard(activity.getString(R.string.home_support_card), R.drawable.ic_kofi, actions::onSupportDeveloper))
 
         val topSpacer = View(activity)
         root.addView(topSpacer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f))
@@ -168,7 +165,7 @@ class HomeViewBuilder(
         statusIndicator!!.setImageDrawable(dot)
         statusCard.addView(statusIndicator, LinearLayout.LayoutParams(dp(12), dp(12)))
 
-        status = text(WAITING_TEXT, 14, R.color.istan_olive, false)
+        status = text(activity.getString(R.string.status_ready), 14, R.color.istan_olive, false)
         status!!.gravity = Gravity.CENTER_VERTICAL
         status!!.setPadding(dp(8), 0, 0, 0)
         statusCard.addView(status, LinearLayout.LayoutParams(
@@ -310,7 +307,7 @@ class HomeViewBuilder(
         iconParams.setMargins(0, 0, dp(10), 0)
         headerRow.addView(icon, iconParams)
 
-        val title = text("Help bring IStanPdf to Google Play", 14, R.color.istan_text, true)
+        val title = text(activity.getString(R.string.home_campaign_title), 14, R.color.istan_text, true)
         headerRow.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
 
         val closeBtn = ImageView(activity)
@@ -329,7 +326,7 @@ class HomeViewBuilder(
             card.visibility = View.GONE
 
             val root = activity.findViewById<View>(android.R.id.content) ?: card.rootView
-            val snackbar = Snackbar.make(root, "You can always support anytime from 'Buy me a Coffee' below", Snackbar.LENGTH_LONG)
+            val snackbar = Snackbar.make(root, activity.getString(R.string.home_campaign_dismissed), Snackbar.LENGTH_LONG)
             snackbar.duration = 4000
             snackbar.view.background = ShadcnDrawables.card(activity, ShadcnDrawables.BUTTON_RADIUS)
             snackbar.view.backgroundTintList = null
@@ -350,7 +347,7 @@ class HomeViewBuilder(
 
         container.addView(headerRow)
 
-        val actionBtn = text("☕  Chip in", 13, R.color.istan_text, true)
+        val actionBtn = text(activity.getString(R.string.home_campaign_action), 13, R.color.istan_text, true)
         actionBtn.gravity = Gravity.CENTER
         actionBtn.setTextColor(ShadcnDrawables.primaryForeground(activity))
         val btnGd = GradientDrawable()

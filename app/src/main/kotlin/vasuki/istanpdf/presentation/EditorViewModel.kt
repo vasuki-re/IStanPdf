@@ -3,7 +3,9 @@ package vasuki.istanpdf.presentation
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.LruCache
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
+import vasuki.istanpdf.R
 import vasuki.istanpdf.model.NormalizeTarget
 import vasuki.istanpdf.model.PageItem
 import vasuki.istanpdf.model.PageOrientation
@@ -78,9 +80,9 @@ class EditorViewModel : ViewModel() {
     private fun maxCacheBytes(fraction: Int) = (Runtime.getRuntime().maxMemory() / fraction).toInt()
 }
 
-enum class ExportCompressMode(val label: String) {
-    OFF("Off"),
-    BALANCED("Balanced"),
-    HIGH_COMPRESSION("High"),
-    CUSTOM_SIZE("Custom size")
+enum class ExportCompressMode(@StringRes val labelRes: Int) {
+    OFF(R.string.compress_mode_off),
+    BALANCED(R.string.compress_mode_balanced),
+    HIGH_COMPRESSION(R.string.compress_mode_high),
+    CUSTOM_SIZE(R.string.compress_mode_custom)
 }

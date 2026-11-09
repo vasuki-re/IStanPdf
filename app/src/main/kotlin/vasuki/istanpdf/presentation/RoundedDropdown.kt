@@ -4,6 +4,8 @@ import android.app.Activity
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
+import android.text.TextPaint
+import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -16,6 +18,7 @@ import android.widget.TextView
 import vasuki.istanpdf.AppFont
 import vasuki.istanpdf.R
 import vasuki.istanpdf.ThemePrefs
+import kotlin.math.ceil
 
 class RoundedDropdown(
     private val activity: Activity,
@@ -70,7 +73,17 @@ class RoundedDropdown(
         val popupHeight = maxHeight.coerceAtMost(available).coerceAtLeast(dp(48))
         val openBelow = spaceBelow >= popupHeight + dp(4) || spaceBelow >= spaceAbove
         val yoff = if (openBelow) dp(4) else -(popupHeight + dp(4))
-        val popupWidth = dp(180).coerceAtMost(
+
+        val paint = TextPaint().apply {
+            typeface = AppFont.regular
+            isAntiAlias = true
+            textSize = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_SP, 15f, activity.resources.displayMetrics
+            )
+        }
+        val widest = options.maxOfOrNull { ceil(paint.measureText(it).toDouble()).toInt() } ?: 0
+        val contentWidth = widest + dp(16) + dp(16) + dp(20) + dp(8)
+        val popupWidth = contentWidth.coerceAtLeast(dp(140)).coerceAtMost(
             (frame.width() - dp(32)).coerceAtLeast(dp(1))
         )
 
@@ -111,6 +124,8 @@ class RoundedDropdown(
             typeface = AppFont.regular
             setTextColor(color(R.color.istan_text))
             includeFontPadding = true
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
         }
         row.addView(
             text,

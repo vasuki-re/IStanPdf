@@ -34,8 +34,8 @@ class EditorViewBuilder(
 
     interface EditorActions {
         fun onBack()
-        fun onSave(titleText: String, docxExport: Boolean)
-        fun onAddItems(titleText: String)
+        fun onSave(mode: EditorMode)
+        fun onAddItems(mode: EditorMode)
         fun onCropPage(position: Int, onCropped: Runnable?)
         fun onShowCustomDialog(title: String, content: View, negativeStr: String?, negativeAction: Runnable?, positiveStr: String?, positiveAction: Runnable?)
         fun toast(message: String)
@@ -57,10 +57,6 @@ class EditorViewBuilder(
         fun setExportCompressMode(mode: ExportCompressMode, targetBytes: Long)
     }
 
-    companion object {
-        private const val WAITING_TEXT = "Ready"
-    }
-
     var status: TextView? = null
         private set
     var statusIndicator: ImageView? = null
@@ -70,7 +66,7 @@ class EditorViewBuilder(
     var pageList: RecyclerView? = null
         private set
 
-    fun build(titleText: String, saveLabelText: String, docxExport: Boolean, allowReorder: Boolean, actions: EditorActions): View {
+    fun build(mode: EditorMode, actions: EditorActions): View {
         val outer = LinearLayout(activity)
         outer.orientation = LinearLayout.VERTICAL
         outer.setBackgroundColor(color(R.color.istan_background))
@@ -84,13 +80,13 @@ class EditorViewBuilder(
         val backArrow = ImageView(activity).apply {
             setImageResource(R.drawable.arrow_back_24px)
             setColorFilter(color(R.color.istan_text))
-            contentDescription = "Navigate up"
+            contentDescription = activity.getString(R.string.action_navigate_up)
             setPadding(dp(12), dp(12), dp(12), dp(12))
             setOnClickListener { actions.onBack() }
         }
         titleRow.addView(backArrow, LinearLayout.LayoutParams(dp(48), dp(48)))
 
-        val title = text(titleText, 28, R.color.istan_text, true).apply {
+        val title = text(activity.getString(mode.titleRes), 28, R.color.istan_text, true).apply {
             includeFontPadding = false
             typeface = AppFont.medium
         }
@@ -119,7 +115,7 @@ class EditorViewBuilder(
         statusIndicator!!.setImageDrawable(dot)
         statusCard.addView(statusIndicator)
 
-        status = text(WAITING_TEXT, 14, R.color.istan_olive, false)
+        status = text(activity.getString(R.string.status_ready), 14, R.color.istan_olive, false)
         status!!.maxLines = 1
         status!!.gravity = Gravity.CENTER
         status!!.setPadding(dp(8), 0, dp(4), 0)
@@ -131,12 +127,8 @@ class EditorViewBuilder(
         statusCard.visibility = View.GONE
         this.statusCard = statusCard
 
-        val showNormalization = !docxExport && (
-            titleText == "Images to PDF" ||
-                titleText == "Reorder Pages" ||
-                titleText == "Modify PDF"
-            )
-        val showSelectionControls = titleText == "Modify PDF" || titleText == "Remove Pages" || titleText == "Reorder Pages"
+        val showNormalization = mode.showNormalization
+        val showSelectionControls = mode.showSelectionControls
 
         val selectedCountView = if (showSelectionControls) {
             TextView(activity).apply {
@@ -153,7 +145,7 @@ class EditorViewBuilder(
             val pages = actions.getPages()
             var count = 0
             for (p in pages) if (p.keep) count++
-            counter.text = "$count of ${pages.size} selected"
+            counter.text = activity.getString(R.string.editor_selected_count, count, pages.size)
         }
 
         selectedCountView?.let {
@@ -171,7 +163,7 @@ class EditorViewBuilder(
         fun showRangeDialog() {
                 val input = EditText(activity)
                 input.setTextColor(color(R.color.istan_text))
-                input.hint = "Type range (e.g. 1-3, 5)..."
+                input.hint = activity.getString(R.string.editor_range_hint)
                 input.setHintTextColor(color(R.color.istan_text_muted))
                 input.setPadding(dp(16), dp(16), dp(16), dp(16))
                 input.background = ShadcnDrawables.input(activity, ShadcnDrawables.BUTTON_RADIUS)
@@ -212,7 +204,13 @@ class EditorViewBuilder(
                 }
                 input.setText(sb.toString())
 
-                actions.onShowCustomDialog("Edit Range", input, "Cancel", null, "Apply") {
+                actions.onShowCustomDialog(
+                    activity.getString(R.string.editor_edit_range),
+                    input,
+                    activity.getString(R.string.action_cancel),
+                    null,
+                    activity.getString(R.string.action_apply)
+                ) {
                     val rangeStr = input.text.toString()
                     val currentPages = actions.getPages()
                     val pendingUris = actions.getPendingUris()
@@ -252,7 +250,7 @@ class EditorViewBuilder(
                                     if (p.originalIndex == originalIdx) {
                                         p.keep = true
                                         newPages.add(p)
-                                        if ((titleText == "Merge PDF" || titleText == "Images to PDF") && i < pendingUris.size) {
+                                        if ((mode == EditorMode.MERGE_PDF || mode == EditorMode.IMAGES_TO_PDF) && i < pendingUris.size) {
                                             newUris.add(pendingUris[i])
                                         }
                                         processedIndices.add(originalIdx)
@@ -266,7 +264,7 @@ class EditorViewBuilder(
                                 if (!processedIndices.contains(p.originalIndex)) {
                                     p.keep = false
                                     newPages.add(p)
-                                    if ((titleText == "Merge PDF" || titleText == "Images to PDF") && i < pendingUris.size) {
+                                    if ((mode == EditorMode.MERGE_PDF || mode == EditorMode.IMAGES_TO_PDF) && i < pendingUris.size) {
                                         newUris.add(pendingUris[i])
                                     }
                                 }
@@ -275,13 +273,13 @@ class EditorViewBuilder(
                             (currentPages as MutableList<PageItem>).clear()
                             currentPages.addAll(newPages)
 
-                            if (titleText == "Merge PDF" || titleText == "Images to PDF") {
+                            if (mode == EditorMode.MERGE_PDF || mode == EditorMode.IMAGES_TO_PDF) {
                                 (pendingUris as MutableList<Uri>).clear()
                                 pendingUris.addAll(newUris)
                             }
 
                         } catch (ignored: Exception) {
-                            Toast.makeText(activity, "Invalid range format", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(activity, activity.getString(R.string.error_invalid_range), Toast.LENGTH_SHORT).show()
                             return@onShowCustomDialog
                         }
                     }
@@ -290,16 +288,11 @@ class EditorViewBuilder(
                 }
         }
 
-        val isRemoveDocx = titleText == "Remove Pages"
-        val hideRotate = isRemoveDocx || titleText == "Merge PDF"
-        val hideDrag = isRemoveDocx
-        val isImg = titleText == "Images to PDF"
-                || titleText == "Modify PDF"
-                || titleText == "Reorder Pages"
-                || isRemoveDocx
-                || titleText == "Merge PDF"
+        val hideRotate = mode.hideRotate
+        val hideDrag = mode.hideDrag
+        val isImg = mode.imageAdapter
 
-        val isMerge = titleText == "Merge PDF"
+        val isMerge = mode == EditorMode.MERGE_PDF
         val adapter = PagesAdapter(actions, {
             refreshCount()
         }, isImg, hideRotate, hideDrag, isMerge)
@@ -317,13 +310,13 @@ class EditorViewBuilder(
             val tuneButton = ImageView(activity)
             tuneButton.setImageResource(R.drawable.tune_24px)
             tuneButton.setColorFilter(color(R.color.istan_text))
-            tuneButton.contentDescription = "Document options"
+            tuneButton.contentDescription = activity.getString(R.string.editor_document_options)
             tuneButton.setPadding(dp(12), dp(12), dp(12), dp(12))
             val ripple = android.util.TypedValue()
             activity.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
             tuneButton.setBackgroundResource(ripple.resourceId)
             tuneButton.setOnClickListener {
-                val showComp = !docxExport && (titleText == "Images to PDF" || titleText == "Modify PDF" || titleText == "Reorder Pages")
+                val showComp = mode.showCompression
                 DocumentOptionsSheet(
                     activity = activity,
                     showPageSize = showNormalization,
@@ -345,7 +338,7 @@ class EditorViewBuilder(
             titleRow.addView(tuneButton, LinearLayout.LayoutParams(dp(48), dp(48)))
         }
 
-        if (allowReorder) {
+        if (mode.allowReorder) {
             val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
                 override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
                     if (viewHolder.itemViewType == 1) return 0
@@ -361,7 +354,7 @@ class EditorViewBuilder(
                     val item = pagesMutable.removeAt(from)
                     pagesMutable.add(to, item)
 
-                    if (titleText == "Merge PDF") {
+                    if (mode.syncPendingUris) {
                         val pendingUris = actions.getPendingUris() as MutableList<Uri>
                         val u = pendingUris.removeAt(from)
                         pendingUris.add(to, u)
@@ -385,7 +378,7 @@ class EditorViewBuilder(
             insets
         }
 
-        if (titleText == "Images to PDF" || titleText == "Reorder Pages" || titleText == "Modify PDF" || titleText == "Merge PDF") {
+        if (mode.showAddCard) {
             val addCard = LinearLayout(activity)
             addCard.orientation = LinearLayout.HORIZONTAL
             addCard.gravity = Gravity.CENTER
@@ -408,24 +401,19 @@ class EditorViewBuilder(
             plusText.background = circleBg
             addCard.addView(plusText, LinearLayout.LayoutParams(dp(28), dp(28)))
 
-            val labelStr = when (titleText) {
-                "Reorder Pages" -> "Add DOCX / PDF"
-                "Merge PDF" -> "Tap to Add PDF"
-                else -> "Add Images / PDF"
-            }
-            val addTitle = text(labelStr, 15, R.color.istan_text, false)
+            val addTitle = text(activity.getString(mode.addLabelRes), 15, R.color.istan_text, false)
             addTitle.setPadding(dp(12), 0, 0, 0)
             addCard.addView(addTitle)
 
             addCard.isClickable = true
-            addCard.setOnClickListener { actions.onAddItems(titleText) }
+            addCard.setOnClickListener { actions.onAddItems(mode) }
 
             val acLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             acLp.setMargins(0, 0, 0, dp(12))
             footer.addView(addCard, acLp)
         }
 
-        val save = actionButton(saveLabelText, true) { actions.onSave(titleText, docxExport) }
+        val save = actionButton(activity.getString(mode.saveLabelRes), true) { actions.onSave(mode) }
         val saveLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         saveLp.setMargins(0, 0, 0, dp(8))
         footer.addView(save, saveLp)
@@ -516,7 +504,7 @@ class EditorViewBuilder(
                 val dragHandle = ImageView(activity)
                 dragHandle.setImageResource(R.drawable.drag_indicator_24px)
                 dragHandle.setColorFilter(color(R.color.istan_text_muted))
-                dragHandle.contentDescription = "Reorder page"
+                dragHandle.contentDescription = activity.getString(R.string.editor_reorder_page)
                 dragHandle.setPadding(dp(12), dp(12), dp(12), dp(12))
                 if (hideDrag) dragHandle.visibility = View.GONE
                 row.addView(dragHandle, LinearLayout.LayoutParams(dp(48), dp(48)))
@@ -549,19 +537,19 @@ class EditorViewBuilder(
                 val cropBtn = ImageView(activity)
                 cropBtn.setImageResource(R.drawable.crop_24px)
                 cropBtn.setColorFilter(color(R.color.istan_olive_dark))
-                cropBtn.contentDescription = "Crop page"
+                cropBtn.contentDescription = activity.getString(R.string.editor_crop_page)
                 cropBtn.setPadding(dp(8), dp(8), dp(8), dp(8))
 
                 val rotateLeft = ImageView(activity)
                 rotateLeft.setImageResource(R.drawable.rotate_left)
                 rotateLeft.setColorFilter(color(R.color.istan_olive_dark))
-                rotateLeft.contentDescription = "Rotate left"
+                rotateLeft.contentDescription = activity.getString(R.string.editor_rotate_left)
                 rotateLeft.setPadding(dp(8), dp(8), dp(8), dp(8))
 
                 val rotateRight = ImageView(activity)
                 rotateRight.setImageResource(R.drawable.rotate_right)
                 rotateRight.setColorFilter(color(R.color.istan_olive_dark))
-                rotateRight.contentDescription = "Rotate right"
+                rotateRight.contentDescription = activity.getString(R.string.editor_rotate_right)
                 rotateRight.setPadding(dp(8), dp(8), dp(8), dp(8))
 
                 val actionsBox = LinearLayout(activity)
@@ -597,7 +585,7 @@ class EditorViewBuilder(
                     crossBtn = ImageView(activity)
                     crossBtn.setImageResource(R.drawable.close_24px)
                     crossBtn.setColorFilter(color(R.color.istan_destructive))
-                    crossBtn.contentDescription = "Remove page"
+                    crossBtn.contentDescription = activity.getString(R.string.editor_remove_page)
                     crossBtn.setPadding(dp(8), dp(8), dp(8), dp(8))
                     addAction(crossBtn, 40)
                 } else {
@@ -659,7 +647,7 @@ class EditorViewBuilder(
                     )
                 )
                 val keepBox = CheckBox(activity)
-                keepBox.text = "Keep"
+                keepBox.text = activity.getString(R.string.editor_keep)
                 keepBox.textSize = 18f
                 keepBox.setTextColor(color(R.color.istan_text))
                 keepBox.buttonTintList = tcColors
@@ -708,16 +696,16 @@ class EditorViewBuilder(
                 }
             }
 
-            holder.preview.contentDescription = "Preview page ${item.originalIndex + 1}"
+            holder.preview.contentDescription = activity.getString(R.string.editor_preview_page, item.originalIndex + 1)
 
             if (isImg) {
                 holder.titleText?.let {
                     it.visibility = View.VISIBLE
-                    it.text = if (item.displayName != null && item.displayName.trim().isNotEmpty()) item.displayName else "Page ${item.originalIndex + 1}"
+                    it.text = if (item.displayName != null && item.displayName.trim().isNotEmpty()) item.displayName else activity.getString(R.string.editor_page, item.originalIndex + 1)
                 }
-                holder.keep.contentDescription = "Select page ${item.originalIndex + 1}"
+                holder.keep.contentDescription = activity.getString(R.string.editor_select_page, item.originalIndex + 1)
             } else {
-                holder.info?.text = "Page ${item.originalIndex + 1}"
+                holder.info?.text = activity.getString(R.string.editor_page, item.originalIndex + 1)
             }
 
             holder.preview.setOnClickListener {
@@ -859,7 +847,7 @@ class EditorViewBuilder(
             )
             val keepBox = CheckBox(activity)
             keepBox.buttonTintList = cbColors
-            keepBox.text = "Keep"
+            keepBox.text = activity.getString(R.string.editor_keep)
             keepBox.textSize = 16f
             keepBox.setTextColor(Color.WHITE)
             keepBox.setPadding(dp(2), 0, dp(14), 0)
@@ -882,7 +870,7 @@ class EditorViewBuilder(
             val syncUi = Runnable {
                 val pgs = actions.getPages()
                 val p = pgs[currentPos[0]]
-                pageCounter.text = "${currentPos[0] + 1} / ${pgs.size}"
+                pageCounter.text = activity.getString(R.string.editor_page_counter, currentPos[0] + 1, pgs.size)
                 keepBox.setOnCheckedChangeListener(null)
                 keepBox.isChecked = p.keep
                 keepBox.setOnCheckedChangeListener { _, checked ->

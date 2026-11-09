@@ -1,7 +1,10 @@
 package vasuki.istanpdf.model
 
-enum class PageOrientation(val label: String) {
-    AUTO("Auto"),
-    PORTRAIT("Portrait"),
-    LANDSCAPE("Landscape")
+import androidx.annotation.StringRes
+import vasuki.istanpdf.R
+
+enum class PageOrientation(@StringRes val labelRes: Int) {
+    AUTO(R.string.orientation_auto),
+    PORTRAIT(R.string.orientation_portrait),
+    LANDSCAPE(R.string.orientation_landscape)
 }

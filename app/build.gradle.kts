@@ -21,6 +21,10 @@ android {
 
     sourceSets["main"].java.srcDirs("src/main/java")
 
+    androidResources {
+        localeFilters += listOf("en", "pt-rBR")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

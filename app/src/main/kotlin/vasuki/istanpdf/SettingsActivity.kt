@@ -43,11 +43,18 @@ import vasuki.istanpdf.presentation.ShadcnDrawables
 
 class SettingsActivity : AppCompatActivity() {
 
+    private var settingsScrollView: ScrollView? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        buildSettings(0)
+        buildSettings(savedInstanceState?.getInt("settingsScrollY", 0) ?: 0)
         applySystemBarTheme()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("settingsScrollY", settingsScrollView?.scrollY ?: 0)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -82,13 +89,13 @@ class SettingsActivity : AppCompatActivity() {
         val backArrow = ImageView(this).apply {
             setImageResource(R.drawable.arrow_back_24px)
             setColorFilter(color(R.color.istan_text))
-            contentDescription = "Navigate up"
+            contentDescription = getString(R.string.action_navigate_up)
             setPadding(dp(12), dp(12), dp(12), dp(12))
             setOnClickListener { finish() }
         }
         titleRow.addView(backArrow, LinearLayout.LayoutParams(dp(48), dp(48)))
 
-        val title = text("Settings", 28, R.color.istan_text, true).apply {
+        val title = text(getString(R.string.settings_title), 28, R.color.istan_text, true).apply {
             includeFontPadding = false
             typeface = AppFont.medium
         }
@@ -102,6 +109,7 @@ class SettingsActivity : AppCompatActivity() {
             clipToPadding = false
         }
         page.addView(scrollView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        settingsScrollView = scrollView
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -125,7 +133,7 @@ class SettingsActivity : AppCompatActivity() {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val mode = ThemePrefs.themeMode(this)
 
-        body.addView(categoryHeader("APPEARANCE"), LinearLayout.LayoutParams(
+        body.addView(categoryHeader(getString(R.string.settings_section_appearance)), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             topMargin = dp(16)
             bottomMargin = dp(8)
@@ -137,7 +145,8 @@ class SettingsActivity : AppCompatActivity() {
             clipToOutline = true
         }
 
-        val (themeRow, _) = settingsRow("Theme", THEME_LABELS[mode], clickable = true)
+        val themeLabels = themeLabels()
+        val (themeRow, _) = settingsRow(getString(R.string.settings_theme), themeLabels[mode], clickable = true)
         val themeChevron = ImageView(this).apply {
             setImageResource(R.drawable.chevron_right_24px)
             setColorFilter(color(R.color.istan_text_muted))
@@ -147,7 +156,7 @@ class SettingsActivity : AppCompatActivity() {
             marginStart = dp(8)
         })
         themeRow.setOnClickListener {
-            RoundedDropdown(this, themeRow, THEME_LABELS, ThemePrefs.themeMode(this)) { index ->
+            RoundedDropdown(this, themeRow, themeLabels, ThemePrefs.themeMode(this)) { index ->
                 if (ThemePrefs.themeMode(this) != index) {
                     ThemePrefs.setThemeMode(this, index)
                     applySystemBarTheme()
@@ -158,7 +167,7 @@ class SettingsActivity : AppCompatActivity() {
         appearanceGroup.addView(themeRow)
 
         if (ThemePrefs.isDark(this)) {
-            val (hcmRow, _) = settingsRow("HCM", "High Contrast Mode")
+            val (hcmRow, _) = settingsRow(getString(R.string.settings_hcm), getString(R.string.settings_hcm_subtitle))
             hcmRow.addView(styledSwitch(
                 checked = ThemePrefs.isHighContrast(this),
                 onToggle = { isChecked ->
@@ -175,7 +184,7 @@ class SettingsActivity : AppCompatActivity() {
             bottomMargin = dp(32)
         })
 
-        body.addView(categoryHeader("GENERAL"), LinearLayout.LayoutParams(
+        body.addView(categoryHeader(getString(R.string.settings_section_general)), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             topMargin = dp(16)
             bottomMargin = dp(8)
@@ -189,7 +198,10 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
 
-        val (updateRow, _) = settingsRow("Check for updates", "Notify when a new version is available")
+        val (updateRow, _) = settingsRow(
+            getString(R.string.settings_check_updates),
+            getString(R.string.settings_check_updates_subtitle)
+        )
         updateRow.addView(styledSwitch(
             checked = prefs.getBoolean("check_updates", true),
             onToggle = { isChecked -> prefs.edit().putBoolean("check_updates", isChecked).apply() }
@@ -197,7 +209,10 @@ class SettingsActivity : AppCompatActivity() {
         generalGroup.addView(updateRow)
 
         if (LibreOfficeManager.isEngineInstalled(this)) {
-            val (perfRow, _) = settingsRow("LibreOffice on startup", "Pre-load engine for faster DOCX conversion")
+            val (perfRow, _) = settingsRow(
+                getString(R.string.settings_libreoffice_startup),
+                getString(R.string.settings_libreoffice_startup_subtitle)
+            )
             perfRow.addView(styledSwitch(
                 checked = prefs.getBoolean("improve_docx_perf", false),
                 onToggle = { isChecked -> prefs.edit().putBoolean("improve_docx_perf", isChecked).apply() }
@@ -205,7 +220,7 @@ class SettingsActivity : AppCompatActivity() {
             generalGroup.addView(perfRow)
         }
 
-        val (cameraRow, cameraSubtitle) = settingsRow("Camera app",
+        val (cameraRow, cameraSubtitle) = settingsRow(getString(R.string.settings_camera_app),
             resolveCameraSubtitle(prefs), clickable = true)
         val chevron = ImageView(this).apply {
             setImageResource(R.drawable.chevron_right_24px)
@@ -216,18 +231,21 @@ class SettingsActivity : AppCompatActivity() {
             marginStart = dp(8)
         })
         cameraRow.setOnClickListener {
-            val options = listOf("Default", "Custom")
+            val options = listOf(
+                getString(R.string.settings_camera_default),
+                getString(R.string.settings_camera_custom)
+            )
             val selected = if ((prefs.getString("camera_pkg", "") ?: "").isEmpty()) 0 else 1
             RoundedDropdown(this, cameraRow, options, selected) { index ->
                 if (index == 0) {
                     prefs.edit().putString("camera_pkg", "").apply()
-                    cameraSubtitle.text = "Default"
+                    cameraSubtitle.text = getString(R.string.settings_camera_default)
                 } else {
                     val customApps = detectCustomCameraApps()
                     if (customApps.isEmpty()) {
                         prefs.edit().putString("camera_pkg", "").apply()
-                        cameraSubtitle.text = "Default"
-                        Toast.makeText(this, "No custom camera apps available", Toast.LENGTH_SHORT).show()
+                        cameraSubtitle.text = getString(R.string.settings_camera_default)
+                        Toast.makeText(this, getString(R.string.settings_camera_none), Toast.LENGTH_SHORT).show()
                     } else {
                         showCustomCameraDialog(customApps, prefs, cameraSubtitle)
                     }
@@ -242,7 +260,7 @@ class SettingsActivity : AppCompatActivity() {
         })
         val (versionName, versionCode) = resolveAppVersion()
 
-        body.addView(categoryHeader("ABOUT"), LinearLayout.LayoutParams(
+        body.addView(categoryHeader(getString(R.string.settings_section_about)), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             topMargin = dp(16)
             bottomMargin = dp(8)
@@ -254,7 +272,7 @@ class SettingsActivity : AppCompatActivity() {
             clipToOutline = true
         }
 
-        val (aboutRow, _) = settingsRow("About", versionName, clickable = true)
+        val (aboutRow, _) = settingsRow(getString(R.string.settings_about), versionName, clickable = true)
         val aboutChevron = ImageView(this).apply {
             setImageResource(R.drawable.chevron_right_24px)
             setColorFilter(color(R.color.istan_text_muted))
@@ -267,7 +285,11 @@ class SettingsActivity : AppCompatActivity() {
             showAboutDialog(versionName, versionCode)
         }
         aboutGroup.addView(aboutRow)
-        val (telegramRow, _) = settingsRow("Canary builds", "Join Telegram for Canary builds", clickable = true)
+        val (telegramRow, _) = settingsRow(
+            getString(R.string.settings_canary),
+            getString(R.string.settings_canary_subtitle),
+            clickable = true
+        )
         val telegramChevron = ImageView(this).apply {
             setImageResource(R.drawable.chevron_right_24px)
             setColorFilter(color(R.color.istan_text_muted))
@@ -280,7 +302,7 @@ class SettingsActivity : AppCompatActivity() {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/istanpdf_builds")))
             } catch (_: Exception) {
-                Toast.makeText(this, "Unable to open link", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.error_unable_open_link), Toast.LENGTH_SHORT).show()
             }
         }
         aboutGroup.addView(telegramRow)
@@ -356,7 +378,7 @@ class SettingsActivity : AppCompatActivity() {
                 packageManager.getPackageInfo(packageName, 0)
             }
         }.getOrNull()
-        val versionName = pInfo?.versionName ?: "Unknown"
+        val versionName = pInfo?.versionName ?: getString(R.string.settings_unknown)
         val versionCode = pInfo?.let { PackageInfoCompat.getLongVersionCode(it).toString() } ?: "0"
         return Pair(versionName, versionCode)
     }
@@ -386,7 +408,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         root.addView(handleBar)
 
-        val titleView = text("About", 20, R.color.istan_text, true).apply {
+        val titleView = text(getString(R.string.dialog_about), 20, R.color.istan_text, true).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -414,7 +436,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         brandSection.addView(iconView, LinearLayout.LayoutParams(dp(48), dp(48)))
 
-        val appName = text("IStanPdf", 20, R.color.istan_text, true).apply {
+        val appName = text(getString(R.string.app_name), 20, R.color.istan_text, true).apply {
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -425,7 +447,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         brandSection.addView(appName)
 
-        val tagline = text("Your offline document toolkit.", 13, R.color.istan_text_muted, false).apply {
+        val tagline = text(getString(R.string.settings_tagline), 13, R.color.istan_text_muted, false).apply {
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -473,7 +495,7 @@ class SettingsActivity : AppCompatActivity() {
             metadataCard.addView(row)
         }
 
-        addMetaRow(R.drawable.info_24px, "Version Name", versionName)
+        addMetaRow(R.drawable.info_24px, getString(R.string.settings_version_name), versionName)
 
         val divider = View(this).apply {
             setBackgroundColor(color(R.color.istan_outline))
@@ -487,7 +509,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         metadataCard.addView(divider)
 
-        addMetaRow(R.drawable.code_24px, "Version Code", versionCode)
+        addMetaRow(R.drawable.code_24px, getString(R.string.settings_version_code), versionCode)
         root.addView(metadataCard)
 
         val btnRow = LinearLayout(this).apply {
@@ -514,12 +536,12 @@ class SettingsActivity : AppCompatActivity() {
             addView(icon, LinearLayout.LayoutParams(dp(18), dp(18)).apply {
                 marginEnd = dp(8)
             })
-            val label = text("Copy Info", 14, R.color.istan_text, true)
+            val label = text(getString(R.string.settings_copy_info), 14, R.color.istan_text, true)
             addView(label)
             setOnClickListener {
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("IStanPdf Version", "IStanPdf $versionName ($versionCode)"))
-                Toast.makeText(this@SettingsActivity, "Version copied to clipboard", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SettingsActivity, getString(R.string.settings_version_copied), Toast.LENGTH_SHORT).show()
             }
         }
         btnRow.addView(copyBtn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
@@ -541,7 +563,7 @@ class SettingsActivity : AppCompatActivity() {
             addView(icon, LinearLayout.LayoutParams(dp(18), dp(18)).apply {
                 marginEnd = dp(8)
             })
-            val label = text("Close", 14, R.color.istan_text, true).apply {
+            val label = text(getString(R.string.action_close), 14, R.color.istan_text, true).apply {
                 setTextColor(ShadcnDrawables.primaryForeground(this@SettingsActivity))
             }
             addView(label)
@@ -641,19 +663,19 @@ class SettingsActivity : AppCompatActivity() {
                     null
                 }
             }
-            .sortedBy { it.label.lowercase() }
+            .sortedWith(java.text.Collator.getInstance().let { collator -> compareBy { collator.getCollationKey(it.label) } })
             .toList()
     }
 
     private fun resolveCameraSubtitle(prefs: android.content.SharedPreferences): String {
         val currentCameraPkg = prefs.getString("camera_pkg", "") ?: ""
-        if (currentCameraPkg.isEmpty()) return "Default"
+        if (currentCameraPkg.isEmpty()) return getString(R.string.settings_camera_default)
         return try {
             val appInfo = packageManager.getApplicationInfo(currentCameraPkg, 0)
             packageManager.getApplicationLabel(appInfo).toString()
         } catch (_: PackageManager.NameNotFoundException) {
             prefs.edit().putString("camera_pkg", "").apply()
-            "Default"
+            getString(R.string.settings_camera_default)
         }
     }
 
@@ -673,7 +695,7 @@ class SettingsActivity : AppCompatActivity() {
             setPadding(dp(24), dp(24), dp(24), dp(20))
         }
 
-        val titleView = text("Select Camera App", 20, R.color.istan_text, true).apply {
+        val titleView = text(getString(R.string.dialog_select_camera), 20, R.color.istan_text, true).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -705,7 +727,7 @@ class SettingsActivity : AppCompatActivity() {
                         .apply()
                     subtitle.text = app.label
                     dialog.dismiss()
-                    Toast.makeText(this@SettingsActivity, "Camera app set to ${app.label}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.settings_camera_set, app.label), Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -767,7 +789,7 @@ class SettingsActivity : AppCompatActivity() {
             gravity = Gravity.END
             setPadding(0, dp(16), 0, 0)
         }
-        val cancelBtn = text("Cancel", 14, R.color.istan_text_muted, true).apply {
+        val cancelBtn = text(getString(R.string.action_cancel), 14, R.color.istan_text_muted, true).apply {
             setPadding(dp(12), dp(12), dp(12), dp(12))
             setOnClickListener { dialog.dismiss() }
         }
@@ -792,7 +814,7 @@ class SettingsActivity : AppCompatActivity() {
         val footer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
         val credit = TextView(this).apply {
-            text = "Dev By\nRamakanth"
+            text = getString(R.string.settings_dev_by)
             textSize = 38f
             setTextColor(color(R.color.istan_text))
             typeface = AppFont.semiBold
@@ -802,11 +824,10 @@ class SettingsActivity : AppCompatActivity() {
         }
         footer.addView(credit)
 
-        val crafted = "Crafted with "
-        val heart = "\u2764\uFE0F"
-        val location = " in Bengaluru, India"
-        val attribution = SpannableString(crafted + heart + location)
-        val locationStart = crafted.length + heart.length
+        val crafted = getString(R.string.settings_crafted_with)
+        val location = " " + getString(R.string.settings_crafted_location)
+        val attribution = SpannableString(crafted + location)
+        val locationStart = crafted.length
         attribution.setSpan(AssetTypefaceSpan(AppFont.regular), 0, locationStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         attribution.setSpan(ForegroundColorSpan(color(R.color.istan_text_muted)), 0, locationStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         attribution.setSpan(ForegroundColorSpan(color(R.color.istan_text)),
@@ -859,10 +880,11 @@ class SettingsActivity : AppCompatActivity() {
         controller.isAppearanceLightNavigationBars = lightBars
     }
 
+    private fun themeLabels(): List<String> = listOf(
+        getString(R.string.theme_system),
+        getString(R.string.theme_light),
+        getString(R.string.theme_dark)
+    )
+
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
-
-
-    private companion object {
-        val THEME_LABELS = listOf("System default", "Light", "Dark")
-    }
 }

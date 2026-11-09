@@ -45,6 +45,7 @@ import vasuki.istanpdf.model.PageItem
 import vasuki.istanpdf.model.PageOrientation
 import vasuki.istanpdf.presentation.BottomSheetStyle
 import vasuki.istanpdf.presentation.CropOverlayView
+import vasuki.istanpdf.presentation.EditorMode
 import vasuki.istanpdf.presentation.EditorViewBuilder
 import vasuki.istanpdf.presentation.EditorViewModel
 import vasuki.istanpdf.presentation.ExportCompressMode
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
     private var cropDialog: android.app.Dialog? = null
     private var cropView: CropOverlayView? = null
     private var cropBitmap: Bitmap? = null
-    private var currentEditorTitle: String? = null
+    private var currentEditorMode: EditorMode? = null
     private var updateThread: Thread? = null
     private var canaryDialog: android.app.Dialog? = null
     private var hasCheckedCanaryPrompt = false
@@ -118,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ::onCameraResult)
         cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) launchCameraForCapture()
-            else toast("Camera permission is required to take photos")
+            else toast(getString(R.string.error_camera_permission))
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -204,7 +205,13 @@ class MainActivity : AppCompatActivity() {
                         canaryDialog?.dismiss()
                         val changelogView = createChangelogView(finalChangelog)
 
-                        showCustomDialog("Update Available: $finalVersionName", changelogView, "Later", null, "Download") {
+                        showCustomDialog(
+                            getString(R.string.dialog_update_available, finalVersionName),
+                            changelogView,
+                            getString(R.string.action_later),
+                            null,
+                            getString(R.string.action_download)
+                        ) {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(finalLink)))
                         }
                     }
@@ -245,13 +252,13 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(24), dp(24), dp(24), dp(20))
         }
 
-        val title = text("Join Telegram", 20, R.color.istan_text, true).apply {
+        val title = text(getString(R.string.dialog_canary_title), 20, R.color.istan_text, true).apply {
             setPadding(0, 0, 0, dp(10))
         }
         dialogRoot.addView(title)
 
         val message = text(
-            "Get early access to canary builds and test experimental features before public release.",
+            getString(R.string.dialog_canary_body),
             14,
             R.color.istan_text_muted,
             false
@@ -294,7 +301,7 @@ class MainActivity : AppCompatActivity() {
         }
         toggleRow.addView(checkbox, cbLp)
 
-        val toggleLabel = text("Don't show again", 14, R.color.istan_text, false)
+        val toggleLabel = text(getString(R.string.canary_dont_show), 14, R.color.istan_text, false)
         toggleRow.addView(toggleLabel, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         toggleRow.setOnClickListener {
@@ -309,7 +316,7 @@ class MainActivity : AppCompatActivity() {
             setPadding(0, dp(12), 0, 0)
         }
 
-        val laterBtn = text("Later", 14, R.color.istan_text_muted, true).apply {
+        val laterBtn = text(getString(R.string.action_later), 14, R.color.istan_text_muted, true).apply {
             setPadding(dp(16), dp(8), dp(16), dp(8))
             minimumHeight = dp(44)
             gravity = Gravity.CENTER
@@ -324,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         }
         btnRow.addView(laterBtn)
 
-        val joinBtn = text("Join", 14, R.color.istan_olive, true).apply {
+        val joinBtn = text(getString(R.string.action_join), 14, R.color.istan_olive, true).apply {
             setPadding(dp(16), dp(8), dp(16), dp(8))
             minimumHeight = dp(44)
             gravity = Gravity.CENTER
@@ -335,7 +342,7 @@ class MainActivity : AppCompatActivity() {
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/istanpdf_builds")))
                 } catch (_: Exception) {
-                    Toast.makeText(this@MainActivity, "Unable to open link", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, getString(R.string.error_unable_open_link), Toast.LENGTH_SHORT).show()
                 }
                 dialog.dismiss()
             }
@@ -514,7 +521,7 @@ class MainActivity : AppCompatActivity() {
             } else if (requestCode == REQ_PICK_IMAGES_TO_PDF) {
                 editorViewModel.clearPendingImageUris()
             }
-            setBusy(false, "Ready")
+            setBusy(false, getString(R.string.status_ready))
             return
         }
 
@@ -543,16 +550,16 @@ class MainActivity : AppCompatActivity() {
             }
             if (pendingUris.isEmpty()) {
                 if (emptyFiles > 0) {
-                    Toast.makeText(this, "Empty PDF skipped", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, resources.getQuantityString(R.plurals.empty_pdf_skipped, 1, 1), Toast.LENGTH_SHORT).show()
                 }
                 return
             }
             if (emptyFiles > 0) {
-                status?.text = "${emptyFiles}Empty PDF skipped."
+                status?.text = resources.getQuantityString(R.plurals.empty_pdf_skipped, emptyFiles, emptyFiles)
             }
 
             applyStatusTone(false)
-            status?.text = "Loading PDFs..."
+            status?.text = getString(R.string.status_loading_pdfs)
             worker.execute {
                 val rendered = mutableListOf<PageItem>()
                 var startIndex = 0
@@ -573,9 +580,9 @@ class MainActivity : AppCompatActivity() {
                     val pages = editorViewModel.pages
                     pages.addAll(rendered)
                     for (p in pages) p.keep = true
-                    buildPageEditor("Merge PDF", "Merge PDF", false, true)
-                    if (skipped > 0) Toast.makeText(this@MainActivity, "$skipped PDF(s) could not be loaded", Toast.LENGTH_SHORT).show()
-                    setBusy(false, WAITING_TEXT)
+                    buildPageEditor(EditorMode.MERGE_PDF)
+                    if (skipped > 0) Toast.makeText(this@MainActivity, resources.getQuantityString(R.plurals.pdfs_not_loaded, skipped, skipped), Toast.LENGTH_SHORT).show()
+                    setBusy(false, getString(R.string.status_ready))
                 }
             }
             return
@@ -583,7 +590,7 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == REQ_PICK_REORDER_PDF) {
             editorViewModel.reorderSource = data.data
-            loadPdfPreview(editorViewModel.reorderSource ?: return, false)
+            loadPdfPreview(editorViewModel.reorderSource ?: return)
             return
         }
 
@@ -596,7 +603,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQ_PICK_REORDER_DOCX_EXPORT) {
             val docx = data.data ?: return
             editorViewModel.originalFileName = getDisplayName(docx)
-            setBusy(true, "Converting DOCX to PDF for preview...")
+            setBusy(true, getString(R.string.status_converting_docx_preview))
             worker.execute {
                 try {
                     val pdfFile = AppModule.get().docxToPdf.execute(docx)
@@ -608,8 +615,8 @@ class MainActivity : AppCompatActivity() {
                         editorViewModel.clearPages()
                         editorViewModel.pages.addAll(rendered)
                         editorViewModel.reorderSource = pdfUri
-                        setBusy(false, "Ready")
-                        buildPageEditor("Reorder Pages", "Save PDF", false, true)
+                        setBusy(false, getString(R.string.status_ready))
+                        buildPageEditor(EditorMode.DOCX_REORDER)
                     }
                 } catch (exception: Exception) {
                     showError(exception)
@@ -648,12 +655,12 @@ class MainActivity : AppCompatActivity() {
                 validUris.add(u)
             }
             if (emptyFiles > 0) {
-                status?.text = "$emptyFiles Empty PDF skipped."
+                status?.text = resources.getQuantityString(R.plurals.empty_pdf_skipped, emptyFiles, emptyFiles)
             }
             if (validUris.isEmpty()) return
 
             applyStatusTone(false)
-            status?.text = "Loading PDFs..."
+            status?.text = getString(R.string.status_loading_pdfs)
             showStatusCard(false)
             worker.execute {
                 val rendered = mutableListOf<PageItem>()
@@ -674,8 +681,8 @@ class MainActivity : AppCompatActivity() {
                     pages.addAll(rendered)
                     editorViewModel.pagesAdded = true
                     pageList?.adapter?.notifyDataSetChanged()
-                    if (skipped > 0) Toast.makeText(this@MainActivity, "$skipped PDF(s) could not be loaded", Toast.LENGTH_SHORT).show()
-                    setBusy(false, WAITING_TEXT)
+                    if (skipped > 0) Toast.makeText(this@MainActivity, resources.getQuantityString(R.plurals.pdfs_not_loaded, skipped, skipped), Toast.LENGTH_SHORT).show()
+                    setBusy(false, getString(R.string.status_ready))
                 }
             }
             return
@@ -691,7 +698,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQ_PICK_DOCX_ADD || requestCode == REQ_PICK_PDF_ADD) {
             val rawUris = readSelectedUris(data)
             if (rawUris.isEmpty()) return
-            setBusy(true, "Rendering previews...", true)
+            setBusy(true, getString(R.string.status_rendering_previews), true)
             worker.execute {
                 try {
                     val pages = editorViewModel.pages
@@ -770,7 +777,7 @@ class MainActivity : AppCompatActivity() {
                         pages.addAll(newPages)
                         editorViewModel.pagesAdded = true
                         pageList?.adapter?.notifyDataSetChanged()
-                        setBusy(false, "Ready")
+                        setBusy(false, getString(R.string.status_ready))
                     }
                 } catch (exception: Exception) {
                     showError(exception)
@@ -788,7 +795,7 @@ class MainActivity : AppCompatActivity() {
                         val fileSize = cursor.getLong(0)
                         if (fileSize == 0L) {
                             cursor.close()
-                            toast("Error: PDF file is empty (0 bytes)")
+                            toast(getString(R.string.error_pdf_empty_bytes))
                             return
                         }
                     }
@@ -800,7 +807,7 @@ class MainActivity : AppCompatActivity() {
             worker.submit {
                 try {
                     val pageCount = AppModule.get().pdfEngine.openSession(pdfUri).use { it.pageCount }
-                    require(pageCount > 0) { "PDF has no pages" }
+                    require(pageCount > 0) { getString(R.string.error_pdf_no_pages) }
                     runOnUiThread { showPdfToImageQualityDialog(pdfUri, pageCount) }
                 } catch (exception: Exception) {
                     showError(exception)
@@ -836,7 +843,7 @@ class MainActivity : AppCompatActivity() {
                         val fileSize = cursor.getLong(0)
                         if (fileSize == 0L) {
                             cursor.close()
-                            toast("Error: File is empty (0 bytes)")
+                            toast(getString(R.string.error_file_empty_bytes))
                             return
                         }
                     }
@@ -859,7 +866,7 @@ class MainActivity : AppCompatActivity() {
                         val fileSize = cursor.getLong(0)
                         if (fileSize == 0L) {
                             cursor.close()
-                            toast("Error: PDF file is empty (0 bytes)")
+                            toast(getString(R.string.error_pdf_empty_bytes))
                             return
                         }
                     }
@@ -875,10 +882,10 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (!hasImages) {
                         showCustomDialog(
-                            "No Images Found",
-                            text("This PDF has no embedded images. Compression may not significantly reduce file size.", 14, R.color.istan_text_muted, false),
-                            "Cancel", null,
-                            "Continue", Runnable { showCompressModeDialog(pdfUri) }
+                            getString(R.string.dialog_no_images_title),
+                            text(getString(R.string.dialog_no_images_body), 14, R.color.istan_text_muted, false),
+                            getString(R.string.action_cancel), null,
+                            getString(R.string.action_continue), Runnable { showCompressModeDialog(pdfUri) }
                         )
                     } else {
                         showCompressModeDialog(pdfUri)
@@ -894,14 +901,14 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == REQ_SAVE_MERGE_PDF) {
             val rotations = pages.map { it.rotation }
-            runJob("Merging PDFs...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) { AppModule.get().mergePdf.execute(ArrayList(pendingUris), rotations, destination) }
+            runJob(getString(R.string.status_merging_pdfs), OutputRef(destination, MIME_PDF, getDisplayName(destination))) { AppModule.get().mergePdf.execute(ArrayList(pendingUris), rotations, destination) }
         } else if (requestCode == REQ_SAVE_IMAGES_TO_PDF) {
             val snapshot = ArrayList(pages)
             val normalize = editorViewModel.normalizeTarget
             val orientation = editorViewModel.pageOrientation
             val compMode = editorViewModel.exportCompressMode
             val targetBytes = editorViewModel.exportTargetBytes
-            runJob("Converting Images...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+            runJob(getString(R.string.status_converting_images), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 if (compMode == ExportCompressMode.OFF) {
                     AppModule.get().imagesToPdf.execute(ArrayList(pendingUris), snapshot, destination, normalize, orientation)
                 } else {
@@ -915,11 +922,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG) {
-            runJob("Converting to JPG...", OutputRef(destination, MIME_JPEG, getDisplayName(destination))) { AppModule.get().pdfToJpeg.executeSingle(pendingUris[0], destination, pdfToImageDpi) }
+            runJob(getString(R.string.status_converting_to_jpg), OutputRef(destination, MIME_JPEG, getDisplayName(destination))) { AppModule.get().pdfToJpeg.executeSingle(pendingUris[0], destination, pdfToImageDpi) }
         } else if (requestCode == REQ_SAVE_PDF_TO_JPG_ZIP) {
-            runJob("Converting to JPGs...", OutputRef(destination, MIME_ZIP, getDisplayName(destination))) { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination, pdfToImageDpi) }
+            runJob(getString(R.string.status_converting_to_jpgs), OutputRef(destination, MIME_ZIP, getDisplayName(destination))) { AppModule.get().pdfToJpeg.execute(pendingUris[0], destination, pdfToImageDpi) }
         } else if (requestCode == REQ_SAVE_DOCX_TO_PDF) {
-            runJob("Converting DOCX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+            runJob(getString(R.string.status_converting_docx), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val docxUri = pendingUris[0]
                 val pdfFile = AppModule.get().docxToPdf.execute(docxUri)
                 try {
@@ -931,7 +938,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else if (requestCode == REQ_SAVE_MD_TO_PDF) {
-            runJob("Converting Markdown to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+            runJob(getString(R.string.status_converting_markdown), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val mdUri = pendingUris[0]
                 val pdfFile = AppModule.get().mdToPdf.execute(mdUri)
                 try {
@@ -943,7 +950,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else if (requestCode == REQ_SAVE_PPTX_TO_PDF) {
-            runJob("Converting PPTX to PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+            runJob(getString(R.string.status_converting_pptx), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                 val pptxUri = pendingUris[0]
                 val pdfFile = AppModule.get().pptxToPdf.execute(pptxUri)
                 try {
@@ -957,16 +964,16 @@ class MainActivity : AppCompatActivity() {
         } else if (requestCode == REQ_SAVE_COMPRESS_PDF) {
             val source = pendingUris[0]
             if (compressMode == COMPRESS_MODE_RESOLUTION) {
-                runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+                runJob(getString(R.string.status_compressing_pdf), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                     val skips = AppModule.get().compressPdf.executeByResolution(source, destination, compressDpi, compressQuality)
-                    if (skips > 0) "$skips image(s) could not be compressed" else null
+                    if (skips > 0) resources.getQuantityString(R.plurals.images_not_compressed, skips, skips) else null
                 }
             } else {
-                runJob("Compressing PDF...", OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+                runJob(getString(R.string.status_compressing_pdf), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
                     val (finalSize, skips) = AppModule.get().compressPdf.executeBySize(source, destination, compressTargetBytes)
                     val warnings = mutableListOf<String>()
-                    if (skips > 0) warnings.add("$skips image(s) could not be compressed")
-                    if (finalSize > compressTargetBytes) warnings.add("Couldn't reach target size (Output: ${formatFileSize(finalSize)})")
+                    if (skips > 0) warnings.add(resources.getQuantityString(R.plurals.images_not_compressed, skips, skips))
+                    if (finalSize > compressTargetBytes) warnings.add(getString(R.string.compress_target_unreached, formatFileSize(finalSize)))
                     if (warnings.isNotEmpty()) warnings.joinToString(". ") else null
                 }
             }
@@ -998,9 +1005,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             val activeStatus = when {
-                removed && reordered -> "Remove+Reorder Pages..."
-                removed -> "Removing Pages..."
-                else -> "Saving Pages..."
+                removed && reordered -> getString(R.string.status_remove_reorder_pages)
+                removed -> getString(R.string.status_removing_pages)
+                else -> getString(R.string.status_saving_pages)
             }
 
             runJob(activeStatus, OutputRef(destination, if (isDocx) MIME_DOCX else MIME_PDF, getDisplayName(destination))) {
@@ -1086,16 +1093,16 @@ class MainActivity : AppCompatActivity() {
         setViewWithLoading(homeView)
     }
 
-    private fun buildPageEditor(titleText: String, saveLabelText: String, docxExport: Boolean, allowReorder: Boolean) {
+    private fun buildPageEditor(mode: EditorMode) {
         isHome = false
         editorViewModel.pagesAdded = false
-        currentEditorTitle = titleText
+        currentEditorMode = mode
 
         val builder = EditorViewBuilder(this)
-        val editorView = builder.build(titleText, saveLabelText, docxExport, allowReorder, object : EditorViewBuilder.EditorActions {
+        val editorView = builder.build(mode, object : EditorViewBuilder.EditorActions {
             override fun onBack() { buildHome() }
-            override fun onSave(title: String, isDocx: Boolean) { handleSave(title, isDocx) }
-            override fun onAddItems(title: String) { onEditorAddRequested(title) }
+            override fun onSave(mode: EditorMode) { handleSave(mode) }
+            override fun onAddItems(mode: EditorMode) { onEditorAddRequested(mode) }
             override fun onCropPage(position: Int, onCropped: Runnable?) { cropEditorPage(position, onCropped) }
             override fun onShowCustomDialog(title: String, content: View, negStr: String?, negAction: Runnable?, posStr: String?, posAction: Runnable?) {
                 showCustomDialog(title, content, negStr, negAction, posStr, posAction)
@@ -1183,11 +1190,11 @@ class MainActivity : AppCompatActivity() {
         setViewWithLoading(editorView)
     }
 
-    private fun handleSave(titleText: String, docxExport: Boolean) {
+    private fun handleSave(mode: EditorMode) {
         val pages = editorViewModel.pages
         val pendingUris = editorViewModel.pendingUris
-        val normalized = !docxExport && editorViewModel.normalizeTarget.isEnabled
-        val oriented = !docxExport && editorViewModel.pageOrientation != PageOrientation.AUTO
+        val normalized = !mode.docxExport && editorViewModel.normalizeTarget.isEnabled
+        val oriented = !mode.docxExport && editorViewModel.pageOrientation != PageOrientation.AUTO
 
         var removed = false
         var keepCount = 0
@@ -1198,7 +1205,7 @@ class MainActivity : AppCompatActivity() {
             if (p.replacementFile != null) cropped = true
         }
         if (keepCount == 0) {
-            toast("Please select at least one page to save.")
+            toast(getString(R.string.error_select_page))
             return
         }
 
@@ -1217,7 +1224,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if ("Merge PDF" == titleText) {
+        if (mode == EditorMode.MERGE_PDF) {
             val keptUris = mutableListOf<Uri>()
             for (i in pages.indices) {
                 if (pages[i].keep && i < pendingUris.size) {
@@ -1225,7 +1232,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             if (keptUris.size < 2) {
-                toast("Please keep at least 2 PDFs to merge.")
+                toast(getString(R.string.error_keep_two_pdfs))
                 return
             }
             pendingUris.clear()
@@ -1237,9 +1244,9 @@ class MainActivity : AppCompatActivity() {
 
         val pagesAdded = editorViewModel.pagesAdded
 
-        if ("Images to PDF" == titleText) {
+        if (mode == EditorMode.IMAGES_TO_PDF) {
         } else if (!removed && !reordered && !rotated && !pagesAdded && !cropped && !normalized && !oriented) {
-            setBusy(false, "No changes to save.")
+            setBusy(false, getString(R.string.error_no_changes))
             return
         }
 
@@ -1266,8 +1273,8 @@ class MainActivity : AppCompatActivity() {
 
         val prefix = editorViewModel.originalFileName ?: getDisplayName(editorViewModel.reorderSource)
         when {
-            docxExport -> createDocument(MIME_DOCX, "$prefix$suffix.docx", REQ_SAVE_REORDER_DOCX_EXPORT)
-            "Images to PDF" == titleText -> {
+            mode.docxExport -> createDocument(MIME_DOCX, "$prefix$suffix.docx", REQ_SAVE_REORDER_DOCX_EXPORT)
+            mode == EditorMode.IMAGES_TO_PDF -> {
                 val imgPrefix = getDisplayName(if (pendingUris.isEmpty()) null else pendingUris[0])
                 createDocument(MIME_PDF, "${imgPrefix}_converted.pdf", REQ_SAVE_IMAGES_TO_PDF)
             }
@@ -1279,47 +1286,47 @@ class MainActivity : AppCompatActivity() {
         return when (mode) {
             ExportCompressMode.HIGH_COMPRESSION -> {
                 val skips = AppModule.get().compressPdf.executeByResolution(source, destination, 72, 40)
-                if (skips > 0) "$skips image(s) could not be compressed" else null
+                if (skips > 0) resources.getQuantityString(R.plurals.images_not_compressed, skips, skips) else null
             }
             ExportCompressMode.BALANCED -> {
                 val skips = AppModule.get().compressPdf.executeByResolution(source, destination, 150, 70)
-                if (skips > 0) "$skips image(s) could not be compressed" else null
+                if (skips > 0) resources.getQuantityString(R.plurals.images_not_compressed, skips, skips) else null
             }
             ExportCompressMode.CUSTOM_SIZE -> {
                 val (finalSize, skips) = AppModule.get().compressPdf.executeBySize(source, destination, targetBytes)
                 val warnings = mutableListOf<String>()
-                if (skips > 0) warnings.add("$skips image(s) could not be compressed")
-                if (finalSize > targetBytes) warnings.add("Couldn't reach target size (Output: ${formatFileSize(finalSize)})")
+                if (skips > 0) warnings.add(resources.getQuantityString(R.plurals.images_not_compressed, skips, skips))
+                if (finalSize > targetBytes) warnings.add(getString(R.string.compress_target_unreached, formatFileSize(finalSize)))
                 if (warnings.isNotEmpty()) warnings.joinToString(". ") else null
             }
             ExportCompressMode.OFF -> null
         }
     }
 
-    private fun onEditorAddRequested(titleText: String) {
-        if (titleText == "Merge PDF") {
-            handleAddItems(titleText)
+    private fun onEditorAddRequested(mode: EditorMode) {
+        if (mode == EditorMode.MERGE_PDF) {
+            handleAddItems(mode)
             return
         }
         showBottomSheetMenu(
-            "Choose",
+            getString(R.string.dialog_choose),
             listOf(
-                BottomSheetItem("From Gallery", R.drawable.image_24px, Runnable {
-                    handleAddItems(titleText)
+                BottomSheetItem(getString(R.string.action_from_gallery), R.drawable.image_24px, Runnable {
+                    handleAddItems(mode)
                 }),
-                BottomSheetItem("Take Photo", R.drawable.photo_camera_24px, Runnable {
-                    cameraMergeToPdf = titleText != "Images to PDF"
+                BottomSheetItem(getString(R.string.action_take_photo), R.drawable.photo_camera_24px, Runnable {
+                    cameraMergeToPdf = mode != EditorMode.IMAGES_TO_PDF
                     launchCameraForCapture()
                 })
             )
         )
     }
 
-    private fun handleAddItems(titleText: String) {
-        when {
-            "Reorder Pages" == titleText -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_DOCX, MIME_PDF), REQ_PICK_DOCX_ADD)
-            titleText == "Modify PDF" -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_PDF), REQ_PICK_PDF_ADD)
-            "Merge PDF" == titleText -> pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF_ADD)
+    private fun handleAddItems(mode: EditorMode) {
+        when (mode) {
+            EditorMode.DOCX_REORDER -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_DOCX, MIME_PDF), REQ_PICK_DOCX_ADD)
+            EditorMode.MODIFY_PDF -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", MIME_PDF), REQ_PICK_PDF_ADD)
+            EditorMode.MERGE_PDF -> pickMany(arrayOf(MIME_PDF), REQ_PICK_MERGE_PDF_ADD)
             else -> pickMany(arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp", "application/pdf"), REQ_PICK_IMAGES_TO_PDF_ADD)
         }
     }
@@ -1383,12 +1390,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showImageSourceChooser() {
         showBottomSheetMenu(
-            "Add Images",
+            getString(R.string.dialog_add_images),
             listOf(
-                BottomSheetItem("From Gallery", R.drawable.image_24px, Runnable {
+                BottomSheetItem(getString(R.string.action_from_gallery), R.drawable.image_24px, Runnable {
                     pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
                 }),
-                BottomSheetItem("Take Photo", R.drawable.photo_camera_24px, Runnable {
+                BottomSheetItem(getString(R.string.action_take_photo), R.drawable.photo_camera_24px, Runnable {
                     launchCameraForCapture()
                 })
             )
@@ -1401,7 +1408,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val file = createCameraCaptureFile() ?: run {
-            toast("Could not create a photo file.")
+            toast(getString(R.string.error_camera_file))
             return
         }
         cameraPhotoFile = file
@@ -1422,7 +1429,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (_: Exception) {}
             }
             discardCameraPhoto()
-            toast("No camera app found. Choose from gallery instead.")
+            toast(getString(R.string.error_no_camera_app))
             pickMany(IMAGE_MIME_TYPES, REQ_PICK_IMAGES_TO_PDF)
         }
     }
@@ -1473,7 +1480,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         cropBitmap = bmp
-        showCropUi("Crop Photo", bmp, {
+        showCropUi(getString(R.string.editor_crop_photo), bmp, {
             cameraPhotoFile?.let { if (it.exists()) it.delete() }
             cameraPhotoFile = null
             clearCropState()
@@ -1496,7 +1503,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         cropBitmap = bitmap
-        showCropUi("Crop Page", bitmap, null) { cropped ->
+        showCropUi(getString(R.string.editor_crop_page_title), bitmap, null) { cropped ->
             clearCropState()
             onResult(cropped)
         }
@@ -1570,7 +1577,7 @@ class MainActivity : AppCompatActivity() {
             if (cropped != null) {
                 onAdd(cropped)
             } else {
-                Toast.makeText(this@MainActivity, "Could not crop image", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, getString(R.string.error_crop_failed), Toast.LENGTH_SHORT).show()
                 if (retakeAction != null) discardCameraPhoto() else clearCropState()
             }
         }
@@ -1612,7 +1619,7 @@ class MainActivity : AppCompatActivity() {
         val rotated = try {
             Bitmap.createBitmap(current, 0, 0, current.width, current.height, matrix, true)
         } catch (e: Throwable) {
-            if (e is OutOfMemoryError) Toast.makeText(this, "Not enough memory to rotate", Toast.LENGTH_SHORT).show()
+            if (e is OutOfMemoryError) Toast.makeText(this, getString(R.string.error_memory_rotate), Toast.LENGTH_SHORT).show()
             null
         } ?: return
         cropView?.setImage(rotated)
@@ -1637,19 +1644,19 @@ class MainActivity : AppCompatActivity() {
         val pages = editorViewModel.pages
         if (position < 0 || position >= pages.size) return
         val page = pages[position]
-        val title = currentEditorTitle
-        setBusy(true, "Preparing page for crop...", true)
+        val mode = currentEditorMode
+        setBusy(true, getString(R.string.status_preparing_crop), true)
         worker.execute {
             try {
                 val src = if (page.replacementFile != null && page.replacementFile!!.exists()) {
                     BitmapUtils.loadCameraBitmap(page.replacementFile!!, CROP_MAX_DIM)
-                } else if (title == "Images to PDF") {
+                } else if (mode == EditorMode.IMAGES_TO_PDF) {
                     val uri = page.uri
                     if (uri != null) BitmapUtils.loadImageUri(this@MainActivity, uri, CROP_MAX_DIM) else null
                 } else {
                     page.sourceUri?.let { activeSession(it).renderPage(page.renderIndex, CROP_MAX_DIM) }
                 }
-                if (src == null) throw IllegalStateException("Cannot load page image")
+                if (src == null) throw IllegalStateException(getString(R.string.error_cannot_load_page))
                 val oriented = if (page.rotation != 0) {
                     val m = android.graphics.Matrix()
                     m.postRotate(page.rotation.toFloat())
@@ -1658,14 +1665,14 @@ class MainActivity : AppCompatActivity() {
                     r
                 } else src
                 runOnUiThread {
-                    setBusy(false, "Ready")
+                    setBusy(false, getString(R.string.status_ready))
                     showPageCropDialog(oriented) { cropped ->
                         applyPageCrop(page, cropped, onCropped)
                     }
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    setBusy(false, "Ready")
+                    setBusy(false, getString(R.string.status_ready))
                     showError(e)
                 }
             }
@@ -1688,7 +1695,7 @@ class MainActivity : AppCompatActivity() {
                 val thumb = BitmapUtils.scaleToFit(cropped, dp(280))
                 val fullRes = if (maxOf(cropped.width, cropped.height) <= previewWidth) {
                     cropped.copy(cropped.config ?: Bitmap.Config.ARGB_8888, false)
-                        ?: throw IllegalStateException("Could not prepare preview")
+                        ?: throw IllegalStateException(getString(R.string.error_cannot_prepare_preview))
                 } else {
                     BitmapUtils.scaleToFit(cropped, previewWidth)
                 }
@@ -1712,7 +1719,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun appendCameraPhotoToPdfOps(bitmap: Bitmap) {
-        setBusy(true, "Adding photo...", true)
+        setBusy(true, getString(R.string.status_adding_photo), true)
         worker.execute {
             try {
                 val photoFile = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
@@ -1723,7 +1730,7 @@ class MainActivity : AppCompatActivity() {
                 editorViewModel.tempImageFiles.add(photoFile)
 
                 val reorderSource = editorViewModel.reorderSource
-                    ?: throw IllegalStateException("No source document")
+                    ?: throw IllegalStateException(getString(R.string.error_no_source))
                 val photoPdf = File(cacheDir, "photo_pdf_${System.currentTimeMillis()}.pdf")
                 val iw = bitmap.width.toFloat()
                 val ih = bitmap.height.toFloat()
@@ -1783,11 +1790,11 @@ class MainActivity : AppCompatActivity() {
                     pages.addAll(newPages)
                     editorViewModel.pagesAdded = true
                     pageList?.adapter?.notifyDataSetChanged()
-                    setBusy(false, "Ready")
+                    setBusy(false, getString(R.string.status_ready))
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    setBusy(false, "Ready")
+                    setBusy(false, getString(R.string.status_ready))
                     showError(e)
                 }
             }
@@ -1806,7 +1813,7 @@ class MainActivity : AppCompatActivity() {
 
                 val thumb = BitmapUtils.scaleToFit(bitmap, dp(280))
                 if (thumb !== bitmap && !bitmap.isRecycled) bitmap.recycle()
-                val newPage = PageItem(editorViewModel.pages.size, displayName = "Camera Photo", uri = fileUri)
+                val newPage = PageItem(editorViewModel.pages.size, displayName = getString(R.string.camera_photo_name), uri = fileUri)
                 editorViewModel.thumbCache.put(newPage.cacheKey, thumb)
 
                 cameraPhotoFile?.let { if (it.exists()) it.delete() }
@@ -1817,11 +1824,11 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.pages.add(newPage)
                     editorViewModel.pagesAdded = true
                     if (isHome) {
-                        buildPageEditor("Images to PDF", "Save PDF", false, true)
+                        buildPageEditor(EditorMode.IMAGES_TO_PDF)
                     } else {
                         pageList?.adapter?.notifyDataSetChanged()
                     }
-                    setBusy(false, WAITING_TEXT)
+                    setBusy(false, getString(R.string.status_ready))
                 }
             } catch (e: Exception) {
                 runOnUiThread { showError(e) }
@@ -1829,8 +1836,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadPdfPreview(uri: Uri, docxExport: Boolean) {
-        setBusy(true, "Opening document...", true)
+    private fun loadPdfPreview(uri: Uri) {
+        setBusy(true, getString(R.string.status_opening_document), true)
         worker.execute {
             try {
                 val count = AppModule.get().pdfEngine.openSession(uri).use { it.pageCount }
@@ -1840,8 +1847,8 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.pages.addAll(rendered)
                     editorViewModel.reorderSource = uri
                     editorViewModel.originalFileName = null
-                    setBusy(false, "Ready")
-                    buildPageEditor("Modify PDF", "Save PDF", docxExport, true)
+                    setBusy(false, getString(R.string.status_ready))
+                    buildPageEditor(EditorMode.MODIFY_PDF)
                 }
             } catch (exception: Exception) {
                 showError(exception)
@@ -1850,7 +1857,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadImagePreview(rawUris: List<Uri>, clearExisting: Boolean) {
-        setBusy(true, "Rendering image previews...", true)
+        setBusy(true, getString(R.string.status_rendering_image_previews), true)
         worker.execute {
             try {
                 val pages = editorViewModel.pages
@@ -1868,10 +1875,10 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         if (loadingSubtitle != null && loadingOverlay != null && loadingOverlay!!.visibility == View.VISIBLE) {
                             loadingTextRow?.visibility = View.VISIBLE
-                            loadingSubtitle!!.text = "Item $current of $total"
+                            loadingSubtitle!!.text = getString(R.string.progress_item_of_total, current, total)
                             loadingPercentage?.let {
                                 val pct = ((current * 100f) / total).toInt()
-                                it.text = "$pct%"
+                                it.text = getString(R.string.percent, pct)
                                 it.visibility = View.VISIBLE
                             }
                             loadingSpinner?.let { spinner ->
@@ -1903,7 +1910,7 @@ class MainActivity : AppCompatActivity() {
                                 tempImageFiles.add(f)
                                 val fileUri = Uri.fromFile(f)
                                 processedUris.add(fileUri)
-                                val item = PageItem(startIndex, displayName = "PDF Page $pIdx", uri = fileUri)
+                                val item = PageItem(startIndex, displayName = getString(R.string.pdf_page_name, pIdx), uri = fileUri)
                                 editorViewModel.thumbCache.put(item.cacheKey, thumb)
                                 rendered.add(item)
                                 startIndex++
@@ -1938,11 +1945,11 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.reorderSource = null
                     editorViewModel.originalFileName = null
                     if (clearExisting) {
-                        setBusy(false, "Ready")
-                        buildPageEditor("Images to PDF", "Save PDF", false, true)
+                        setBusy(false, getString(R.string.status_ready))
+                        buildPageEditor(EditorMode.IMAGES_TO_PDF)
                     } else {
                         pageList?.adapter?.notifyDataSetChanged()
-                        setBusy(false, "Ready")
+                        setBusy(false, getString(R.string.status_ready))
                     }
                 }
             } catch (exception: Exception) {
@@ -1955,7 +1962,7 @@ class MainActivity : AppCompatActivity() {
         val opt = android.graphics.BitmapFactory.Options()
         opt.inJustDecodeBounds = true
         (contentResolver.openInputStream(uri)
-            ?: throw IllegalArgumentException("Cannot open image file")).use { stream ->
+            ?: throw IllegalArgumentException(getString(R.string.error_cannot_open_image))).use { stream ->
             android.graphics.BitmapFactory.decodeStream(stream, null, opt)
         }
         var scale = 1
@@ -1965,14 +1972,14 @@ class MainActivity : AppCompatActivity() {
         val opt2 = android.graphics.BitmapFactory.Options()
         opt2.inSampleSize = scale
         return (contentResolver.openInputStream(uri)
-            ?: throw IllegalArgumentException("Cannot open image file for decoding")).use { stream ->
+            ?: throw IllegalArgumentException(getString(R.string.error_cannot_open_image_decode))).use { stream ->
             android.graphics.BitmapFactory.decodeStream(stream, null, opt2)
-                ?: throw IllegalArgumentException("Cannot decode image file. Format not supported.")
+                ?: throw IllegalArgumentException(getString(R.string.error_cannot_decode_image))
         }
     }
 
     private fun loadDocxPreviewViaLibreOffice(docx: Uri) {
-        setBusy(true, "Converting DOCX for preview...")
+        setBusy(true, getString(R.string.status_converting_docx_preview_short))
         worker.execute {
             try {
                 val pdfFile = AppModule.get().docxToPdf.execute(docx)
@@ -1986,8 +1993,8 @@ class MainActivity : AppCompatActivity() {
                     editorViewModel.pages.addAll(rendered)
                     editorViewModel.reorderSource = docx
                     editorViewModel.originalFileName = null
-                    setBusy(false, "Ready")
-                    buildPageEditor("Remove Pages", "Save DOCX", true, false)
+                    setBusy(false, getString(R.string.status_ready))
+                    buildPageEditor(EditorMode.DOCX_REMOVE)
                 }
             } catch (exception: Exception) {
                 showError(exception)
@@ -2131,17 +2138,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun showEngineRequiredDialog(onReady: Runnable) {
         val body = text(
-            "The Offline LibreOffice Engine is required for this operation.\n\nWould you like to download it now? (~45 MB)",
+            getString(R.string.dialog_engine_body),
             14,
             R.color.istan_text_muted,
             false
         )
         body.setPadding(0, 0, 0, 0)
         showCustomDialog(
-            "Offline LibreOffice Engine",
+            getString(R.string.dialog_engine_title),
             body,
-            "Cancel", null,
-            "Download"
+            getString(R.string.action_cancel), null,
+            getString(R.string.action_download)
         ) {
             showEngineDownloadDialog(onReady)
         }
@@ -2158,7 +2165,7 @@ class MainActivity : AppCompatActivity() {
         root.background = ShadcnDrawables.card(this, ShadcnDrawables.DIALOG_RADIUS)
         root.setPadding(dp(24), dp(24), dp(24), dp(24))
 
-        val titleView = text("Downloading Engine", 20, R.color.istan_text, true)
+        val titleView = text(getString(R.string.dialog_engine_download_title), 20, R.color.istan_text, true)
         titleView.setPadding(0, 0, 0, dp(24))
         root.addView(titleView)
 
@@ -2166,7 +2173,7 @@ class MainActivity : AppCompatActivity() {
         textRow.orientation = LinearLayout.HORIZONTAL
         textRow.setPadding(0, 0, 0, dp(12))
 
-        val phaseView = text("Preparing download…", 15, R.color.istan_text, false)
+        val phaseView = text(getString(R.string.engine_phase_preparing), 15, R.color.istan_text, false)
         val percentView = text("", 15, R.color.istan_text_muted, false)
         percentView.gravity = android.view.Gravity.END
 
@@ -2199,19 +2206,22 @@ class MainActivity : AppCompatActivity() {
                         if (phase == "Extracting") {
                             progressBar.isIndeterminate = false
                             progressBar.progress = 100
-                            phaseView.text = "Extracting libraries…"
-                            percentView.text = "Finishing up"
+                            phaseView.text = getString(R.string.engine_phase_extracting)
+                            percentView.text = getString(R.string.engine_phase_finishing)
                         } else if (total > 0) {
                             val pct = ((downloaded * 100L) / total).toInt().coerceIn(0, 100)
                             progressBar.isIndeterminate = false
                             progressBar.progress = pct
-                            phaseView.text = "Downloading…"
-                            val dlMb = String.format(java.util.Locale.US, "%.1f", downloaded / 1048576f)
-                            val totMb = String.format(java.util.Locale.US, "%.1f", total / 1048576f)
-                            percentView.text = "$pct%  •  $dlMb / $totMb MB"
+                            phaseView.text = getString(R.string.engine_phase_downloading)
+                            percentView.text = getString(
+                                R.string.engine_progress,
+                                pct,
+                                downloaded / 1048576f,
+                                total / 1048576f
+                            )
                         } else {
                             progressBar.isIndeterminate = true
-                            phaseView.text = "Preparing download…"
+                            phaseView.text = getString(R.string.engine_phase_preparing)
                             percentView.text = ""
                         }
                     }
@@ -2225,16 +2235,16 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     dialog.dismiss()
                     val msg = text(
-                        "Download failed: ${e.message ?: e.javaClass.simpleName}\n\nCheck your internet connection and try again.",
+                        getString(R.string.dialog_engine_failed_body, e.message ?: e.javaClass.simpleName),
                         14,
                         R.color.istan_text_muted,
                         false
                     )
                     showCustomDialog(
-                        "Download Failed",
+                        getString(R.string.dialog_engine_failed_title),
                         msg,
-                        "Cancel", null,
-                        "Retry"
+                        getString(R.string.action_cancel), null,
+                        getString(R.string.action_retry)
                     ) {
                         showEngineDownloadDialog(onComplete)
                     }
@@ -2306,7 +2316,7 @@ class MainActivity : AppCompatActivity() {
         worker.submit {
             try {
                 val result = job.run()
-                val finalMsg = if (result is String) result else "Ready"
+                val finalMsg = if (result is String) result else getString(R.string.status_ready)
                 runOnUiThread {
                     setBusy(false, finalMsg)
                     if (output != null) {
@@ -2322,7 +2332,7 @@ class MainActivity : AppCompatActivity() {
     private fun showOutputSnackbar(output: OutputRef) {
         val show = Runnable {
             val root = findViewById<View>(android.R.id.content) ?: return@Runnable
-            val snackbar = Snackbar.make(root, "File saved successfully", Snackbar.LENGTH_LONG)
+            val snackbar = Snackbar.make(root, getString(R.string.snackbar_file_saved), Snackbar.LENGTH_LONG)
             snackbar.duration = 4500
             snackbar.view.background = ShadcnDrawables.card(this, ShadcnDrawables.BUTTON_RADIUS)
             snackbar.view.backgroundTintList = null
@@ -2338,7 +2348,7 @@ class MainActivity : AppCompatActivity() {
             }
             val actionView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_action)
             actionView?.typeface = AppFont.semiBold
-            snackbar.setAction("Open") { openSavedFile(output) }
+            snackbar.setAction(getString(R.string.action_open)) { openSavedFile(output) }
             val lp = snackbar.view.layoutParams as? ViewGroup.MarginLayoutParams
             lp?.setMargins(dp(16), 0, dp(16), dp(24))
             if (lp != null) snackbar.view.layoutParams = lp
@@ -2357,9 +2367,9 @@ class MainActivity : AppCompatActivity() {
             intent.setDataAndType(output.uri, output.mime)
             intent.putExtra(Intent.EXTRA_TITLE, output.name)
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            startActivity(Intent.createChooser(intent, "Open with"))
+            startActivity(Intent.createChooser(intent, getString(R.string.chooser_open_with)))
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.error_no_app_open_file), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -2403,7 +2413,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showError(exception: Exception) {
         if (exception is InterruptedException || "Cancelled by user" == exception.message) {
-            runOnUiThread { setBusy(false, WAITING_TEXT) }
+            runOnUiThread { setBusy(false, getString(R.string.status_ready)) }
             return
         }
         android.util.Log.e("IStanPdf", "Operation failed", exception)
@@ -2466,7 +2476,7 @@ class MainActivity : AppCompatActivity() {
         panel.setPadding(dp(24), dp(24), dp(24), dp(20))
         panel.background = ShadcnDrawables.card(this, ShadcnDrawables.DIALOG_RADIUS)
 
-        loadingMessage = text(WAITING_TEXT, 18, R.color.istan_text, true)
+        loadingMessage = text(getString(R.string.status_ready), 18, R.color.istan_text, true)
         loadingMessage!!.gravity = Gravity.CENTER
         val messageParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         messageParams.gravity = Gravity.CENTER_HORIZONTAL
@@ -2509,13 +2519,13 @@ class MainActivity : AppCompatActivity() {
         ShadcnDrawables.applyButton(cancelBtn, ShadcnDrawables.ButtonVariant.OUTLINE, ShadcnDrawables.BUTTON_RADIUS)
         cancelBtn.minimumHeight = dp(48)
 
-        val cancelText = text("Cancel", 15, R.color.istan_text, false)
+        val cancelText = text(getString(R.string.action_cancel), 15, R.color.istan_text, false)
         cancelText.setPadding(dp(24), dp(12), dp(24), dp(12))
         cancelBtn.addView(cancelText)
 
         cancelBtn.setOnClickListener {
             cancelJob.set(true)
-            setBusy(false, "Ready")
+            setBusy(false, getString(R.string.status_ready))
         }
 
         val btnParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -2633,7 +2643,7 @@ class MainActivity : AppCompatActivity() {
 
         if (busy) {
             showStatusCard(false)
-        } else if (message == WAITING_TEXT) {
+        } else if (message == getString(R.string.status_ready)) {
             hideStatusCard()
         } else {
             showStatusCard(true)
@@ -2664,7 +2674,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun formatFileSize(bytes: Long): String {
         val kb = bytes / 1024.0
-        return if (kb >= 1024) "%.1f MB".format(kb / 1024f) else "%.0f KB".format(kb)
+        return if (kb >= 1024) getString(R.string.file_size_mb, kb / 1024f) else getString(R.string.file_size_kb, kb.toFloat())
     }
 
     private fun showCompressModeDialog(pdfUri: Uri) {
@@ -2682,7 +2692,7 @@ class MainActivity : AppCompatActivity() {
             showResolutionPresetDialog(pdfUri)
         }
 
-        val opt1 = text("By Resolution", 15, R.color.istan_text, false)
+        val opt1 = text(getString(R.string.compress_by_resolution), 15, R.color.istan_text, false)
         opt1.setPadding(dp(20), dp(16), dp(20), dp(16))
         card1.addView(opt1)
 
@@ -2698,14 +2708,14 @@ class MainActivity : AppCompatActivity() {
             showSizeInputDialog(pdfUri)
         }
 
-        val opt2 = text("By Size", 15, R.color.istan_text, false)
+        val opt2 = text(getString(R.string.compress_by_size), 15, R.color.istan_text, false)
         opt2.setPadding(dp(20), dp(16), dp(20), dp(16))
         card2.addView(opt2)
 
         val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         content.addView(card2, lp2)
 
-        dialogRef[0] = showCustomDialog("Compression Mode", content, "Cancel", null, null, null)
+        dialogRef[0] = showCustomDialog(getString(R.string.dialog_compression_mode), content, getString(R.string.action_cancel), null, null, null)
     }
 
     private fun showResolutionPresetDialog(pdfUri: Uri) {
@@ -2716,8 +2726,8 @@ class MainActivity : AppCompatActivity() {
         val dialogRef = arrayOfNulls<android.app.Dialog>(1)
 
         val presets = arrayOf(
-            Triple("Highest Compression", 72, 40),
-            Triple("Balanced", 150, 70)
+            Triple(getString(R.string.compress_highest), 72, 40),
+            Triple(getString(R.string.compress_balanced), 150, 70)
         )
 
         for ((index, preset) in presets.withIndex()) {
@@ -2740,7 +2750,7 @@ class MainActivity : AppCompatActivity() {
             content.addView(card, lp)
         }
 
-        dialogRef[0] = showCustomDialog("Resolution Preset", content, "Cancel", null, null, null)
+        dialogRef[0] = showCustomDialog(getString(R.string.dialog_resolution_preset), content, getString(R.string.action_cancel), null, null, null)
     }
 
     private fun showPdfToImageQualityDialog(pdfUri: Uri, pageCount: Int) {
@@ -2750,8 +2760,8 @@ class MainActivity : AppCompatActivity() {
 
         val dialogRef = arrayOfNulls<android.app.Dialog>(1)
         val options = arrayOf(
-            Pair("Normal", PDF_TO_IMAGE_NORMAL_DPI),
-            Pair("High", PDF_TO_IMAGE_HIGH_DPI)
+            Pair(getString(R.string.compress_normal), PDF_TO_IMAGE_NORMAL_DPI),
+            Pair(getString(R.string.compress_high), PDF_TO_IMAGE_HIGH_DPI)
         )
 
         for ((index, option) in options.withIndex()) {
@@ -2777,7 +2787,7 @@ class MainActivity : AppCompatActivity() {
             content.addView(card, params)
         }
 
-        dialogRef[0] = showCustomDialog("Image Quality", content, "Cancel", null, null, null)
+        dialogRef[0] = showCustomDialog(getString(R.string.dialog_image_quality), content, getString(R.string.action_cancel), null, null, null)
     }
 
     private fun showSizeInputDialog(pdfUri: Uri) {
@@ -2792,7 +2802,7 @@ class MainActivity : AppCompatActivity() {
 
         if (sourceKb > 0) {
             val sizeLabel = text(
-                "Current size: ${if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"}",
+                getString(R.string.compress_source_size, formatFileSize(sourceKb * 1024L)),
                 13, R.color.istan_text_muted, false
             )
             sizeLabel.setPadding(0, 0, 0, dp(8))
@@ -2801,7 +2811,7 @@ class MainActivity : AppCompatActivity() {
 
         val input = android.widget.EditText(this)
         input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        input.hint = "Target size in KB"
+        input.hint = getString(R.string.compress_target_hint)
         input.textSize = 15f
         input.typeface = AppFont.regular
         input.setTextColor(color(R.color.istan_text))
@@ -2812,17 +2822,17 @@ class MainActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ))
 
-        showCustomDialog("Target Size", content, "Cancel", null, "Compress", Runnable {
+        showCustomDialog(getString(R.string.dialog_target_size), content, getString(R.string.action_cancel), null, getString(R.string.action_compress), Runnable {
             val kb = input.text.toString().toLongOrNull()
             if (kb == null || kb <= 0) {
-                toast("Please enter a valid size in KB.")
+                toast(getString(R.string.error_invalid_size))
                 return@Runnable
             }
             if (sourceKb > 0) {
                 val capKb = sourceKb * 95L / 100L
-                val srcLabel = if (sourceKb >= 1024) "%.1f MB".format(sourceKb / 1024f) else "$sourceKb KB"
+                val srcLabel = formatFileSize(sourceKb * 1024L)
                 if (kb > capKb) {
-                    toast("Target must not exceed 95% of the source file ($srcLabel).")
+                    toast(getString(R.string.error_target_exceeds, srcLabel))
                     return@Runnable
                 }
             }
@@ -2851,13 +2861,13 @@ class MainActivity : AppCompatActivity() {
         addLayer(R.drawable.ic_kofi_heart, R.color.istan_olive)
 
         showBottomSheetMenu(
-            "Support the Developer",
+            getString(R.string.dialog_support_developer),
             listOf(
-                BottomSheetItem("Ko-fi (Global)", 0, Runnable {
+                BottomSheetItem(getString(R.string.donation_kofi), 0, Runnable {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/ramakanthgacharya")))
                     onComplete?.run()
                 }, tintIcon = false, customIcon = kofiIcon, iconWidthDp = 30, iconHeightDp = 24),
-                BottomSheetItem("UPI (India)", R.drawable.upi_pay_24px, Runnable {
+                BottomSheetItem(getString(R.string.donation_upi), R.drawable.upi_pay_24px, Runnable {
                     handleUpiDonation(onComplete)
                 })
             )
@@ -2869,7 +2879,7 @@ class MainActivity : AppCompatActivity() {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("UPI ID", upiId))
         if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
-            Toast.makeText(this, "UPI ID copied: $upiId", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.upi_copied, upiId), Toast.LENGTH_SHORT).show()
         }
         onComplete?.run()
 
@@ -2883,21 +2893,21 @@ class MainActivity : AppCompatActivity() {
                 val launchIntent = pm.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
                 Triple(info.loadLabel(pm).toString(), launchIntent, info.loadIcon(pm))
             }
-            .sortedBy { it.first.lowercase() }
+            .sortedWith(java.text.Collator.getInstance().let { collator -> compareBy { collator.getCollationKey(it.first) } })
 
         if (apps.isEmpty()) {
             val message =
                 if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
-                    "No UPI app found. UPI ID copied."
+                    getString(R.string.upi_not_found_copied)
                 } else {
-                    "No UPI app found."
+                    getString(R.string.upi_not_found)
                 }
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             return
         }
 
         showBottomSheetMenu(
-            "Open UPI App",
+            getString(R.string.dialog_open_upi),
             apps.map { (label, launchIntent, icon) ->
                 val iconView = ImageView(this)
                 iconView.setImageDrawable(icon)
@@ -2906,7 +2916,7 @@ class MainActivity : AppCompatActivity() {
                     try {
                         startActivity(launchIntent)
                     } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Could not open $label", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.upi_could_not_open, label), Toast.LENGTH_SHORT).show()
                     }
                 }, tintIcon = false, customIcon = iconView)
             }
@@ -2959,7 +2969,6 @@ class MainActivity : AppCompatActivity() {
         private const val MIME_MD = "text/markdown"
         private const val MIME_JPEG = "image/jpeg"
         private const val MIME_ZIP = "application/zip"
-        private const val WAITING_TEXT = "Ready"
 
         private val IMAGE_MIME_TYPES = arrayOf("image/jpeg", "image/png", "image/webp", "image/bmp")
 
