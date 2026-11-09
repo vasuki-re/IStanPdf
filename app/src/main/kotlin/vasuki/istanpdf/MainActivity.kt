@@ -287,6 +287,7 @@ class MainActivity : AppCompatActivity() {
                     color(R.color.istan_outline_emphasis)
                 )
             )
+            buttonIconTintList = ColorStateList.valueOf(ShadcnDrawables.primaryForeground(this@MainActivity))
         }
         val cbLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             marginEnd = dp(8)
