@@ -1,10 +1,10 @@
-versionname:3.0-Vanilla LTS
-versioncode:4
-link:https://github.com/vasuki-re/IStanPdf/releases/download/v3.0-Vanilla/IStanPdf-release.apk
+versionname:4.0-Valhalla LTS
+versioncode:5
+link:https://github.com/vasuki-re/IStanPdf/releases/download/v4.0-Valhalla/IStanPdf_v4.0-release.apk
 changelog:
-- **Massive Size Reduction:** App install size reduced by ~80% thanks to on-demand engine loading.
-- **Markdown to PDF:** Brand new converter for Markdown files with support for tables, lists, and emojis.
-- **Enhanced Editor:** Integrated camera capture and high-res page cropping directly inside the PDF editor.
-- **Smart Compression:** New target file-size compression modes and image quality selectors.
-- **UI Refresh:** Brand new Obsidian and Monochrome themes, dynamic launcher icons, and edge-to-edge design.
-- **Performance:** Completely rebuilt core for faster document handling, smoother swipe previews, and better memory management.
+- **PPTX to PDF:** Offline PowerPoint conversion via bundled LibreOffice engine.
+- **Page Normalization:** Standardize pages to A4, A3, Letter, or Legal with auto-centering.
+- **Document Options:** Live orientation controls (Auto, Portrait, Landscape) and export compression presets.
+- **Shadcn UI Refresh:** Redesigned interface with clean outlines, High Contrast Dark Mode (HCM), and symmetrical cards.
+- **Camera Selection:** Choose between default and installed third-party camera apps.
+- **Stability & Performance:** Eliminated native PDFium crashes, fixed cropper bitmap lifecycle, and reduced idle CPU overhead.
