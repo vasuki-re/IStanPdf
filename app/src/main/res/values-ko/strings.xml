@@ -1,0 +1,235 @@
+<resources>
+    <string name="app_name" translatable="false">IStanPdf</string>
+
+    <string name="action_cancel">취소</string>
+    <string name="action_continue">계속</string>
+    <string name="action_close">닫기</string>
+    <string name="action_open">열기</string>
+    <string name="action_retry">다시 시도</string>
+    <string name="action_later">나중에</string>
+    <string name="action_download">다운로드</string>
+    <string name="action_join">참여</string>
+    <string name="action_apply">적용</string>
+    <string name="action_save_pdf">PDF 저장</string>
+    <string name="action_save_docx">DOCX 저장</string>
+    <string name="action_compress">압축</string>
+    <string name="action_from_gallery">갤러리에서</string>
+    <string name="action_take_photo">사진 촬영</string>
+    <string name="action_navigate_up">위로 이동</string>
+
+    <string name="home_subtitle">PDF 및 DOCX 작업용 오프라인 앱</string>
+    <string name="home_section_pdf_tools">PDF 도구</string>
+    <string name="home_section_conversions">변환</string>
+    <string name="home_section_docx_tools">DOCX 도구</string>
+    <string name="home_tool_merge_pdf">PDF 병합</string>
+    <string name="home_tool_modify_pdf">PDF 수정</string>
+    <string name="home_tool_compress_pdf">PDF 압축</string>
+    <string name="home_tool_image_to_pdf">이미지를 PDF로</string>
+    <string name="home_tool_pdf_to_image">PDF를 이미지로</string>
+    <string name="home_tool_docx_to_pdf">DOCX를 PDF로</string>
+    <string name="home_tool_md_to_pdf">MD를 PDF로</string>
+    <string name="home_tool_pptx_to_pdf">PPTX를 PDF로</string>
+    <string name="home_tool_remove_pages">페이지 제거</string>
+    <string name="home_tool_reorder_pages">페이지 순서 변경</string>
+    <string name="home_support_card">커피 한 잔 사주세요</string>
+    <string name="home_campaign_title">IStanPdf를 Google Play에 출시하도록 도와주세요</string>
+    <string name="home_campaign_action">☕ 후원하기</string>
+    <string name="home_campaign_dismissed">아래의 ‘커피 한 잔 사주세요’에서 언제든 후원할 수 있습니다</string>
+
+    <string name="status_ready">준비 완료</string>
+    <string name="status_loading_pdfs">PDF 불러오는 중...</string>
+    <string name="status_rendering_previews">미리보기 렌더링 중...</string>
+    <string name="status_opening_document">문서 여는 중...</string>
+    <string name="status_rendering_image_previews">이미지 미리보기 렌더링 중...</string>
+    <string name="status_converting_docx_preview">미리보기를 위해 DOCX를 PDF로 변환 중...</string>
+    <string name="status_converting_docx_preview_short">미리보기용 DOCX 변환 중...</string>
+    <string name="status_merging_pdfs">PDF 병합 중...</string>
+    <string name="status_converting_images">이미지 변환 중...</string>
+    <string name="status_converting_to_jpg">JPG로 변환 중...</string>
+    <string name="status_converting_to_jpgs">여러 JPG로 변환 중...</string>
+    <string name="status_converting_docx">DOCX를 PDF로 변환 중...</string>
+    <string name="status_converting_markdown">Markdown을 PDF로 변환 중...</string>
+    <string name="status_converting_pptx">PPTX를 PDF로 변환 중...</string>
+    <string name="status_compressing_pdf">PDF 압축 중...</string>
+    <string name="status_remove_reorder_pages">페이지 제거 및 순서 변경 중...</string>
+    <string name="status_removing_pages">페이지 제거 중...</string>
+    <string name="status_saving_pages">페이지 저장 중...</string>
+    <string name="status_preparing_crop">자르기용 페이지 준비 중...</string>
+    <string name="status_adding_photo">사진 추가 중...</string>
+
+    <string name="error_camera_permission">사진을 찍으려면 카메라 권한이 필요합니다</string>
+    <string name="error_pdf_empty_bytes">오류: PDF 파일이 비어 있습니다(0바이트)</string>
+    <string name="error_file_empty_bytes">오류: 파일이 비어 있습니다(0바이트)</string>
+    <string name="error_pdf_no_pages">PDF에 페이지가 없습니다</string>
+    <string name="error_camera_file">사진 파일을 만들지 못했습니다.</string>
+    <string name="error_no_camera_app">카메라 앱을 찾을 수 없습니다. 갤러리에서 선택해 주세요.</string>
+    <string name="error_crop_failed">이미지를 자르지 못했습니다</string>
+    <string name="error_memory_rotate">회전할 메모리가 부족합니다</string>
+    <string name="error_cannot_load_page">페이지 이미지를 불러올 수 없습니다</string>
+    <string name="error_cannot_open_image">이미지 파일을 열 수 없습니다</string>
+    <string name="error_cannot_open_image_decode">디코딩을 위해 이미지 파일을 열 수 없습니다</string>
+    <string name="error_cannot_decode_image">이미지 파일을 디코딩할 수 없습니다. 지원되지 않는 형식입니다.</string>
+    <string name="error_cannot_prepare_preview">미리보기를 준비하지 못했습니다</string>
+    <string name="error_no_source">원본 문서가 없습니다</string>
+    <string name="error_unable_open_link">링크를 열 수 없습니다</string>
+    <string name="error_no_app_open_file">이 파일을 열 수 있는 앱을 찾을 수 없습니다</string>
+    <string name="error_invalid_range">잘못된 범위 형식입니다</string>
+    <string name="error_select_page">저장할 페이지를 하나 이상 선택해 주세요.</string>
+    <string name="error_keep_two_pdfs">병합할 PDF를 최소 2개 이상 유지해 주세요.</string>
+    <string name="error_no_changes">저장할 변경 사항이 없습니다.</string>
+    <string name="error_invalid_size">KB 단위의 올바른 크기를 입력해 주세요.</string>
+    <string name="error_target_exceeds">대상 크기는 원본 파일의 95%%를 초과할 수 없습니다 (%1$s).</string>
+    <string name="compress_target_unreached">목표 크기에 도달하지 못했습니다(출력: %1$s)</string>
+    <string name="camera_photo_name">카메라 사진</string>
+    <string name="pdf_page_name">PDF 페이지 %1$d</string>
+    <string name="progress_item_of_total">항목 %1$d / %2$d</string>
+
+    <string name="dialog_update_available">업데이트 가능: %1$s</string>
+    <string name="dialog_no_images_title">이미지를 찾을 수 없습니다</string>
+    <string name="dialog_no_images_body">이 PDF에 포함된 이미지가 없습니다. 압축으로 파일 크기를 크게 줄이지 못할 수 있습니다.</string>
+    <string name="dialog_compression_mode">압축 모드</string>
+    <string name="dialog_resolution_preset">해상도 프리셋</string>
+    <string name="dialog_image_quality">이미지 품질</string>
+    <string name="dialog_target_size">대상 크기</string>
+    <string name="dialog_engine_title">오프라인 LibreOffice 엔진</string>
+    <string name="dialog_engine_body">이 작업에는 오프라인 LibreOffice 엔진이 필요합니다.\n\n지금 다운로드하시겠습니까? (~45 MB)</string>
+    <string name="dialog_engine_download_title">엔진 다운로드 중</string>
+    <string name="dialog_engine_failed_title">다운로드 실패</string>
+    <string name="dialog_engine_failed_body">다운로드에 실패했습니다: %1$s\n\n인터넷 연결을 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="dialog_choose">선택</string>
+    <string name="dialog_add_images">이미지 추가</string>
+    <string name="dialog_support_developer">개발자 후원</string>
+    <string name="dialog_open_upi">UPI 앱 열기</string>
+    <string name="dialog_select_camera">카메라 앱 선택</string>
+    <string name="dialog_about">정보</string>
+    <string name="dialog_canary_title">텔레그램 참여</string>
+    <string name="dialog_canary_body">공개 출시 전에 Canary 빌드에 조기 액세스하고 실험 기능을 테스트해 보세요.</string>
+    <string name="canary_dont_show">다시 보지 않기</string>
+
+    <string name="compress_by_resolution">해상도 기준</string>
+    <string name="compress_by_size">크기 기준</string>
+    <string name="compress_highest">최대 압축</string>
+    <string name="compress_balanced">균형</string>
+    <string name="compress_normal">보통</string>
+    <string name="compress_high">높음</string>
+    <string name="compress_custom_size">사용자 지정 크기</string>
+    <string name="compress_custom_size_value">사용자 지정 크기 (%1$s)</string>
+    <string name="compress_source_size">현재 크기: %1$s</string>
+    <string name="compress_target_hint">KB 단위 대상 크기</string>
+
+    <string name="engine_phase_preparing">다운로드 준비 중…</string>
+    <string name="engine_phase_extracting">라이브러리 추출 중…</string>
+    <string name="engine_phase_downloading">다운로드 중…</string>
+    <string name="engine_phase_finishing">마무리 중</string>
+    <string name="engine_progress">%1$d%%  •  %2$.1f / %3$.1f MB</string>
+
+    <string name="file_size_mb">%1$.1f MB</string>
+    <string name="file_size_kb">%1$.0f KB</string>
+    <string name="percent">%1$d%%</string>
+
+    <string name="snackbar_file_saved">파일이 성공적으로 저장되었습니다</string>
+    <string name="chooser_open_with">다음 앱으로 열기</string>
+
+    <string name="donation_kofi">Ko-fi (전 세계)</string>
+    <string name="donation_upi">UPI (인도)</string>
+    <string name="upi_copied">UPI ID 복사됨: %1$s</string>
+    <string name="upi_not_found_copied">UPI 앱을 찾지 못해 UPI ID를 복사했습니다.</string>
+    <string name="upi_not_found">UPI 앱을 찾을 수 없습니다.</string>
+    <string name="upi_could_not_open">%1$s을(를) 열 수 없습니다</string>
+
+    <string name="editor_title_merge">PDF 병합</string>
+    <string name="editor_title_modify">PDF 수정</string>
+    <string name="editor_title_images">이미지를 PDF로</string>
+    <string name="editor_title_reorder">페이지 순서 변경</string>
+    <string name="editor_title_remove">페이지 제거</string>
+    <string name="editor_save_merge">PDF 병합</string>
+    <string name="editor_add_pdf">탭하여 PDF 추가</string>
+    <string name="editor_add_images_pdf">이미지 / PDF 추가</string>
+    <string name="editor_add_docx_pdf">DOCX / PDF 추가</string>
+    <string name="editor_selected_count">%1$d / %2$d 선택됨</string>
+    <string name="editor_range_hint">범위 입력 (예: 1-3, 5)...</string>
+    <string name="editor_edit_range">범위 수정</string>
+    <string name="editor_document_options">문서 옵션</string>
+    <string name="editor_reorder_page">페이지 순서 변경</string>
+    <string name="editor_crop_page">페이지 자르기</string>
+    <string name="editor_rotate_left">왼쪽으로 회전</string>
+    <string name="editor_rotate_right">오른쪽으로 회전</string>
+    <string name="editor_remove_page">페이지 제거</string>
+    <string name="editor_preview_page">페이지 %1$d 미리보기</string>
+    <string name="editor_page">페이지 %1$d</string>
+    <string name="editor_select_page">페이지 %1$d 선택</string>
+    <string name="editor_keep">유지</string>
+    <string name="editor_page_counter">%1$d / %2$d</string>
+    <string name="editor_crop_photo">사진 자르기</string>
+    <string name="editor_crop_page_title">페이지 자르기</string>
+
+    <string name="options_title">문서 옵션</string>
+    <string name="options_page_size">페이지 크기</string>
+    <string name="options_orientation">방향</string>
+    <string name="options_compress_output">출력 압축</string>
+    <string name="options_value">%1$s ▾</string>
+    <string name="options_content_description">%1$s: %2$s</string>
+
+    <string name="normalize_off">끄기</string>
+    <string name="normalize_letter">Letter</string>
+    <string name="normalize_legal">Legal</string>
+    <string name="normalize_a4" translatable="false">A4</string>
+    <string name="normalize_a3" translatable="false">A3</string>
+    <string name="orientation_auto">자동</string>
+    <string name="orientation_portrait">세로</string>
+    <string name="orientation_landscape">가로</string>
+    <string name="compress_mode_off">끄기</string>
+    <string name="compress_mode_balanced">균형</string>
+    <string name="compress_mode_high">높음</string>
+    <string name="compress_mode_custom">사용자 지정 크기</string>
+
+    <string name="settings_title">설정</string>
+    <string name="settings_section_appearance">모양</string>
+    <string name="settings_section_general">일반</string>
+    <string name="settings_section_about">정보</string>
+    <string name="settings_theme">테마</string>
+    <string name="settings_hcm">대비</string>
+    <string name="settings_hcm_subtitle">고대비 모드</string>
+    <string name="settings_check_updates">업데이트 확인</string>
+    <string name="settings_check_updates_subtitle">새 버전이 있으면 알림</string>
+    <string name="settings_language">언어</string>
+    <string name="settings_language_system">시스템 기본값</string>
+    <string name="settings_language_english">영어</string>
+    <string name="settings_language_portuguese_brazil">포르투갈어 (브라질)</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_libreoffice_startup">시작 시 LibreOffice</string>
+    <string name="settings_libreoffice_startup_subtitle">DOCX 변환 속도를 위해 엔진 미리 로드</string>
+    <string name="settings_camera_app">카메라 앱</string>
+    <string name="settings_camera_default">기본값</string>
+    <string name="settings_camera_custom">사용자 지정</string>
+    <string name="settings_camera_none">사용 가능한 사용자 지정 카메라 앱이 없습니다</string>
+    <string name="settings_camera_set">카메라 앱이 %1$s(으)로 설정됨</string>
+    <string name="settings_about">정보</string>
+    <string name="settings_canary">Canary 빌드</string>
+    <string name="settings_canary_subtitle">Canary 빌드용 텔레그램 참여</string>
+    <string name="settings_version_name">버전 이름</string>
+    <string name="settings_version_code">버전 코드</string>
+    <string name="settings_copy_info">정보 복사</string>
+    <string name="settings_version_copied">버전이 클립보드에 복사되었습니다</string>
+    <string name="settings_unknown">알 수 없음</string>
+    <string name="settings_tagline">오프라인 문서 도구 모음.</string>
+    <string name="settings_dev_by">개발자\nRamakanth</string>
+    <string name="settings_crafted_with">❤️로 제작됨</string>
+    <string name="settings_crafted_location">인도 벵갈루루</string>
+    <string name="theme_system">시스템 기본값</string>
+    <string name="theme_light">라이트</string>
+    <string name="theme_dark">다크</string>
+
+    <plurals name="empty_pdf_skipped">
+        <item quantity="one">빈 PDF %1$d개를 건너뛰었습니다.</item>
+        <item quantity="other">빈 PDF %1$d개를 건너뛰었습니다.</item>
+    </plurals>
+    <plurals name="pdfs_not_loaded">
+        <item quantity="one">PDF %1$d개를 불러오지 못했습니다</item>
+        <item quantity="other">PDF %1$d개를 불러오지 못했습니다</item>
+    </plurals>
+    <plurals name="images_not_compressed">
+        <item quantity="one">이미지 %1$d개를 압축하지 못했습니다</item>
+        <item quantity="other">이미지 %1$d개를 압축하지 못했습니다</item>
+    </plurals>
+</resources>

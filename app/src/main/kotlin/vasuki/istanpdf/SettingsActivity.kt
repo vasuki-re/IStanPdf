@@ -198,6 +198,35 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
 
+        val languageValues = languageValues()
+        val languageLabels = languageLabels()
+        val selectedLanguage = LanguagePrefs.selected(this)
+        val selectedLanguageIndex = languageValues.indexOf(selectedLanguage).takeIf { it >= 0 } ?: 0
+        val (languageRow, languageSubtitle) = settingsRow(
+            getString(R.string.settings_language),
+            languageLabels[selectedLanguageIndex],
+            clickable = true
+        )
+        val languageChevron = ImageView(this).apply {
+            setImageResource(R.drawable.chevron_right_24px)
+            setColorFilter(color(R.color.istan_text_muted))
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+        }
+        languageRow.addView(languageChevron, LinearLayout.LayoutParams(dp(24), dp(24)).apply {
+            marginStart = dp(8)
+        })
+        languageRow.setOnClickListener {
+            RoundedDropdown(this, languageRow, languageLabels, selectedLanguageIndex) { index ->
+                val languageTag = languageValues.getOrElse(index) { LanguagePrefs.SYSTEM }
+                if (languageTag != LanguagePrefs.selected(this)) {
+                    LanguagePrefs.update(this, languageTag)
+                    languageSubtitle.text = languageLabels.getOrElse(index) { languageLabels.first() }
+                    recreate()
+                }
+            }.show()
+        }
+        generalGroup.addView(languageRow)
+
         val (updateRow, _) = settingsRow(
             getString(R.string.settings_check_updates),
             getString(R.string.settings_check_updates_subtitle)
@@ -884,6 +913,20 @@ class SettingsActivity : AppCompatActivity() {
         getString(R.string.theme_system),
         getString(R.string.theme_light),
         getString(R.string.theme_dark)
+    )
+
+    private fun languageValues(): List<String> = listOf(
+        LanguagePrefs.SYSTEM,
+        LanguagePrefs.ENGLISH,
+        LanguagePrefs.PORTUGUESE_BRAZIL,
+        LanguagePrefs.KOREAN
+    )
+
+    private fun languageLabels(): List<String> = listOf(
+        getString(R.string.settings_language_system),
+        getString(R.string.settings_language_english),
+        getString(R.string.settings_language_portuguese_brazil),
+        getString(R.string.settings_language_korean)
     )
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()

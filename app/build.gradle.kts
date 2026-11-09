@@ -22,7 +22,7 @@ android {
     sourceSets["main"].java.srcDirs("src/main/java")
 
     androidResources {
-        localeFilters += listOf("en", "pt-rBR")
+        localeFilters += listOf("en", "pt-rBR", "ko")
     }
 
     compileOptions {

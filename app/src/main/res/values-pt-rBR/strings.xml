@@ -188,6 +188,11 @@
     <string name="settings_hcm_subtitle">Modo de alto contraste</string>
     <string name="settings_check_updates">Verificar atualizações</string>
     <string name="settings_check_updates_subtitle">Avisar quando houver uma nova versão</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_system">Padrão do sistema</string>
+    <string name="settings_language_english">Inglês</string>
+    <string name="settings_language_portuguese_brazil">Português (Brasil)</string>
+    <string name="settings_language_korean">Coreano</string>
     <string name="settings_libreoffice_startup">LibreOffice na inicialização</string>
     <string name="settings_libreoffice_startup_subtitle">Pré-carregar o motor para conversões DOCX mais rápidas</string>
     <string name="settings_camera_app">App de câmera</string>

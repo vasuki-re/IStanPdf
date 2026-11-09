@@ -192,6 +192,11 @@
     <string name="settings_hcm_subtitle">High Contrast Mode</string>
     <string name="settings_check_updates">Check for updates</string>
     <string name="settings_check_updates_subtitle">Notify when a new version is available</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_portuguese_brazil">Portuguese (Brazil)</string>
+    <string name="settings_language_korean">Korean</string>
     <string name="settings_libreoffice_startup">LibreOffice on startup</string>
     <string name="settings_libreoffice_startup_subtitle">Pre-load engine for faster DOCX conversion</string>
     <string name="settings_camera_app">Camera app</string>
