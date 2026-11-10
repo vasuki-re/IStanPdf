@@ -59,10 +59,8 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if (ThemePrefs.themeMode(this) == ThemePrefs.THEME_AUTO) {
-            applySystemBarTheme()
-            buildSettings(0)
-        }
+        applySystemBarTheme()
+        buildSettings(0)
     }
 
     private fun buildSettings(scrollY: Int) {
@@ -220,8 +218,7 @@ class SettingsActivity : AppCompatActivity() {
                 val languageTag = languageValues.getOrElse(index) { LanguagePrefs.SYSTEM }
                 if (languageTag != LanguagePrefs.selected(this)) {
                     LanguagePrefs.update(this, languageTag)
-                    languageSubtitle.text = languageLabels.getOrElse(index) { languageLabels.first() }
-                    recreate()
+                    buildSettings(scrollView.scrollY)
                 }
             }.show()
         }
