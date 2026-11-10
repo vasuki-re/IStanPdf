@@ -17,7 +17,7 @@
     <string name="action_take_photo">사진 촬영</string>
     <string name="action_navigate_up">위로 이동</string>
 
-    <string name="home_subtitle">PDF 및 DOCX 작업용 오프라인 앱</string>
+    <string name="home_subtitle">PDF 및 Docs 작업용 오프라인 앱</string>
     <string name="home_section_pdf_tools">PDF 도구</string>
     <string name="home_section_conversions">변환</string>
     <string name="home_section_docx_tools">DOCX 도구</string>
@@ -29,6 +29,7 @@
     <string name="home_tool_docx_to_pdf">DOCX를 PDF로</string>
     <string name="home_tool_md_to_pdf">MD를 PDF로</string>
     <string name="home_tool_pptx_to_pdf">PPTX를 PDF로</string>
+    <string name="home_tool_xlsx_to_pdf">XLSX를 PDF로</string>
     <string name="home_tool_remove_pages">페이지 제거</string>
     <string name="home_tool_reorder_pages">페이지 순서 변경</string>
     <string name="home_support_card">커피 한 잔 사주세요</string>
@@ -50,6 +51,7 @@
     <string name="status_converting_docx">DOCX를 PDF로 변환 중...</string>
     <string name="status_converting_markdown">Markdown을 PDF로 변환 중...</string>
     <string name="status_converting_pptx">PPTX를 PDF로 변환 중...</string>
+    <string name="status_converting_xlsx">XLSX를 PDF로 변환 중...</string>
     <string name="status_compressing_pdf">PDF 압축 중...</string>
     <string name="status_remove_reorder_pages">페이지 제거 및 순서 변경 중...</string>
     <string name="status_removing_pages">페이지 제거 중...</string>
@@ -198,7 +200,7 @@
     <string name="settings_language_portuguese_brazil">포르투갈어 (브라질)</string>
     <string name="settings_language_korean">한국어</string>
     <string name="settings_libreoffice_startup">시작 시 LibreOffice</string>
-    <string name="settings_libreoffice_startup_subtitle">DOCX 변환 속도를 위해 엔진 미리 로드</string>
+    <string name="settings_libreoffice_startup_subtitle">더 빠른 Docs 변환을 위해 엔진 미리 로드</string>
     <string name="settings_camera_app">카메라 앱</string>
     <string name="settings_camera_default">기본값</string>
     <string name="settings_camera_custom">사용자 지정</string>

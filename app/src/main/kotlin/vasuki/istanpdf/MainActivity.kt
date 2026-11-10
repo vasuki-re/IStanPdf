@@ -834,6 +834,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (requestCode == REQ_PICK_XLSX_TO_PDF) {
+            val xlsxUri = data.data ?: return
+            editorViewModel.clearPendingUris()
+            editorViewModel.pendingUris.add(xlsxUri)
+            val prefix = getDisplayName(xlsxUri)
+            createDocument(MIME_PDF, "${prefix}_converted.pdf", REQ_SAVE_XLSX_TO_PDF)
+            return
+        }
+
         if (requestCode == REQ_PICK_MD_TO_PDF) {
             val mdUri = data.data ?: return
             try {
@@ -961,6 +970,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        } else if (requestCode == REQ_SAVE_XLSX_TO_PDF) {
+            runJob(getString(R.string.status_converting_xlsx), OutputRef(destination, MIME_PDF, getDisplayName(destination))) {
+                val xlsxUri = pendingUris[0]
+                val pdfFile = AppModule.get().xlsxToPdf.execute(xlsxUri)
+                try {
+                    ContentFiles.copyFileToUri(this@MainActivity, pdfFile, destination)
+                } finally {
+                    if (pdfFile.exists()) {
+                        pdfFile.delete()
+                    }
+                }
+            }
         } else if (requestCode == REQ_SAVE_COMPRESS_PDF) {
             val source = pendingUris[0]
             if (compressMode == COMPRESS_MODE_RESOLUTION) {
@@ -1067,6 +1088,13 @@ class MainActivity : AppCompatActivity() {
                     pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF)
                 } else {
                     showEngineRequiredDialog { pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF) }
+                }
+            }
+            override fun onXlsxToPdf() {
+                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
+                    pickOne(arrayOf(MIME_XLSX, MIME_XLS), REQ_PICK_XLSX_TO_PDF)
+                } else {
+                    showEngineRequiredDialog { pickOne(arrayOf(MIME_XLSX, MIME_XLS), REQ_PICK_XLSX_TO_PDF) }
                 }
             }
             override fun onDocxRemovePages() {
@@ -2958,6 +2986,8 @@ class MainActivity : AppCompatActivity() {
         private const val REQ_SAVE_COMPRESS_PDF = 45
         private const val REQ_PICK_PPTX_TO_PDF = 47
         private const val REQ_SAVE_PPTX_TO_PDF = 48
+        private const val REQ_PICK_XLSX_TO_PDF = 49
+        private const val REQ_SAVE_XLSX_TO_PDF = 50
 
         private const val COMPRESS_MODE_RESOLUTION = 0
         private const val COMPRESS_MODE_SIZE = 1
@@ -2966,6 +2996,8 @@ class MainActivity : AppCompatActivity() {
         private const val MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         private const val MIME_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         private const val MIME_PPT = "application/vnd.ms-powerpoint"
+        private const val MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        private const val MIME_XLS = "application/vnd.ms-excel"
         private const val MIME_MD = "text/markdown"
         private const val MIME_JPEG = "image/jpeg"
         private const val MIME_ZIP = "application/zip"

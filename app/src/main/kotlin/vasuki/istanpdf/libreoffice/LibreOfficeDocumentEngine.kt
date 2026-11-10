@@ -2,6 +2,7 @@ package vasuki.istanpdf.libreoffice
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import org.libreoffice.kit.Document
 import org.libreoffice.kit.LibreOfficeKit
 import org.libreoffice.kit.Office
@@ -10,43 +11,55 @@ import java.io.File
 import java.io.IOException
 
 object LibreOfficeDocumentEngine {
+    private val PRESENTATION_SUFFIXES = setOf("ppt", "pptx")
+    private val SPREADSHEET_SUFFIXES = setOf("xls", "xlsx")
     private var isInitialized = false
     private var nativesLoaded = false
     private var cachedOffice: Office? = null
 
     @Throws(Exception::class)
-    fun exportDocxToPdf(context: Context, docxUri: Uri): File {
-        var input: File? = null
-        val output: File
-        try {
-            input = ContentFiles.copyUriToCache(context, docxUri, ".docx")
-            requireNonEmptyDocx(input)
-            output = File.createTempFile("istanpdf_docx_preview_", ".pdf", context.cacheDir)
-            saveAs(context, input, output, "pdf")
-
-            check(output.exists() && output.length() > 0) {
-                "LibreOffice failed to generate output PDF"
-            }
-            return output
-        } finally {
-            if (input?.exists() == true) input.delete()
-        }
-    }
-
-    private fun requireNonEmptyDocx(input: File?) {
-        if (input == null || !input.exists() || input.length() == 0L) {
-            throw IOException("Corrupt DOCX file")
-        }
-    }
+    fun exportDocxToPdf(context: Context, docxUri: Uri): File =
+        exportToPdf(
+            context,
+            docxUri,
+            ".docx",
+            "istanpdf_docx_preview_",
+            "Corrupt DOCX file"
+        )
 
     @Throws(Exception::class)
-    fun exportPptxToPdf(context: Context, pptxUri: Uri): File {
+    fun exportPptxToPdf(context: Context, pptxUri: Uri): File =
+        exportToPdf(
+            context,
+            pptxUri,
+            sourceSuffix(context, pptxUri, ".pptx", PRESENTATION_SUFFIXES),
+            "istanpdf_pptx_preview_",
+            "Corrupt presentation file"
+        )
+
+    @Throws(Exception::class)
+    fun exportXlsxToPdf(context: Context, xlsxUri: Uri): File =
+        exportToPdf(
+            context,
+            xlsxUri,
+            sourceSuffix(context, xlsxUri, ".xlsx", SPREADSHEET_SUFFIXES),
+            "istanpdf_xlsx_preview_",
+            "Corrupt spreadsheet file"
+        )
+
+    @Throws(Exception::class)
+    private fun exportToPdf(
+        context: Context,
+        sourceUri: Uri,
+        suffix: String,
+        prefix: String,
+        corruptMessage: String
+    ): File {
         var input: File? = null
-        val output: File
         try {
-            input = ContentFiles.copyUriToCache(context, pptxUri, ".pptx")
-            requireNonEmptyPresentation(input)
-            output = File.createTempFile("istanpdf_pptx_preview_", ".pdf", context.cacheDir)
+            input = ContentFiles.copyUriToCache(context, sourceUri, suffix)
+            requireNonEmpty(input, corruptMessage)
+            val output = File.createTempFile(prefix, ".pdf", context.cacheDir)
             saveAs(context, input, output, "pdf")
 
             check(output.exists() && output.length() > 0) {
@@ -58,9 +71,32 @@ object LibreOfficeDocumentEngine {
         }
     }
 
-    private fun requireNonEmptyPresentation(input: File?) {
+    private fun sourceSuffix(context: Context, uri: Uri, fallback: String, allowed: Set<String>): String {
+        val displayName = try {
+            context.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) cursor.getString(index) else null
+                } else {
+                    null
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+        val extension = displayName?.substringAfterLast('.', "")?.lowercase()
+        return if (extension != null && extension in allowed) ".$extension" else fallback
+    }
+
+    private fun requireNonEmpty(input: File?, message: String) {
         if (input == null || !input.exists() || input.length() == 0L) {
-            throw IOException("Corrupt presentation file")
+            throw IOException(message)
         }
     }
 
@@ -71,6 +107,9 @@ object LibreOfficeDocumentEngine {
         try {
             document = office.documentLoad(Uri.fromFile(input).toString())
                 ?: throw IllegalStateException("LibreOffice could not open the document")
+            if (format == "pdf" && document.getDocumentType() == Document.DOCTYPE_SPREADSHEET) {
+                SpreadsheetPageFitter.fit(document)
+            }
             document.saveAs(Uri.fromFile(output).toString(), format, null)
         } finally {
             document?.destroy()

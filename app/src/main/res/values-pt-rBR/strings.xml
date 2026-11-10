@@ -15,7 +15,7 @@
     <string name="action_take_photo">Tirar foto</string>
     <string name="action_navigate_up">Voltar</string>
 
-    <string name="home_subtitle">App offline para operações com PDF e DOCX</string>
+    <string name="home_subtitle">App offline para operações com PDF e Docs</string>
     <string name="home_section_pdf_tools">Ferramentas PDF</string>
     <string name="home_section_conversions">Conversões</string>
     <string name="home_section_docx_tools">Ferramentas DOCX</string>
@@ -27,6 +27,7 @@
     <string name="home_tool_docx_to_pdf">DOCX para PDF</string>
     <string name="home_tool_md_to_pdf">MD para PDF</string>
     <string name="home_tool_pptx_to_pdf">PPTX para PDF</string>
+    <string name="home_tool_xlsx_to_pdf">XLSX para PDF</string>
     <string name="home_tool_remove_pages">Remover páginas</string>
     <string name="home_tool_reorder_pages">Reordenar páginas</string>
     <string name="home_support_card">Pague um café</string>
@@ -48,6 +49,7 @@
     <string name="status_converting_docx">Convertendo DOCX em PDF...</string>
     <string name="status_converting_markdown">Convertendo Markdown em PDF...</string>
     <string name="status_converting_pptx">Convertendo PPTX em PDF...</string>
+    <string name="status_converting_xlsx">Convertendo XLSX em PDF...</string>
     <string name="status_compressing_pdf">Comprimindo PDF...</string>
     <string name="status_remove_reorder_pages">Removendo e reordenando páginas...</string>
     <string name="status_removing_pages">Removendo páginas...</string>
@@ -194,7 +196,7 @@
     <string name="settings_language_portuguese_brazil">Português (Brasil)</string>
     <string name="settings_language_korean">Coreano</string>
     <string name="settings_libreoffice_startup">LibreOffice na inicialização</string>
-    <string name="settings_libreoffice_startup_subtitle">Pré-carregar o motor para conversões DOCX mais rápidas</string>
+    <string name="settings_libreoffice_startup_subtitle">Pré-carregar o motor para conversões de Docs mais rápidas</string>
     <string name="settings_camera_app">App de câmera</string>
     <string name="settings_camera_default">Padrão</string>
     <string name="settings_camera_custom">Personalizado</string>

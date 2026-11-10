@@ -32,6 +32,7 @@ class HomeViewBuilder(
         fun onDocxToPdf()
         fun onMdToPdf()
         fun onPptxToPdf()
+        fun onXlsxToPdf()
         fun onDocxRemovePages()
         fun onDocxReorderPages()
         fun onSupportDeveloper()
@@ -131,13 +132,11 @@ class HomeViewBuilder(
         convRow2.addView(dashboardCard(activity.getString(R.string.home_tool_md_to_pdf), R.drawable.md2pdf_24px, actions::onMdToPdf))
         root.addView(convRow2)
 
-        val pptxCard = dashboardCard(activity.getString(R.string.home_tool_pptx_to_pdf), R.drawable.pptx2pdf_24px, actions::onPptxToPdf)
-        (pptxCard.layoutParams as LinearLayout.LayoutParams).apply {
-            width = ViewGroup.LayoutParams.MATCH_PARENT
-            height = ViewGroup.LayoutParams.WRAP_CONTENT
-            weight = 0f
-        }
-        root.addView(pptxCard)
+        val convRow3 = LinearLayout(activity)
+        convRow3.orientation = LinearLayout.HORIZONTAL
+        convRow3.addView(dashboardCard(activity.getString(R.string.home_tool_pptx_to_pdf), R.drawable.pptx2pdf_24px, actions::onPptxToPdf))
+        convRow3.addView(dashboardCard(activity.getString(R.string.home_tool_xlsx_to_pdf), R.drawable.xlsx2pdf_24px, actions::onXlsxToPdf))
+        root.addView(convRow3)
 
         root.addView(createSectionHeader(activity.getString(R.string.home_section_docx_tools)))
         val docxRow1 = LinearLayout(activity)

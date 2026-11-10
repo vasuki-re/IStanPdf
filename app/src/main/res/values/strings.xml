@@ -17,7 +17,7 @@
     <string name="action_take_photo">Take Photo</string>
     <string name="action_navigate_up">Navigate up</string>
 
-    <string name="home_subtitle">Offline app for PDF and DOCX operations</string>
+    <string name="home_subtitle">Offline app for PDF and Docs operations</string>
     <string name="home_section_pdf_tools">PDF tools</string>
     <string name="home_section_conversions">Conversions</string>
     <string name="home_section_docx_tools">DOCX tools</string>
@@ -29,6 +29,7 @@
     <string name="home_tool_docx_to_pdf">DOCX to PDF</string>
     <string name="home_tool_md_to_pdf">MD to PDF</string>
     <string name="home_tool_pptx_to_pdf">PPTX to PDF</string>
+    <string name="home_tool_xlsx_to_pdf">XLSX to PDF</string>
     <string name="home_tool_remove_pages">Remove Pages</string>
     <string name="home_tool_reorder_pages">Reorder Pages</string>
     <string name="home_support_card">Buy me a Coffee</string>
@@ -50,6 +51,7 @@
     <string name="status_converting_docx">Converting DOCX to PDF...</string>
     <string name="status_converting_markdown">Converting Markdown to PDF...</string>
     <string name="status_converting_pptx">Converting PPTX to PDF...</string>
+    <string name="status_converting_xlsx">Converting XLSX to PDF...</string>
     <string name="status_compressing_pdf">Compressing PDF...</string>
     <string name="status_remove_reorder_pages">Remove+Reorder Pages...</string>
     <string name="status_removing_pages">Removing Pages...</string>
@@ -198,7 +200,7 @@
     <string name="settings_language_portuguese_brazil">Portuguese (Brazil)</string>
     <string name="settings_language_korean">Korean</string>
     <string name="settings_libreoffice_startup">LibreOffice on startup</string>
-    <string name="settings_libreoffice_startup_subtitle">Pre-load engine for faster DOCX conversion</string>
+    <string name="settings_libreoffice_startup_subtitle">Pre-load engine for faster Docs conversion</string>
     <string name="settings_camera_app">Camera app</string>
     <string name="settings_camera_default">Default</string>
     <string name="settings_camera_custom">Custom</string>
