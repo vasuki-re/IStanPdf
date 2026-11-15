@@ -26,10 +26,8 @@
     <string name="home_tool_compress_pdf">Compress PDF</string>
     <string name="home_tool_image_to_pdf">Image to PDF</string>
     <string name="home_tool_pdf_to_image">PDF to Image</string>
-    <string name="home_tool_docx_to_pdf">DOCX to PDF</string>
+    <string name="home_tool_office_to_pdf">Office to PDF</string>
     <string name="home_tool_md_to_pdf">MD to PDF</string>
-    <string name="home_tool_pptx_to_pdf">PPTX to PDF</string>
-    <string name="home_tool_xlsx_to_pdf">XLSX to PDF</string>
     <string name="home_tool_remove_pages">Remove Pages</string>
     <string name="home_tool_reorder_pages">Reorder Pages</string>
     <string name="home_support_card">Buy me a Coffee</string>
@@ -99,6 +97,13 @@
     <string name="dialog_engine_failed_title">Download Failed</string>
     <string name="dialog_engine_failed_body">Download failed: %1$s\n\nCheck your internet connection and try again.</string>
     <string name="dialog_choose">Choose</string>
+    <string name="sheet_office_title">Office to PDF</string>
+    <string name="sheet_office_docx">DOCX</string>
+    <string name="sheet_office_pptx">PPTX</string>
+    <string name="sheet_office_xlsx">XLSX</string>
+    <string name="sheet_office_docx_action">Convert DOCX to PDF</string>
+    <string name="sheet_office_pptx_action">Convert PPTX to PDF</string>
+    <string name="sheet_office_xlsx_action">Convert XLSX to PDF</string>
     <string name="dialog_add_images">Add Images</string>
     <string name="dialog_support_developer">Support the Developer</string>
     <string name="dialog_open_upi">Open UPI App</string>

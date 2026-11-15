@@ -32,6 +32,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
 import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
@@ -1075,28 +1076,14 @@ class MainActivity : AppCompatActivity() {
             override fun onCompressPdf() { pickOne(arrayOf(MIME_PDF), REQ_PICK_COMPRESS_PDF) }
             override fun onImageToPdf() { editorViewModel.clearPendingImageUris(); showImageSourceChooser() }
             override fun onPdfToImage() { pickOne(arrayOf(MIME_PDF), REQ_PICK_PDF_TO_JPG) }
-            override fun onDocxToPdf() {
+            override fun onOfficeToPdf() {
                 if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
-                    pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF)
+                    showOfficeToPdfSheet()
                 } else {
-                    showEngineRequiredDialog { pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF) }
+                    showEngineRequiredDialog { showOfficeToPdfSheet() }
                 }
             }
             override fun onMdToPdf() { pickOne(arrayOf(MIME_MD, "text/plain"), REQ_PICK_MD_TO_PDF) }
-            override fun onPptxToPdf() {
-                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
-                    pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF)
-                } else {
-                    showEngineRequiredDialog { pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF) }
-                }
-            }
-            override fun onXlsxToPdf() {
-                if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
-                    pickOne(arrayOf(MIME_XLSX, MIME_XLS), REQ_PICK_XLSX_TO_PDF)
-                } else {
-                    showEngineRequiredDialog { pickOne(arrayOf(MIME_XLSX, MIME_XLS), REQ_PICK_XLSX_TO_PDF) }
-                }
-            }
             override fun onDocxRemovePages() {
                 if (LibreOfficeManager.isEngineInstalled(this@MainActivity)) {
                     pickOne(arrayOf(MIME_DOCX), REQ_PICK_REORDER_DOCX)
@@ -1359,7 +1346,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private data class BottomSheetItem(val label: String, val iconRes: Int, val action: Runnable, val tintIcon: Boolean = true, val customIcon: View? = null, val iconWidthDp: Int = 24, val iconHeightDp: Int = 24)
+    private data class BottomSheetItem(
+        val label: String,
+        val iconRes: Int,
+        val action: Runnable,
+        val tintIcon: Boolean = true,
+        val customIcon: View? = null,
+        val iconWidthDp: Int = 24,
+        val iconHeightDp: Int = 24,
+        val a11yLabel: String? = null
+    )
 
     private fun showBottomSheetMenu(titleStr: String, items: List<BottomSheetItem>) {
         val bottomSheetDialog = BottomSheetStyle.dialog(this)
@@ -1370,6 +1366,7 @@ class MainActivity : AppCompatActivity() {
         
         val title = text(titleStr, 20, R.color.istan_text, true)
         title.setPadding(dp(24), dp(8), dp(24), dp(16))
+        ViewCompat.setAccessibilityHeading(title, true)
         dialogRoot.addView(title)
         
         for (item in items) {
@@ -1382,6 +1379,7 @@ class MainActivity : AppCompatActivity() {
             row.setBackgroundResource(typedValue.resourceId)
             
             row.setPadding(dp(24), dp(16), dp(24), dp(16))
+            row.contentDescription = item.a11yLabel ?: item.label
             row.setOnClickListener {
                 bottomSheetDialog.dismiss()
                 item.action.run()
@@ -1414,6 +1412,42 @@ class MainActivity : AppCompatActivity() {
 
         val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         bottomSheet?.let { BottomSheetStyle.apply(this, bottomSheetDialog, it) }
+    }
+
+    private enum class OfficeFormat { DOCX, PPTX, XLSX }
+
+    private fun showOfficeToPdfSheet() {
+        showBottomSheetMenu(
+            getString(R.string.sheet_office_title),
+            listOf(
+                BottomSheetItem(
+                    getString(R.string.sheet_office_docx),
+                    R.drawable.docx2pdf_24px,
+                    Runnable { startOfficeConversion(OfficeFormat.DOCX) },
+                    a11yLabel = getString(R.string.sheet_office_docx_action)
+                ),
+                BottomSheetItem(
+                    getString(R.string.sheet_office_pptx),
+                    R.drawable.pptx2pdf_24px,
+                    Runnable { startOfficeConversion(OfficeFormat.PPTX) },
+                    a11yLabel = getString(R.string.sheet_office_pptx_action)
+                ),
+                BottomSheetItem(
+                    getString(R.string.sheet_office_xlsx),
+                    R.drawable.xlsx2pdf_24px,
+                    Runnable { startOfficeConversion(OfficeFormat.XLSX) },
+                    a11yLabel = getString(R.string.sheet_office_xlsx_action)
+                )
+            )
+        )
+    }
+
+    private fun startOfficeConversion(format: OfficeFormat) {
+        when (format) {
+            OfficeFormat.DOCX -> pickOne(arrayOf(MIME_DOCX), REQ_PICK_DOCX_TO_PDF)
+            OfficeFormat.PPTX -> pickOne(arrayOf(MIME_PPTX, MIME_PPT), REQ_PICK_PPTX_TO_PDF)
+            OfficeFormat.XLSX -> pickOne(arrayOf(MIME_XLSX, MIME_XLS), REQ_PICK_XLSX_TO_PDF)
+        }
     }
 
     private fun showImageSourceChooser() {

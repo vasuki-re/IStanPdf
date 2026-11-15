@@ -26,10 +26,8 @@
     <string name="home_tool_compress_pdf">PDF 압축</string>
     <string name="home_tool_image_to_pdf">이미지를 PDF로</string>
     <string name="home_tool_pdf_to_image">PDF를 이미지로</string>
-    <string name="home_tool_docx_to_pdf">DOCX를 PDF로</string>
+    <string name="home_tool_office_to_pdf">Office를 PDF로</string>
     <string name="home_tool_md_to_pdf">MD를 PDF로</string>
-    <string name="home_tool_pptx_to_pdf">PPTX를 PDF로</string>
-    <string name="home_tool_xlsx_to_pdf">XLSX를 PDF로</string>
     <string name="home_tool_remove_pages">페이지 제거</string>
     <string name="home_tool_reorder_pages">페이지 순서 변경</string>
     <string name="home_support_card">커피 한 잔 사주세요</string>
@@ -99,6 +97,13 @@
     <string name="dialog_engine_failed_title">다운로드 실패</string>
     <string name="dialog_engine_failed_body">다운로드에 실패했습니다: %1$s\n\n인터넷 연결을 확인한 뒤 다시 시도해 주세요.</string>
     <string name="dialog_choose">선택</string>
+    <string name="sheet_office_title">Office를 PDF로</string>
+    <string name="sheet_office_docx">DOCX</string>
+    <string name="sheet_office_pptx">PPTX</string>
+    <string name="sheet_office_xlsx">XLSX</string>
+    <string name="sheet_office_docx_action">DOCX를 PDF로 변환</string>
+    <string name="sheet_office_pptx_action">PPTX를 PDF로 변환</string>
+    <string name="sheet_office_xlsx_action">XLSX를 PDF로 변환</string>
     <string name="dialog_add_images">이미지 추가</string>
     <string name="dialog_support_developer">개발자 후원</string>
     <string name="dialog_open_upi">UPI 앱 열기</string>

@@ -24,10 +24,8 @@
     <string name="home_tool_compress_pdf">Comprimir PDF</string>
     <string name="home_tool_image_to_pdf">Imagem para PDF</string>
     <string name="home_tool_pdf_to_image">PDF para imagem</string>
-    <string name="home_tool_docx_to_pdf">DOCX para PDF</string>
+    <string name="home_tool_office_to_pdf">Office para PDF</string>
     <string name="home_tool_md_to_pdf">MD para PDF</string>
-    <string name="home_tool_pptx_to_pdf">PPTX para PDF</string>
-    <string name="home_tool_xlsx_to_pdf">XLSX para PDF</string>
     <string name="home_tool_remove_pages">Remover páginas</string>
     <string name="home_tool_reorder_pages">Reordenar páginas</string>
     <string name="home_support_card">Pague um café</string>
@@ -97,6 +95,13 @@
     <string name="dialog_engine_failed_title">Falha no download</string>
     <string name="dialog_engine_failed_body">Falha no download: %1$s\n\nVerifique sua conexão com a internet e tente novamente.</string>
     <string name="dialog_choose">Escolher</string>
+    <string name="sheet_office_title">Office para PDF</string>
+    <string name="sheet_office_docx">DOCX</string>
+    <string name="sheet_office_pptx">PPTX</string>
+    <string name="sheet_office_xlsx">XLSX</string>
+    <string name="sheet_office_docx_action">Converter DOCX para PDF</string>
+    <string name="sheet_office_pptx_action">Converter PPTX para PDF</string>
+    <string name="sheet_office_xlsx_action">Converter XLSX para PDF</string>
     <string name="dialog_add_images">Adicionar imagens</string>
     <string name="dialog_support_developer">Apoie o desenvolvedor</string>
     <string name="dialog_open_upi">Abrir app UPI</string>
